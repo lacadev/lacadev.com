@@ -153,6 +153,7 @@ function theOption($name) {
     echo getOption($name);
 }
 
+// Option image
 function theOptionImage($name, $width = null, $height = null) {
     $imageId = getOption($name);
     if (!empty($imageId)) {
@@ -160,20 +161,12 @@ function theOptionImage($name, $width = null, $height = null) {
     }
 }
 
-/**
- * Load resource
- *
- * @param string $path
- */
+// Load resource
 function theAsset($path) {
     echo getImageAsset($path);
 }
 
-/**
- * Tạo phân trang
- *
- * @param mixed|\WP_Query $query
- */
+// Pagination
 function thePagination($query = null) {
     if (empty($query)) {
         global $wp_query;
@@ -228,12 +221,7 @@ function thePagination($query = null) {
     }
 }
 
-/**
- * Pagination for specific post type (used in search results)
- *
- * @param mixed|\WP_Query $query
- * @param string $post_type Post type slug (e.g., 'post', 'page', 'service')
- */
+// Pagination for specific post type (used in search results)
 function thePostTypePagination($query, $post_type) {
     if (empty($query) || $query->max_num_pages <= 1) {
         return;
@@ -288,16 +276,17 @@ function thePostTypePagination($query, $post_type) {
     }
 }
 
-/**
- * Tạo breadcrumb
- */
+// Breadcrumb
 function theBreadcrumb() {
     get_template_part('template-parts/breadcrumb');
 }
+
+// Share socials
 function theShareSocials() {
     get_template_part('template-parts/share_box');
 }
 
+// Get page title
 function getPageTitle() {
     $obj   = get_queried_object();
     $title = get_bloginfo('name');
@@ -337,10 +326,8 @@ function getPageTitle() {
     }
     return $title;
 }
-function thePageTitle() {
-	echo getPageTitle();
-}
 
+// Language switcher
 function theLanguageSwitcher($showName = true, $showFlag = false) {
   if (function_exists('pll_the_languages')) {
       $languages = pll_the_languages([
