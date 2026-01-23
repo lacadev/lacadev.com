@@ -11,7 +11,7 @@
     "dev": "concurrently \"yarn dev:theme\" \"yarn dev:blocks\"",
     "dev:theme": "cross-env NODE_ENV=development webpack --color --config resources/build/webpack.development.js",
     "dev:blocks": "wp-scripts start block-gutenberg/index.js --output-path=./dist/gutenberg",
-    "build": "yarn build:theme && yarn build:blocks",
+    "build": "yarn build:theme && yarn build:blocks && yarn critical",
     "build:theme": "cross-env NODE_ENV=production webpack --color --config resources/build/webpack.production.js",
     "build:blocks": "wp-scripts build block-gutenberg/index.js --output-path=./dist/gutenberg",
     "lint": "run-s -cl lint:scripts lint:styles",
@@ -19,7 +19,8 @@
     "lint:styles": "stylelint 'resources/styles/**/*.{css,scss}'",
     "lint-fix": "run-s -cl lint-fix:scripts lint-fix:styles",
     "lint-fix:scripts": "wp-scripts lint-js --fix 'resources/scripts' 'block-gutenberg'",
-    "lint-fix:styles": "stylelint --fix 'resources/styles/**/*.{css,scss}'"
+    "lint-fix:styles": "stylelint --fix 'resources/styles/**/*.{css,scss}'",
+    "critical": "node resources/build/critical.js"
   },
   "browserslist": [
     "last 3 versions"

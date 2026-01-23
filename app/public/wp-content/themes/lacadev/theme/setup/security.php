@@ -13,6 +13,12 @@ if (!defined('ABSPATH')) {
  * Add HTTP Security Headers
  */
 add_action('send_headers', function() {
+    // Generate Nonce
+    $nonce = base64_encode(random_bytes(16));
+    if (!defined('LACA_CSP_NONCE')) {
+        define('LACA_CSP_NONCE', $nonce);
+    }
+
     // Prevent clickjacking
     header('X-Frame-Options: SAMEORIGIN');
     
@@ -25,9 +31,11 @@ add_action('send_headers', function() {
     // XSS Protection (legacy browsers)
     header('X-XSS-Protection: 1; mode=block');
     
-    // Content Security Policy (adjust as needed for your site)
+    // Content Security Policy
+    // Note: We keep 'unsafe-inline' for backward compatibility with some plugins, 
+    // but the presence of nonce-value will make modern browsers ignore 'unsafe-inline' for script-src
     $csp = "default-src 'self'; ";
-    $csp .= "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://images.dmca.com https://apis.google.com blob:; ";
+    $csp .= "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-{$nonce}' https://www.googletagmanager.com https://www.google-analytics.com https://images.dmca.com https://apis.google.com blob:; ";
     $csp .= "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; ";
     $csp .= "font-src 'self' https://fonts.gstatic.com data:; ";
     $csp .= "connect-src 'self' https://www.youtube.com https://www.google-analytics.com https://stats.g.doubleclick.net https://apis.google.com ws: wss: webpack:; ";
@@ -42,6 +50,19 @@ add_action('send_headers', function() {
     // Permissions Policy (Feature Policy)
     header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
 });
+
+/**
+ * Inject Nonce into script tags
+ */
+add_filter('script_loader_tag', function($tag, $handle) {
+    if (defined('LACA_CSP_NONCE')) {
+        $nonce = LACA_CSP_NONCE;
+        if (strpos($tag, "nonce=") === false) {
+            $tag = str_replace('<script ', '<script nonce="' . $nonce . '" ', $tag);
+        }
+    }
+    return $tag;
+}, 10, 2);
 
 /**
  * Remove WordPress version from head
@@ -100,4 +121,32 @@ add_action('wp_login', function($username) {
     $ip = $_SERVER['REMOTE_ADDR'];
     $transient_key = 'login_attempts_' . md5($ip);
     delete_transient($transient_key);
+});
+
+/**
+ * Sanitize Uploaded Filenames
+ * Prevent special characters and ensure safe filenames
+ */
+add_filter('sanitize_file_name', function($filename) {
+    $info = pathinfo($filename);
+    $ext  = empty($info['extension']) ? '' : '.' . $info['extension'];
+    $name = basename($filename, $ext);
+
+    // Remove accents and special chars
+    $name = remove_accents($name);
+    
+    // Ensure only safe characters remain
+    $name = preg_replace('/[^A-Za-z0-9-]/', '-', $name);
+    
+    // Prevent multiple dashes
+    $name = preg_replace('/-+/', '-', $name);
+    
+    // Trim dashes from beginning and end
+    $name = trim($name, '-');
+
+    // Add short unique hash (4 chars) to prevent duplication but keep it short
+    // Example: image-name-a1b2.jpg
+    $short_hash = substr(md5(uniqid()), 0, 4);
+    
+    return strtolower($name . '-' . $short_hash . $ext);
 });
