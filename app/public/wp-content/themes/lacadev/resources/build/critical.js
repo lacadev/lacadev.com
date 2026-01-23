@@ -3,7 +3,7 @@
  * Critical CSS Generator
  * Run via: npm run critical
  */
-const critical = require('critical');
+// Critical module will be imported dynamically
 const path = require('path');
 const config = require('../../config.json');
 
@@ -34,7 +34,8 @@ const dimensions = [
 
 (async () => {
     try {
-        const { css, html, uncritical } = await critical.generate({
+        const { generate } = await import('critical');
+        const { css, html, uncritical } = await generate({
             base: distPath,
             src: targetUrl,
             target: 'styles/critical.css',
@@ -45,8 +46,7 @@ const dimensions = [
             ignore: {
                 atrule: ['@font-face'],
             },
-            // Ensure connection doesn't timeout for local WP
-            timeout: 30000,
+
         });
 
         console.log('✅ Critical CSS generated successfully at: dist/styles/critical.css');
