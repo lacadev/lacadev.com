@@ -12,6 +12,24 @@ body.wp-admin {
   font-size: 13px !important;
 }
 
+//img theme preview
+.theme-overlay .screenshot {
+  box-shadow: none;
+
+  &::after {
+    content: none;
+  }
+
+  img {
+    position: relative;
+  }
+}
+
+.subsubsub {
+  position: relative;
+  z-index: 9999;
+}
+
 .featured_image.column-featured_image {
   a:not(.remove-thumbnail) {
     display: block !important;
@@ -49,6 +67,7 @@ body.wp-admin {
     aspect-ratio: 16 / 10;
     object-fit: cover;
   }
+
   .no-image-text {
     display: flex;
     align-items: center;
@@ -92,6 +111,7 @@ button[data-toggle="password-toggle"] {
   opacity: 1 !important;
 }
 
-.dashicons, .dashicons-before:before {
+.dashicons,
+.dashicons-before:before {
   font-family: "dashicons" !important;
 }

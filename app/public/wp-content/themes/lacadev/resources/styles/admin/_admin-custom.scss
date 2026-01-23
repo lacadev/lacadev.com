@@ -46,6 +46,37 @@ body.wp-admin {
     text-indent: 0;
     margin-right: 0;
   }
+
+  .cf-container__tabs {
+    background-color: $backgroundColorAd;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+  }
+
+  .cf-container__tabs-list .cf-container__tabs-item {
+    background-color: $backgroundColorAd;
+    border-color: #fff;
+    border-bottom: none !important;
+    border-top-right-radius: 15px !important;
+    border-top-left-radius: 15px !important;
+  }
+
+  .cf-container__tabs-list .cf-container__tabs-item--current {
+    background-color: #fff;
+  }
+
+  .cf-container .cf-field+.cf-field {
+    border-top-width: 0 !important;
+  }
+
+  .postbox.carbon-box {
+    border-radius: 15px !important;
+    // overflow: hidden !important;
+  }
+
+  .cf-container__fields {
+    background-color: transparent;
+  }
 }
 
 .wp-admin #wpcontent #wpadminbar #wp-admin-bar-site-name > .ab-item {
@@ -112,12 +143,19 @@ body.wp-admin {
   }
 
   .wp-has-current-submenu {
-    background: $secondaryColorAd;
+    background: transparent;
+    border-top-left-radius: 15px !important;
+    border-top-right-radius: 15px !important;
 
     &:hover {
       color: $primaryColorAd !important;
-      background: $secondaryColorAd !important;
+      background: transparent !important;
     }
+  }
+
+  .wp-has-current-submenu.opensub.wp-menu-open .wp-submenu, #adminmenu .wp-menu-open.opensub .wp-submenu,
+  a.wp-has-current-submenu.wp-menu-open:focus + .wp-submenu {
+    padding-bottom: 0 !important;
   }
 
   .wp-submenu {
@@ -183,11 +221,18 @@ body.wp-admin {
 
   .wp-has-current-submenu .wp-submenu {
     background: $secondaryColorAd !important;
+    padding-bottom: 0;
     border-right: 1px solid $textColorAd;
+    border-bottom-left-radius: 15px !important;
+    border-bottom-right-radius: 15px !important;
   }
 
   li.wp-has-current-submenu a.wp-has-current-submenu {
     background: $secondaryColorAd !important;
+
+    &:hover {
+      box-shadow: none !important;
+    }
   }
 
   @include maxWidth($lg) {
@@ -221,6 +266,8 @@ body.wp-admin {
 
   .opensub .wp-submenu li.current a,
   .wp-submenu li.current,
+  .wp-submenu li,
+  .wp-submenu li a,
   .wp-submenu li.current a,
   .wp-submenu li.current a:focus,
   .wp-submenu li.current a:hover,
@@ -242,6 +289,12 @@ ul#adminmenu {
   li > a.menu-top:focus {
     color: $primaryColorAd !important;
     background: $secondaryColorAd !important;
+    border-radius: 15px !important;
+  }
+
+  li.wp-menu-open.menu-top.wp-has-current-submenu:hover > *,
+  li.wp-menu-open.menu-top.wp-has-current-submenu:hover > ul > li > a{
+    background: transparent !important;
   }
 
   li.menu-top:hover a {
@@ -342,6 +395,25 @@ ul#adminmenu {
     padding: 0;
   }
 
+  .quicklinks .menupop ul li {
+    .ab-item {
+      height: auto !important;
+      margin-bottom: 8px !important;
+
+      &:hover {
+        text-decoration:underline!important;
+        text-underline-position: under;
+        text-decoration-color: $textColorAd !important;
+      }
+    }
+
+    &:last-child {
+      .ab-item {
+        margin-bottom: 0 !important;
+      }
+    }
+  }
+
   ul#wp-admin-bar-root-default>li {
     margin-right: 30px;
   }
@@ -380,6 +452,9 @@ ul#adminmenu {
     }
 
     .avatar {
+      top: -7px;
+      width: 70px;
+      height: 70px;
       border-radius: 50%;
       background: #fff !important;
     }

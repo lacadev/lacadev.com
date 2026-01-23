@@ -76,30 +76,6 @@ class Security
     }
 
     /**
-     * Loại bỏ các thành phần không cần thiết của WordPress để tăng bảo mật và hiệu suất
-     */
-    public function removeWordpressBloat()
-    {
-        remove_action('wp_head', 'rsd_link');
-        remove_action('wp_head', 'wlwmanifest_link');
-        remove_action('wp_head', 'wp_generator');
-        remove_action('wp_head', 'feed_links', 2);
-        remove_action('wp_head', 'feed_links_extra', 3);
-        remove_action('wp_head', 'adjacent_posts_rel_link_wp_head', 10);
-        remove_action('wp_head', 'wp_shortlink_wp_head', 10);
-        remove_action('wp_head', 'start_post_rel_link');
-        remove_action('wp_head', 'index_rel_link');
-        remove_action('wp_head', 'parent_post_rel_link', 10, 0);
-        // Tối ưu heartbeat
-        add_filter('heartbeat_settings', function ($settings) {
-            $settings['interval'] = 120; // 2 phút thay vì 15 giây
-            return $settings;
-        });
-        // Ẩn lỗi đăng nhập
-        add_filter('login_errors', '__return_null');
-    }
-
-    /**
      * Giới hạn số lượng post revision và tăng autosave interval
      */
     public function optimizeDatabaseQueries()
