@@ -4,3 +4,6 @@
 local-site.json
 /conf/
 /logs/
+.claude/
+.codex/
+.github/skills/
