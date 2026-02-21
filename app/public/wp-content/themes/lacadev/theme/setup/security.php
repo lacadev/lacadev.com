@@ -31,30 +31,35 @@ add_action('send_headers', function() {
     // XSS Protection (legacy browsers)
     header('X-XSS-Protection: 1; mode=block');
     
-    // Content Security Policy
-    // Note: We keep 'unsafe-inline' for backward compatibility with some plugins, 
-    // but the presence of nonce-value will make modern browsers ignore 'unsafe-inline' for script-src
-    $csp = "default-src 'self'; ";
-    $csp .= "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-{$nonce}' https://www.googletagmanager.com https://www.google-analytics.com https://images.dmca.com https://apis.google.com blob:; ";
-    $csp .= "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; ";
-    $csp .= "font-src 'self' https://fonts.gstatic.com data:; ";
-    $csp .= "connect-src 'self' https://www.youtube.com https://www.google-analytics.com https://stats.g.doubleclick.net https://apis.google.com ws: wss: webpack:; ";
-    $csp .= "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://docs.google.com https://www.google.com; ";
-    $csp .= "media-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com; ";
-    $csp .= "img-src 'self' data: https: http:; ";
-    $csp .= "worker-src 'self' blob:; ";
-    $csp .= "frame-ancestors 'self';";
-    
-    header("Content-Security-Policy: " . $csp);
-    
-    // Permissions Policy (Feature Policy)
-    header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
+    if ( ! is_admin() ) {
+        // Content Security Policy
+        // Note: We keep 'unsafe-inline' for backward compatibility with some plugins, 
+        // but the presence of nonce-value will make modern browsers ignore 'unsafe-inline' for script-src
+        $csp = "default-src 'self'; ";
+        $csp .= "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-{$nonce}' https://www.googletagmanager.com https://www.google-analytics.com https://images.dmca.com https://apis.google.com blob:; ";
+        $csp .= "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; ";
+        $csp .= "font-src 'self' https://fonts.gstatic.com data:; ";
+        $csp .= "connect-src 'self' https://www.youtube.com https://www.google-analytics.com https://stats.g.doubleclick.net https://apis.google.com ws: wss: webpack:; ";
+        $csp .= "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://docs.google.com https://www.google.com; ";
+        $csp .= "media-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com; ";
+        $csp .= "img-src 'self' data: https: http:; ";
+        $csp .= "worker-src 'self' blob:; ";
+        $csp .= "frame-ancestors 'self';";
+        
+        header("Content-Security-Policy: " . $csp);
+        
+        // Permissions Policy (Feature Policy)
+        header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
+    }
 });
 
 /**
  * Inject Nonce into script tags
  */
 add_filter('script_loader_tag', function($tag, $handle) {
+    if ( is_admin() ) {
+        return $tag;
+    }
     if (defined('LACA_CSP_NONCE')) {
         $nonce = LACA_CSP_NONCE;
         if (strpos($tag, "nonce=") === false) {
