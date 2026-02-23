@@ -559,3 +559,79 @@ $close-trans-time: 150ms;
     }
   }
 }
+
+/*=============================================================================
+    PAGE LOADER STYLES (EXACT REX CLONE)
+  ============================================================================= */
+.page-loader {
+  background: #fff;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  position: fixed;
+  z-index: 99999;
+  display: block; // Changed from flex to match sample float/absolute logic
+
+  .text-loader {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+    display: block;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .right,
+  .left {
+    float: left;
+    width: 50%;
+    color: #000;
+    box-sizing: border-box;
+    text-align: right;
+    padding-right: 20px;
+  }
+
+  .left {
+    transform: scale(-1, 1);
+    margin-top: 5vw;
+  }
+
+  h2,
+  h4 {
+    transition: opacity 0.1s ease-in-out;
+    font-family: $primaryFont;
+    font-weight: $regular;
+    margin: 0;
+    color: #000;
+    opacity: 0.1;
+    line-height: 1.1;
+  }
+
+  h2 {
+    text-transform: uppercase;
+    font-weight: $bold;
+
+    @include resFont(2, 5);
+  }
+
+  h4 {
+    text-transform: uppercase;
+    letter-spacing: 0.2vw;
+
+    @include resFont(1.8, 3);
+  }
+}
+
+html[data-theme="dark"] {
+  .page-loader {
+    background: #000;
+    .right, .left {
+      color: #fff;
+    }
+    h2, h4 {
+      color: #fff;
+    }
+  }
+}

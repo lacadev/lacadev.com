@@ -7,12 +7,21 @@ import gsap from 'gsap';
 import Swup from 'swup';
 import Swiper from 'swiper';
 
+let flickerInterval;
+
 document.addEventListener( 'DOMContentLoaded', () => {
 	const swup = new Swup();
 	initializePageFeatures();
+	initPageLoader();
+
+	// Hiển thị loader khi chuyển trang qua Swup
+	swup.hooks.on( 'visit:start', () => {
+		showPageLoader();
+	} );
 
 	swup.hooks.on( 'content:replace', () => {
 		initializePageFeatures();
+		hidePageLoader();
 	} );
 } );
 
@@ -20,6 +29,115 @@ function initializePageFeatures() {
 	initHoverService();
 	setupGsap404();
 	initToggleDarkMode();
+}
+
+/**
+ * Hiển thị Page Loader
+ */
+function showPageLoader() {
+	const loader = document.querySelector( '.page-loader' );
+	const textLoader = document.querySelector( '.text-loader' );
+	if ( ! loader || ! textLoader ) return;
+
+	gsap.set( [ loader, textLoader ], { display: 'block', opacity: 1 } );
+	document.body.classList.add( 'overflow-hidden' );
+	startFlicker();
+}
+
+/**
+ * Ẩn Page Loader
+ */
+function hidePageLoader() {
+	const loader = document.querySelector( '.page-loader' );
+	const textLoader = document.querySelector( '.text-loader' );
+	if ( ! loader || ! textLoader ) return;
+
+	const randoms = document.querySelectorAll( '.randoms' );
+	randoms.forEach( ( el ) => ( el.style.opacity = '1' ) );
+
+	gsap.to( textLoader, {
+		opacity: 0,
+		duration: 0.5,
+		delay: 0.3,
+		ease: 'power2.inOut',
+		onComplete: () => {
+			gsap.to( loader, {
+				opacity: 0,
+				duration: 0.6,
+				delay: 0.1,
+				ease: 'power2.inOut',
+				onComplete: () => {
+					loader.style.display = 'none';
+					document.body.classList.remove( 'overflow-hidden' );
+					stopFlicker();
+				},
+			} );
+		},
+	} );
+}
+
+/**
+ * Hiệu ứng nhấp nháy chữ ngẫu nhiên
+ */
+function startFlicker() {
+	stopFlicker();
+	const randoms = document.querySelectorAll( '.randoms' );
+	const words = [
+		'LA CÀ DEV',
+		'WORDPRESS',
+		'BLOG',
+		'TRAVELLING',
+		'MINIMAL',
+		'CLEAN',
+	];
+
+	flickerInterval = setInterval( () => {
+		randoms.forEach( ( el ) => {
+			const randomWord = words[ Math.floor( Math.random() * words.length ) ];
+			el.textContent = randomWord;
+			el.style.opacity = Math.random() > 0.5 ? '1' : '0.1';
+		} );
+	}, 120 );
+}
+
+function stopFlicker() {
+	if ( flickerInterval ) {
+		clearInterval( flickerInterval );
+	}
+}
+
+/**
+ * Khởi tạo Page Loader lần đầu
+ */
+function initPageLoader() {
+	const loader = document.querySelector( '.page-loader' );
+	if ( ! loader ) return;
+
+	document.body.classList.add( 'overflow-hidden' );
+	startFlicker();
+
+	// Hiển thị trong 1s (1000ms)
+	const startTime = Date.now();
+	const minDisplayTime = 1000;
+
+	const handleFinish = () => {
+		const elapsedTime = Date.now() - startTime;
+		const remainingTime = Math.max( 0, minDisplayTime - elapsedTime );
+		setTimeout( hidePageLoader, remainingTime );
+	};
+
+	if ( document.readyState === 'complete' ) {
+		handleFinish();
+	} else {
+		window.addEventListener( 'load', handleFinish );
+	}
+
+	// Fallback an toàn sau 5s
+	setTimeout( () => {
+		if ( loader.style.display !== 'none' ) {
+			hidePageLoader();
+		}
+	}, 5000 );
 }
 
 /**

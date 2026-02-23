@@ -74,6 +74,25 @@ if (!defined('ABSPATH')) {
     app_shim_wp_body_open();
     ?>
 
+    <div class="page-loader">
+        <div class="text-loader">
+            <div class="right">
+                <h4 class="randoms">MINIMAL</h4>
+                <h2 class="randoms">LA CÀ DEV</h2>
+                <h4 class="randoms">WORDPRESS</h4>
+                <h4 class="randoms">BLOG</h4>
+                <h4 class="randoms">TRAVELLING</h4>
+            </div>
+            <div class="left">
+                <h4 class="randoms">WORDPRESS</h4>
+                <h2 class="randoms">LA CÀ DEV</h2>
+                <h4 class="randoms">CLEAN</h4>
+                <h4 class="randoms">BLOG</h4>
+                <h4 class="randoms">TRAVELLING</h4>
+            </div>
+        </div>
+    </div>
+
 	<!-- Skip to content link for accessibility -->
 	<a class="skip-link screen-reader-text" href="#main-content">
 		<?php esc_html_e('Skip to content', 'laca'); ?>
