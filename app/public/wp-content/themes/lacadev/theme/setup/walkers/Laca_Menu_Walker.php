@@ -58,21 +58,37 @@ class Laca_Menu_Walker extends Walker_Nav_Menu
     function start_el(&$output, $item, $depth = 0, $args = [], $id = 0)
     {
         $classes = empty($item->classes) ? [] : (array)$item->classes;
-        $classes[] = 'nav__dropdown menu-item-' . $item->ID;
-
+        
+        // Chỉ giữ lại các class cần thiết cho trạng thái (Active)
+        $allowed_classes = [
+            'current-menu-item',
+            'current-menu-parent',
+            'current-menu-ancestor',
+        ];
+        
+        $new_classes = array_intersect($classes, $allowed_classes);
+        
+        // Đổi tên class current-menu-item thành actived-menu
+        if (in_array('current-menu-item', $new_classes)) {
+            $key = array_search('current-menu-item', $new_classes);
+            $new_classes[$key] = 'actived-menu';
+        }
+        
+        // Thêm class nếu có menu con
         $has_children = false;
         if (is_object($args) && isset($args->walker) && property_exists($args->walker, 'has_children')) {
             $has_children = $args->walker->has_children;
         }
 
         if ($has_children) {
-            $classes[] = 'menu-item-has-children';
+            $new_classes[] = 'has-children';
         }
 
-        $class_names = join(' ', apply_filters('nav_menu_css_class', array_filter($classes), $item, $args, $depth));
-        $class_names = $class_names ? ' class="menu-line ' . esc_attr($class_names) . '"' : '';
+        // Tạo chuỗi class gọn gàng
+        $class_names = join(' ', array_filter($new_classes));
+        $class_names = $class_names ? ' class="menu-item ' . esc_attr($class_names) . '"' : ' class="menu-item"';
 
-        $output .= '<li' . str_replace('menu-item-has-children', '', $class_names) . '>';
+        $output .= '<li' . $class_names . '>';
 
         // Custom menu icon (optional)
         // $icon = carbon_get_nav_menu_item_meta($item->ID, 'icon');

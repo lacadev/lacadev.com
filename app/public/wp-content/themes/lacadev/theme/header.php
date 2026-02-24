@@ -48,23 +48,23 @@ if (!defined('ABSPATH')) {
     <style>
         :root {
             /* Theme colors */
-            --primary-color: <?php echo getOption('primary_color'); ?>;
-            --secondary-color: <?php echo getOption('secondary_color'); ?>;
-            --bg-color: <?php echo getOption('bg_color'); ?>;
+            --primary-color: <?php echo carbon_get_theme_option('primary_color'); ?>;
+            --secondary-color: <?php echo carbon_get_theme_option('secondary_color'); ?>;
+            --bg-color: <?php echo carbon_get_theme_option('bg_color'); ?>;
 
-            --primary-color-dark: <?php echo getOption('primary_color_dark'); ?>;
-            --secondary-color-dark: <?php echo getOption('secondary_color_dark'); ?>;
-            --bg-color-dark: <?php echo getOption('bg_color_dark'); ?>;
+            --primary-color-dark: <?php echo carbon_get_theme_option('primary_color_dark'); ?>;
+            --secondary-color-dark: <?php echo carbon_get_theme_option('secondary_color_dark'); ?>;
+            --bg-color-dark: <?php echo carbon_get_theme_option('bg_color_dark'); ?>;
         }
 
         html[data-theme="dark"] {
-            --primary-color: <?php echo getOption('primary_color_dark'); ?>;
-            --secondary-color: <?php echo getOption('secondary_color_dark'); ?>;
-            --bg-color: <?php echo getOption('bg_color_dark'); ?>;
+            --primary-color: <?php echo carbon_get_theme_option('primary_color_dark'); ?>;
+            --secondary-color: <?php echo carbon_get_theme_option('secondary_color_dark'); ?>;
+            --bg-color: <?php echo carbon_get_theme_option('bg_color_dark'); ?>;
 
-            --primary-color-dark: <?php echo getOption('primary_color'); ?>;
-            --secondary-color-dark: <?php echo getOption('secondary_color'); ?>;
-            --bg-color-dark: <?php echo getOption('bg_color'); ?>;
+            --primary-color-dark: <?php echo carbon_get_theme_option('primary_color'); ?>;
+            --secondary-color-dark: <?php echo carbon_get_theme_option('secondary_color'); ?>;
+            --bg-color-dark: <?php echo carbon_get_theme_option('bg_color'); ?>;
         }
     </style>
 </head>
@@ -104,77 +104,86 @@ if (!defined('ABSPATH')) {
 	endif;
 	?>
 
-	<!-- dark mode -->
-	<div id="darkmode" class="btn">
-		<div class="btn-outline btn-outline-1"></div>
-		<div class="btn-outline btn-outline-2"></div>
-		<label class="darkmode-icon">
-			<input type="checkbox" 
-				   aria-label="<?php esc_attr_e('Chuyển chế độ tối/sáng', 'laca'); ?>" 
-				   role="switch" 
-				   aria-checked="false"/>
-			<div></div>
-		</label>
-	</div>
-
 	<div class="wrapper" id="swup">
         <?php if (!is_404()) : ?>
 		<header id="header">
 			<div class="container">
                 <div class="header-inner">
-                    <!-- slogan -->
-                    <div class="slogan">
+                    <!-- Main menu -->
+                    <div class="pc-menu">
                         <?php
-                        $slogan = getOption('slogan');
-                        echo apply_filters('the_content', $slogan);
+                        echo '<nav class="nav-menu" aria-label="' . esc_attr__('Main menu', 'laca') . '">';
+                            wp_nav_menu([
+                                'theme_location' => 'main-menu',
+                                'menu_class'     => 'main-menu',
+                                'container'      => false,
+                                'items_wrap'     => '<ul class="%2$s">%3$s</ul>',
+                                'walker'         => new Laca_Menu_Walker(),
+                            ]);
+                        echo '</nav>';
                         ?>
                     </div>
 
-                    <div class="head-menu">
-                        <!-- logo -->
-                        <div class="logo-menu">
-                            <span class="circle"></span>
-                            <?php
-                            echo '<nav class="nav-menu" aria-label="' . esc_attr__('Menu chính', 'laca') . '">	<button id="btn-hamburger" 
-                                        aria-label="' . esc_attr__('Mở menu', 'laca') . '" 
-                                        aria-expanded="false" 
-                                        aria-controls="main-menu">
-                                    <div class="line-1"></div>
-                                    <div class="line-2"></div>
-                                    <div class="line-3"></div>
-                                </button>';
-                            
-                                wp_nav_menu([
-                                    'theme_location' => 'main-menu',
-                                    'menu_class'     => 'main-menu',
-                                    'container'      => false,
-                                    'walker'         => new Laca_Menu_Walker(),
-                                ]);
-                            echo '</nav>';
-                            ?>
+                    <div class="mobile-menu">
+                        <div class="act-menu not-active">
+                            <span></span>
+                            <span></span>
+                            <span></span>
                         </div>
+                    </div>
 
-                        <div class="language-search">
-                            <!-- search -->
-                            <div class="header__bottom-search">
-                                <div class="header__bottom-search-inner">
-                                    <form class="search-box" method="get" role="search" aria-label="<?php esc_attr_e('Tìm kiếm', 'laca'); ?>" action="<?php echo esc_url(home_url('/')) ?>">
-                                        <label for="search-input" class="screen-reader-text"><?php esc_html_e('Từ khóa tìm kiếm', 'laca'); ?></label>
-                                        <input type="text" 
-                                               id="search-input"
-                                               name="s"
-                                               placeholder="<?php echo esc_attr__('Tìm kiếm ...', 'laca'); ?>" 
-                                               aria-label="<?php esc_attr_e('Nhập từ khóa tìm kiếm', 'laca'); ?>"/>
-                                        <button type="reset" aria-label="<?php esc_attr_e('Xóa tìm kiếm', 'laca'); ?>"></button>
-                                        <div class="search-results" 
-                                             role="status" 
-                                             aria-live="polite" 
-                                             aria-atomic="true"></div>
-                                    </form>
-                                </div>
+                    <!-- Logo -->
+                    <?php
+                    $logo_id = carbon_get_theme_option('logo');
+                    $logo_dark_id = carbon_get_theme_option('logo_dark');
+                    $logo_url = wp_get_attachment_image_url($logo_id, 'full');
+                    $logo_dark_url = wp_get_attachment_image_url($logo_dark_id, 'full');
+                    ?>
+                    <div class="header-logo">
+                        <a href="<?php echo esc_url(home_url('/')); ?>">
+                            <?php if ($logo_url) : ?>
+                                <img src="<?php echo esc_url($logo_url); ?>" class="light" alt="<?php echo esc_attr(get_bloginfo('name')); ?>">
+                            <?php endif; ?>
+                            <?php if ($logo_dark_url) : ?>
+                                <img src="<?php echo esc_url($logo_dark_url); ?>" class="dark" alt="<?php echo esc_attr(get_bloginfo('name')); ?>">
+                            <?php endif; ?>
+                        </a>
+                    </div>
+
+                    <div class="language-search">
+                        <!-- search -->
+                        <!-- <div class="header__bottom-search">
+                            <div class="header__bottom-search-inner">
+                                <form class="search-box" method="get" role="search" aria-label="<?php esc_attr_e('Tìm kiếm', 'laca'); ?>" action="<?php echo esc_url(home_url('/')) ?>">
+                                    <label for="search-input" class="screen-reader-text"><?php esc_html_e('Từ khóa tìm kiếm', 'laca'); ?></label>
+                                    <input type="text" 
+                                            id="search-input"
+                                            name="s"
+                                            placeholder="<?php echo esc_attr__('Tìm kiếm ...', 'laca'); ?>" 
+                                            aria-label="<?php esc_attr_e('Nhập từ khóa tìm kiếm', 'laca'); ?>"/>
+                                    <button type="reset" aria-label="<?php esc_attr_e('Xóa tìm kiếm', 'laca'); ?>"></button>
+                                    <div class="search-results" 
+                                            role="status" 
+                                            aria-live="polite" 
+                                            aria-atomic="true"></div>
+                                </form>
                             </div>
-                            <!-- multi language -->
-                            <?php theLanguageSwitcher(); ?>
+                        </div> -->
+
+                        <!-- multi language -->
+                        <?php theLanguageSwitcher(); ?>
+
+                        <!-- dark mode -->
+                        <div id="darkmode" class="btn">
+                            <div class="btn-outline btn-outline-1"></div>
+                            <div class="btn-outline btn-outline-2"></div>
+                            <label class="darkmode-icon">
+                                <input type="checkbox" 
+                                    aria-label="<?php esc_attr_e('Chuyển chế độ tối/sáng', 'laca'); ?>" 
+                                    role="switch" 
+                                    aria-checked="false"/>
+                                <div></div>
+                            </label>
                         </div>
                     </div>
                     <!-- end head-menu -->

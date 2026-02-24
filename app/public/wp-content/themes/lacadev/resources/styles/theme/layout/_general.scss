@@ -13,7 +13,6 @@ html {
   font-size: 62.5%;
   color-scheme: light;
   border: none !important;
-  background-color: $backgroundColor;
 
   &[data-theme="dark"] {
     color-scheme: dark;
@@ -25,8 +24,8 @@ body {
   font-weight: $regular !important;
   line-height: 1.5em !important;
   color: $primaryColor !important;
+  background-color: $backgroundColor;
   transition: background-color 0.3s ease, color 0.3s ease;
-  scroll-behavior: smooth;
   @include resFont(1.6, 1.8, true);
 
   &.overflow-hidden {
@@ -95,7 +94,6 @@ table {
 
 img {
   max-width: 100%;
-  transition: all 0.25s linear;
   cursor: pointer;
 }
 

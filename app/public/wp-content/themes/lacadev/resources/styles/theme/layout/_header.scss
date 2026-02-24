@@ -23,13 +23,30 @@ html {
 }
 
 header {
+  z-index: 100;
   position: relative;
+  padding: 2rem 0;
 
   .header-inner {
-    min-height: 70vh;
+    position: relative;
     display: flex;
-    flex-direction: column;
     justify-content: space-between;
+    align-items: center;
+  }
+
+  .header-logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: block;
+
+    img {
+      width: 100%;
+      max-height: 3rem;
+      height: auto;
+      object-fit: contain;
+    }
   }
 
   .language-switcher {
@@ -56,118 +73,13 @@ header {
     }
   }
 
-  .slogan {
-    padding: 15rem 0;
-    text-align: right;
-    font-family: $primaryFont;
-    font-size: 11rem;
-    font-weight: $extraBold;
-    line-height: 1.2;
-
-    span {
-      text-transform: uppercase;
-      -webkit-text-fill-color: transparent;
-      -webkit-text-stroke: 2px $primaryColor;
-    }
-
-    p {
-      margin-bottom: 0;
-    }
-  }
-
-  .hidden {
-    display: none;
-  }
-
-  .head-menu {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
   .language-search {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
-  }
-
-  .logo-menu {
-    position: relative;
-    display: flex;
-    align-items: center;
-    
-    .circle {
-      width: 3.6rem;
-      height: 3.6rem;
-      border-radius: 50%;
-      background-color: transparent;
-      border: 0.5rem solid $primaryColor;
-    }
-  }
-
-  #btn-hamburger {
-    padding: 0 2rem;
-    border: none;
-    border-radius: 3px;
-    outline: 0;
-    cursor: pointer;
-
-    .line-1,
-    .line-2,
-    .line-3 {
-      width: 22px;
-      height: 2px;
-      background-color: $primaryColor;
-      margin: 4px 0;
-      transition: 0.4s;
-    }
-    &.animeOpenClose .line-1 {
-      -webkit-transform: rotate(-45deg) translate(-4px, 4px);
-      transform: rotate(-45deg) translate(-4px, 4px);
-    }
-    &.animeOpenClose .line-2 {
-      opacity: 0;
-    }
-    &.animeOpenClose .line-3 {
-      -webkit-transform: rotate(45deg) translate(-4px, -4px);
-      transform: rotate(45deg) translate(-4px, -4px);
-    }
+    gap: 2rem;
   }
 
   nav.nav-menu {
-    margin-left: 1rem;
-    position: relative;
-    background-color: transparent;
-    box-shadow: 0px 0px 0 5px $primaryColor;
-    border-radius: 3rem;
-    width: 6.2rem;
-    -webkit-transition: width 0.5s;
-    -moz-transition: width 0.5s;
-    -o-transition: width 0.5s;
-    transition: width 0.5s;
-    display: flex;
-    align-items: center;
-
-    &.actived {
-      width: 100%;
-      -webkit-transition: width 0.5s;
-      -moz-transition: width 0.5s;
-      -o-transition: width 0.5s;
-      transition: width 0.5s;
-      box-shadow: 0px 0px 0 2px $primaryColor;
-
-      ul.main-menu {
-        visibility: visible;
-        opacity: 1;
-        transition: visibility 0s 0.45s, opacity 0.45s 0.45s;
-        overflow: visible;
-      }
-
-      &::before {
-        content: none;
-      }
-    }
-
     ul.main-menu {
       margin: 0;
       position: relative;
@@ -175,25 +87,47 @@ header {
       column-gap: 3rem;
       align-items: center;
       list-style: none;
-      visibility: hidden;
-      opacity: 0;
-      overflow: hidden;
 
       li {
         position: relative;
+        transition: all 0.4s;
+
+        &::before {
+          content: "";
+          position: absolute;
+          top: 50%;
+          left: -1rem;
+          transform: translateY(-50%);
+          width: 4px;
+          height: 4px;
+          background-color: $primaryColor;
+          border-radius: 50%;
+          opacity: 0;
+          overflow: hidden;
+          transition: all 0.4s;
+        }
+
+        &.actived-menu,
+        &:hover {
+          &::before {
+            opacity: 1;
+            overflow: visible;
+          }
+        }
 
         a {
-          padding: 0.2rem 2rem;
+          padding: 1rem 0;
+          margin-right: 2rem;
           display: block;
           font-family: $secondaryFont;
           font-size: 1.8rem;
           color: $primaryColor;
           font-weight: $regular;
-          line-height: normal;
+          line-height: 1;
           min-width: max-content;
         }
 
-        &:hover  ul.sub-menu {
+        &:hover ul.sub-menu {
           visibility: visible;
           opacity: 1;
           -webkit-transform: translateZ(0) perspective(1px);
@@ -239,9 +173,22 @@ header {
         -webkit-transition: visibility 250ms ease, opacity 250ms ease,
           -webkit-transform 0.55s cubic-bezier(0.19, 1, 0.22, 1);
 
+        // &::before {
+        //   content: "";
+        //   position: absolute;
+        //   top: -30px;
+        //   left: 0;
+        //   width: 100%;
+        //   height: 30px;
+        // }
+
         li {
           position: relative;
           transition: all 0.4s;
+
+          &::before {
+            content: none;
+          }
 
           &::after {
             content: "";
@@ -266,44 +213,132 @@ header {
           }
 
           a {
-            padding: 1rem 0.8rem;
+            padding: 1rem .8rem;
             display: block;
             font-size: 1.6rem;
             transition: all 0.4s;
           }
         }
       }
+    }
+  }
 
-      li.mega-menu {
-        ul.sub-menu {
-          li {
-            &:hover .menu-img {
-              visibility: visible;
-              opacity: 1;
-            }
+  // animation for dark mode transition
+  #darkmode {
+    // position: fixed;
+    // top: 2rem;
+    // right: 3rem;
+    width: 5rem;
+    height: 5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    border: none;
+    
+    .btn-outline {
+      position: absolute;
+      width: 5rem;
+      height: 5rem;
+      border: 1px solid $primaryColor;
+    }
+    .btn-outline-1 {
+      border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+      animation: morph 4s linear infinite;
+    }
+    .btn-outline-2 {
+      border-radius: 53% 47% 43% 58% / 51% 39% 61% 49%;
+    }
+  }
 
-            .menu-img {
-              visibility: hidden;
-              opacity: 0;
-              position: absolute;
-              width: 100%;
-              height: 100%;
-              top: 50%;
-              transform: translateY(-50%);
-              left: 100%;
-              object-fit: contain;
-              transition: all 0.4s;
-            }
-          }
+  .darkmode-icon {
+    transform: scale(0.45);
+    cursor: pointer;
+    z-index: 10;
+
+    input {
+      display: none;
+
+      & + div {
+        border-radius: 50%;
+        width: 5rem;
+        height: 5rem;
+        position: relative;
+        box-shadow: inset 1.3rem -1.3rem 0 0 $primaryColor;
+        transform: scale(1) rotate(-2deg);
+        transition: box-shadow 0.5s ease 0s, transform 0.4s ease 0.1s;
+
+        &:before {
+          content: "";
+          width: inherit;
+          height: inherit;
+          border-radius: inherit;
+          position: absolute;
+          left: 0;
+          top: 0;
+          background: light-dark(transparent, $primaryColor);
+          transition: background 0.3s ease;
+        }
+
+        &:after {
+          content: "";
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          margin: -4px 0 0 -4px;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          box-shadow: 0 -3rem 0 $primaryColor,
+            0 3rem 0 $primaryColor,
+            3rem 0 0 $primaryColor,
+            -3rem 0 0 $primaryColor,
+            2rem 2rem 0 $primaryColor,
+            -2rem 2rem 0 $primaryColor,
+            2rem -2rem 0 $primaryColor,
+            -2rem -2rem 0 $primaryColor;
+          transform: scale(0);
+          transition: all 0.3s ease;
+        }
+      }
+
+      &:checked + div {
+        box-shadow: inset 3.2rem -3.2rem 0 0 #fff;
+        transform: scale(0.5) rotate(0deg);
+        transition: transform 0.3s ease 0.1s, box-shadow 0.2s ease 0s;
+
+        &:before {
+          background: $primaryColor;
+          transition: background 0.3s ease 0.1s;
+          outline: none;
+        }
+
+        &:after {
+          transform: scale(1.5);
+          transition: transform 0.5s ease 0.15s;
+          outline: none;
         }
       }
     }
   }
 
-  .search-icon__btn {
-    font-size: 3rem;
-    color: $primaryColor;
+  ::view-transition-new(html) {
+    animation: all 1.9s ease-in-out forwards;
+    z-index: 1;
+    mix-blend-mode: normal;
   }
+
+  ::view-transition-old(html) {
+    animation: all 1.9s ease-in-out forwards;
+    animation-delay: 1.9s;
+    z-index: 0;
+    mix-blend-mode: normal;
+  }
+
+  ::view-transition-image-pair(html) {
+    isolation: isolate;
+}
+// end of dark mode transition
 }
 
 @keyframes morph {

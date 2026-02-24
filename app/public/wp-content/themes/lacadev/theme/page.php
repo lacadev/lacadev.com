@@ -10,18 +10,11 @@
  */
 ?>
 <?php
-	if (!is_front_page() && is_page()):
-		echo get_template_part('template-parts/breadcrumb');
-	endif;
-?>
+if (!is_front_page() && is_page()):
+    echo get_template_part('template-parts/breadcrumb');
+endif;
 
-    <!-- Trang chủ -->
-    <?php
-	if (is_front_page()):
-    ?>
-        <div class="page-content">
-            <?php the_content(); ?>
-        </div>
-    <?php
-	endif;
-	?>
+if (is_front_page()):
+    the_content();
+endif;
+?>

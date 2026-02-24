@@ -3,15 +3,15 @@
 use Carbon_Fields\Block;
 use Carbon_Fields\Field;
 
-Block::make(__('Block Service', 'laca'))
+Block::make(__('Block Service', 'mms'))
     ->add_fields([
-        Field::make('separator', 'service_section', __('BLOCK SERVICE', 'laca')),
-        Field::make('text', 'service_title', __('', 'laca'))
+        Field::make('separator', 'service_section', __('BLOCK SERVICE', 'mms')),
+        Field::make('text', 'service_title', __('', 'mms'))
             ->set_attribute('placeholder', 'Nhập tiêu đề của block'),
-        Field::make('textarea', 'service_desc', __('', 'laca'))
+        Field::make('textarea', 'service_desc', __('', 'mms'))
             ->set_attribute('placeholder', 'Nhập mô tả của block'),
 
-        Field::make('association', 'service_obj', __('Chọn dịch vụ hiển thị:', 'laca'))
+        Field::make('association', 'service_obj', __('Chọn dịch vụ hiển thị:', 'mms'))
             ->set_types([
                 [
                     'type' => 'post', 
