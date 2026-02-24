@@ -10,6 +10,9 @@
     text-transform: uppercase;
     font-weight: $medium;
     color: $primaryColor;
+    font-family: $secondaryFont;
+    line-height: 1.5;
+
     @include resFont(1.8, 2.4);
   }
 
@@ -17,6 +20,7 @@
     font-weight: $thin;
     font-style: italic;
     text-transform: uppercase;
+
     @include resFont(2, 8, true);
   }
 
@@ -24,12 +28,14 @@
     text-align: justify;
   }
 
-  section:not(.block-about) {
+  section {
+    margin-bottom: 8rem;
     padding: 6rem 0;
     position: relative;
     overflow: hidden;
 
     @include maxWidth($md) {
+      margin-bottom: 5rem;
       padding: 4rem 0;
     }
   }   
@@ -207,6 +213,188 @@
 
     &.editor-view {
         padding: 4rem 0;
+    }
+  }
+
+  // Block About La Ca Dev
+  .block-about-laca {
+    padding: 0 !important;
+    height: 100vh; // Logic pinning của GSAP sẽ lo phần chiều dài
+    position: relative;
+    background-color: $backgroundColor;
+    overflow: hidden;
+
+    .img-container {
+      position: relative;
+      height: 100vh;
+      width: 100%;
+      max-width: 50rem;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-radius: 2rem;
+      
+      will-change: max-width, border-radius;
+      transform: translateZ(0);
+      transition: none !important;
+    }
+
+    .parallax-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%; 
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: 1;
+      
+      // Bắt đầu với scale nhẹ để zoom out mượt hơn
+      transform: scale(1.1) translateZ(0); 
+      will-change: transform;
+      transition: none !important;
+      
+      &::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    .content-wrapper {
+        position: relative;
+        z-index: 2;
+        color: #fff;
+        text-align: center;
+        max-width: 100rem;
+        margin: 0 auto;
+        opacity: 0; 
+        transform: translateY(30px);
+    }
+
+    .about-content {
+      line-height: 1.4;
+      font-weight: $light;
+      word-break: break-word;
+      
+      @include resFont(1.8, 3.2);
+    }
+
+    &.editor-view {
+        height: auto;
+        min-height: 400px;
+        padding: 4rem 0 !important;
+        font-family: $secondaryFont;
+
+        .parallax-bg {
+            height: 100%;
+        }
+
+        .bg-image-preview {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            z-index: 1;
+            
+            &::after {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        .img-container {
+          max-width: 100%;
+        }
+
+        .content-wrapper {
+            opacity: 1;
+            transform: none;
+        }
+    }
+  }
+
+  // Block Service
+  .block-service {
+    text-align: center;
+
+    .block-desc {
+      margin: 0 auto 6rem;
+      max-width: 92rem;
+      font-weight: $light;
+      @include resFont(1.6, 2);
+    }
+
+    &__list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3rem;
+
+      @include maxWidth($md) {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      @include maxWidth($sm) {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    &__item {
+      .item__link {
+        height: 100%;
+        padding: 8rem 4rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border-radius: 2rem;
+        background-color: #fff;
+        text-align: center;
+        color: #010101;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+        &:hover {
+          transform: translateY(-10px);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+      }
+
+      .item__icon {
+        margin-bottom: 3rem;
+        display: block;
+        line-height: 1;
+        font-weight: $bold;
+        color: $primaryColor;
+        @include resFont(6, 12);
+      }
+
+      .item__title {
+        margin-bottom: 2rem;
+        font-weight: $semiBold;
+        @include resFont(2, 3);
+      }
+
+      .item__desc {
+        text-align: center;
+        color: #666;
+        line-height: 1.6;
+        font-weight: $light;
+      }
     }
   }
 }

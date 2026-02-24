@@ -3,5 +3,6 @@
  */
 
 // Import blocks
-import './about-block';
 import './slogan-block';
+import './about-laca-block';
+import './service-block';

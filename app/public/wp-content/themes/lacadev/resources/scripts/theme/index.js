@@ -4,8 +4,12 @@ import '@styles/theme';
 import './pages/*.js';
 import './ajax-search.js';
 import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Swup from 'swup';
 import Swiper from 'swiper';
+import { initAboutLacaHero } from './pages/about-laca';
+
+gsap.registerPlugin( ScrollTrigger );
 
 let flickerInterval;
 
@@ -29,6 +33,8 @@ function initializePageFeatures() {
 	initHoverService();
 	setupGsap404();
 	initToggleDarkMode();
+	initAboutLacaHero();
+	initAnimations();
 }
 
 /**

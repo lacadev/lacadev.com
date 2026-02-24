@@ -134,7 +134,12 @@ module.exports = {
             {
                 test: utils.tests.styles,
                 use: [
-                    MiniCssExtractPlugin.loader,
+                    {
+                        loader: MiniCssExtractPlugin.loader,
+                        options: {
+                            publicPath: '../',  // Fix: CSS ở styles/, fonts ở fonts/ → cần ../fonts/
+                        },
+                    },
                     {
                         loader: 'css-loader',
                         options: {
