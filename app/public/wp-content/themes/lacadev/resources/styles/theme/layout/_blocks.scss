@@ -38,111 +38,14 @@
       margin-bottom: 5rem;
       padding: 4rem 0;
     }
-  }   
+  }
 
-  // Block WELCOME
-  .block-about {
-    margin: 4rem auto 0;
-    max-width: 92rem;
+  .home {
+    .block-slogan {
+      margin-top: 10rem;
 
-    &__head {
-      margin: 0 auto;
-      padding: 1rem 1rem 2rem 1rem;
-      position: relative;
-      width: fit-content;
-      border-radius: 10rem;
-      overflow: hidden;
-
-      &::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: $primaryColor;
-      }
-    }
-
-    &__img {
-      margin: 0 auto;
-      margin-top: 8rem;
-      position: relative;
-
-      figure {
-        margin: 0 auto;
-        width: 13rem;
-        height: 13rem;
-
-        img {
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          object-fit: cover;
-          object-position: center left;
-        }
-      }
-    }
-
-    &__body {
-      padding: 4rem 0;
-
-      .block-title {
-        font-style: italic;
-      }
-    }
-
-    .scroll-circle {
-      margin: 0 auto;
-      position: relative;
-      width: 14rem;
-      height: 14rem;
-
-      svg {
-        width: 100%;
-        height: 100%;
-        animation: rotateText 14s linear infinite;
-        min-height: clamp(10rem, 20vw, 14rem);
-        min-width: clamp(10rem, 20vw, 14rem);
-      }
-
-      text {
-        font-size: 1.5rem;
-        fill: $primaryColorDark;
-        text-transform: uppercase;
-      }
-
-      .arrow {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        @include iconify-mask("guidance:down-arrow", 4rem, 4rem, $primaryColorDark);
-
-        @include maxWidth($sm) {
-          width: 3rem;
-          height: 3rem;
-        }
-      }
-    }
-
-    .welcome-text {
-      display: inline-flex;
-      align-items: center;
-      font-weight: $thin;
-      line-height: 1em;
-      text-transform: uppercase;
-      white-space: nowrap;
-      opacity: 0.3;
-      @include resFont(5, 13);
-    }
-
-    @keyframes rotateText {
-      from {
-        transform: rotate(0deg);
-      }
-      to {
-        transform: rotate(-360deg);
+      @include maxWidth($md) {
+        margin-top: 6rem;
       }
     }
   }
@@ -166,9 +69,9 @@
         padding: 6rem 3rem;
         display: block;
         border-radius: 1rem;
-        background-color: #fff;
+        background-color: $backgroundColor;
         text-align: center;
-        color: #010101;
+        color: $primaryColorDark;
       }
 
       .item__icon {
@@ -197,14 +100,22 @@
     text-align: center;
     font-family: $primaryFont;
     font-weight: $extraBold;
-    line-height: 1.2;
+    line-height: 1.4;
 
-    @include resFont(5, 11);
+    @include maxWidth($md) {
+        padding: 6rem 0;
+      }
+
+    @include resFont(3.2, 11);
 
     span {
       text-transform: uppercase;
       -webkit-text-fill-color: transparent;
       -webkit-text-stroke: 2px $primaryColor;
+
+      @include maxWidth($md) {
+        -webkit-text-stroke: 1px $primaryColor;
+      }
     }
 
     p {
@@ -219,14 +130,13 @@
   // Block About La Ca Dev
   .block-about-laca {
     padding: 0 !important;
-    height: 100vh; // Logic pinning của GSAP sẽ lo phần chiều dài
-    position: relative;
+    height: 80vh;
     background-color: $backgroundColor;
     overflow: hidden;
 
     .img-container {
       position: relative;
-      height: 100vh;
+      height: 80vh;
       width: 100%;
       max-width: 50rem;
       margin: 0 auto;
@@ -235,7 +145,6 @@
       justify-content: center;
       overflow: hidden;
       border-radius: 2rem;
-      
       will-change: max-width, border-radius;
       transform: translateZ(0);
       transition: none !important;
@@ -251,8 +160,6 @@
       background-position: center;
       background-repeat: no-repeat;
       z-index: 1;
-      
-      // Bắt đầu với scale nhẹ để zoom out mượt hơn
       transform: scale(1.1) translateZ(0); 
       will-change: transform;
       transition: none !important;
@@ -281,10 +188,7 @@
 
     .about-content {
       line-height: 1.4;
-      font-weight: $light;
       word-break: break-word;
-      
-      @include resFont(1.8, 3.2);
     }
 
     &.editor-view {
@@ -357,7 +261,7 @@
     &__item {
       .item__link {
         height: 100%;
-        padding: 8rem 4rem;
+        padding: 4rem;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -365,13 +269,6 @@
         background-color: #fff;
         text-align: center;
         color: #010101;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-
-        &:hover {
-          transform: translateY(-10px);
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        }
       }
 
       .item__icon {
@@ -380,20 +277,23 @@
         line-height: 1;
         font-weight: $bold;
         color: $primaryColor;
+
         @include resFont(6, 12);
       }
 
       .item__title {
         margin-bottom: 2rem;
         font-weight: $semiBold;
+        color: $primaryColor;
+
         @include resFont(2, 3);
       }
 
       .item__desc {
         text-align: center;
-        color: #666;
-        line-height: 1.6;
-        font-weight: $light;
+        color: $primaryColor;
+        line-height: 1.5;
+        font-weight: $regular;
       }
     }
   }

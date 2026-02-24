@@ -93,6 +93,14 @@ if (!defined('ABSPATH')) {
         </div>
     </div>
 
+    <!-- Custom Mouse Cursor -->
+    <div class="mouse-cursor cursor-outer"></div>
+    <div class="mouse-cursor cursor-inner">
+        <svg class="cursor-arrow" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 17L17 7M17 7H7M17 7V17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </div>
+
 	<!-- Skip to content link for accessibility -->
 	<a class="skip-link screen-reader-text" href="#main-content">
 		<?php esc_html_e('Skip to content', 'laca'); ?>
@@ -125,10 +133,12 @@ if (!defined('ABSPATH')) {
                     </div>
 
                     <div class="mobile-menu">
-                        <div class="act-menu not-active">
-                            <span></span>
-                            <span></span>
-                            <span></span>
+                        <div class="act-menu not-active" id="btn-hamburger">
+                            <div class="burger-icon">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
                         </div>
                     </div>
 
@@ -189,5 +199,32 @@ if (!defined('ABSPATH')) {
                     <!-- end head-menu -->
                 </div>
 			</div>
+
+            <!-- Mobile Overlay Menu -->
+            <div class="mobile-overlay">
+                <div class="mobile-overlay-bg"></div>
+                <div class="mobile-overlay-inner">
+                    <?php theLanguageSwitcher(); ?>
+                    <div class="mobile-nav-label"><?php _e('NAVIGATION', 'laca'); ?></div>
+                    <?php
+                    echo '<nav class="nav-menu">';
+                        wp_nav_menu([
+                            'theme_location' => 'main-menu',
+                            'menu_class'     => 'main-menu',
+                            'container'      => false,
+                            'items_wrap'     => '<ul class="%2$s">%3$s</ul>',
+                            'walker'         => new Laca_Menu_Walker(),
+                        ]);
+                    echo '</nav>';
+                    ?>
+                    
+                    <div class="mobile-footer">
+                        <div class="mobile-socials">
+                            <a href="#" target="_blank">Facebook</a>
+                            <a href="#" target="_blank">Instagram</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
 		</header>
         <?php endif; ?>

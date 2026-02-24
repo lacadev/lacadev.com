@@ -30,11 +30,14 @@ document.addEventListener( 'DOMContentLoaded', () => {
 } );
 
 function initializePageFeatures() {
+	initCustomCursor();
 	initHoverService();
 	setupGsap404();
 	initToggleDarkMode();
 	initAboutLacaHero();
 	initAnimations();
+	initHeaderScroll();
+	initMobileMenu();
 }
 
 /**
@@ -225,108 +228,99 @@ function initToggleDarkMode() {
 		} );
 }
 
-function initMenu() {
-	const $menuBtn = document.getElementById( 'btn-hamburger' );
-	const navMenu = document.querySelector( 'nav.nav-menu' );
+/**
+ * Header Scroll logic (Hide on scroll down, Show on scroll up)
+ */
+function initHeaderScroll() {
+	const header = document.getElementById( 'header' );
+	if ( ! header ) return;
 
-	if ( $menuBtn ) {
-		$menuBtn.onclick = function ( e ) {
-			const isExpanded = navMenu.classList.contains( 'actived' );
+	let lastScrollTop = 0;
+	const threshold = 100;
 
-			// Update ARIA states
-			$menuBtn.setAttribute( 'aria-expanded', ! isExpanded );
-			$menuBtn.setAttribute(
-				'aria-label',
-				isExpanded ? 'Mở menu' : 'Đóng menu'
-			);
+	window.addEventListener( 'scroll', () => {
+		const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
-			navMenu.classList.toggle( 'actived' );
-			document.body.classList.toggle( 'overflow-hidden' );
+		// Background / Scrolled state
+		if ( scrollTop > 50 ) {
+			header.classList.add( 'header--scrolled' );
+		} else {
+			header.classList.remove( 'header--scrolled' );
+		}
 
-			animatedMenu( this );
-			e.preventDefault();
-		};
-	}
-}
+		// Hide / Show logic
+		if ( scrollTop > threshold ) {
+			if ( scrollTop > lastScrollTop ) {
+				// Scroll Down
+				header.classList.add( 'header--hidden' );
+			} else {
+				// Scroll Up
+				header.classList.remove( 'header--hidden' );
+			}
+		} else {
+			header.classList.remove( 'header--hidden' );
+		}
 
-function animatedMenu( x ) {
-	x.classList.toggle( 'animeOpenClose' );
-}
-
-function initMmenu() {
-	// new Mmenu("#mobile_menu", {
-	//   extensions: ["position-bottom", "fullscreen", "theme-black", "border-full"],
-	//   searchfield: false,
-	//   counters: false,
-	// });
-}
-
-function initSwiperSlider() {
-	setTimeout( () => {
-		new Swiper( '.sliders', {
-			spaceBetween: 30,
-			centeredSlides: true,
-			effect: 'fade',
-			speed: 1500,
-			autoplay: {
-				delay: 5000,
-				disableOnInteraction: false,
-			},
-		} );
-	}, 500 );
-}
-
-function initIsotop() {
-	//   $(".menu-wrapper").imagesLoaded(() => {
-	//     const $menuWrapper = $(".menu-wrapper");
-	//
-	//     $(".menu-filter li").on("click", function () {
-	//       $(".menu-filter li").removeClass("active");
-	//       $(this).addClass("active");
-	//
-	//       $menuWrapper.isotope({
-	//         filter: $(this).attr("data-filter"),
-	//         animationOptions: {
-	//           duration: 750,
-	//           easing: "linear",
-	//           queue: false,
-	//         },
-	//       });
-	//       return false;
-	//     });
-	//
-	//     $menuWrapper.isotope({
-	//       itemSelector: ".loop-food",
-	//       layoutMode: "masonry",
-	//     });
-	//   });
+		lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+	}, { passive: true } );
 }
 
 /**
- * hide/show header when scrolling
+ * Mobile Menu logic (Full screen overlay)
  */
-function setupHideHeaderOnScroll() {
-	let lastScrollTop = 0;
-	const header = document.getElementById( 'header' );
-	let scrollTimeout;
+function initMobileMenu() {
+	const burgerBtn = document.getElementById( 'btn-hamburger' );
+	const overlay = document.querySelector( '.mobile-overlay' );
+	
+	if ( ! burgerBtn || ! overlay ) return;
 
-	window.addEventListener( 'scroll', () => {
-		clearTimeout( scrollTimeout );
-
-		const currentScrollTop =
-			window.pageYOffset || document.documentElement.scrollTop;
-
-		if ( currentScrollTop > lastScrollTop ) {
-			header.classList.add( 'hidden' );
+	// Toggle mobile overlay
+	burgerBtn.addEventListener( 'click', () => {
+		const isActive = burgerBtn.classList.contains( 'active' );
+		
+		if ( isActive ) {
+			burgerBtn.classList.remove( 'active' );
+			overlay.classList.remove( 'active' );
+			document.body.classList.remove( 'menu-open' );
 		} else {
-			header.classList.add( 'hidden' );
+			burgerBtn.classList.add( 'active' );
+			overlay.classList.add( 'active' );
+			document.body.classList.add( 'menu-open' );
 		}
+	} );
 
-		lastScrollTop = currentScrollTop <= 0 ? 0 : currentScrollTop;
+	// Combined logic for mobile submenus and navigation
+	const menuLinks = overlay.querySelectorAll( 'a' );
+	menuLinks.forEach( link => {
+		link.addEventListener( 'click', ( e ) => {
+			const parentLi = link.parentElement;
+			const isParent = parentLi.classList.contains( 'has-children' );
 
-		scrollTimeout = setTimeout( () => {
-			header.classList.remove( 'hidden' );
-		}, 500 );
+			if ( window.innerWidth < 992 && isParent ) {
+				const isOpen = parentLi.classList.contains( 'open' );
+				
+				if ( ! isOpen ) {
+					// First click on parent: prevent navigation & open submenu
+					e.preventDefault();
+					e.stopPropagation();
+
+					// Close other open submenus (Accordion style)
+					const allParents = overlay.querySelectorAll( '.has-children' );
+					allParents.forEach( p => {
+						if ( p !== parentLi ) p.classList.remove( 'open' );
+					} );
+
+					parentLi.classList.add( 'open' );
+					return; // Stop here, keep overlay open
+				}
+			}
+
+			// If it's a regular link, or second click on parent, or desktop link:
+			// Close the whole overlay and let navigation happen
+			burgerBtn.classList.remove( 'active' );
+			overlay.classList.remove( 'active' );
+			document.body.classList.remove( 'menu-open' );
+		} );
 	} );
 }
 
@@ -413,5 +407,75 @@ function animateText( selector ) {
 				ease: 'power2.out',
 			}
 		);
+	} );
+}
+
+/**
+ * Custom Mouse Cursor
+ */
+function initCustomCursor() {
+	const cursorOuter = document.querySelector( '.cursor-outer' );
+	const cursorInner = document.querySelector( '.cursor-inner' );
+
+	if ( ! cursorOuter || ! cursorInner ) return;
+
+	let mouseX = 0;
+	let mouseY = 0;
+
+	window.addEventListener( 'mousemove', ( e ) => {
+		mouseX = e.clientX;
+		mouseY = e.clientY;
+
+		gsap.to( cursorInner, {
+			x: mouseX,
+			y: mouseY,
+			duration: 0.1,
+			ease: 'power2.out',
+		} );
+
+		gsap.to( cursorOuter, {
+			x: mouseX,
+			y: mouseY,
+			duration: 0.5,
+			ease: 'power2.out',
+		} );
+	} );
+
+	// Handle hover states
+	const handleMouseEnter = ( e ) => {
+		const target = e.currentTarget;
+		if ( target.hasAttribute( 'data-cursor-arrow' ) ) {
+			cursorInner.classList.add( 'is-hover', 'is-visible' );
+			cursorOuter.classList.add( 'is-hover', 'is-visible' );
+		}
+	};
+
+	const handleMouseLeave = () => {
+		cursorInner.classList.remove( 'is-hover', 'is-visible' );
+		cursorOuter.classList.remove( 'is-hover', 'is-visible' );
+	};
+
+	const addCursorEvents = () => {
+		const interactiveElements = document.querySelectorAll(
+			'[data-cursor-arrow]'
+		);
+		interactiveElements.forEach( ( el ) => {
+			el.removeEventListener( 'mouseenter', handleMouseEnter );
+			el.removeEventListener( 'mouseleave', handleMouseLeave );
+			el.addEventListener( 'mouseenter', handleMouseEnter );
+			el.addEventListener( 'mouseleave', handleMouseLeave );
+		} );
+	};
+
+	addCursorEvents();
+
+	// Support for dynamically added elements (like after Swup content replacement)
+	const observer = new MutationObserver( () => {
+		addCursorEvents();
+	} );
+
+	observer.observe( document.body, {
+		childList: true,
+		subtree: true,
 	} );
 }
