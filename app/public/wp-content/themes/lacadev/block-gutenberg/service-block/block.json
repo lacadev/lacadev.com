@@ -1,0 +1,29 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "lacadev/service-block",
+  "title": "Laca Service",
+  "description": "Hiển thị danh sách dịch vụ",
+  "category": "lacadev-blocks",
+  "icon": "megaphone",
+  "keywords": ["service", "laca"],
+  "textdomain": "laca",
+  "attributes": {
+    "title": {
+      "type": "string",
+      "default": "LA CÀ DEV CÓ GÌ"
+    },
+    "description": {
+      "type": "string",
+      "default": "<p>La cà Dev là nơi mình làm web WordPress, thiết kế thương hiệu và hỗ trợ marketing online.</p><p>Mình giúp bạn tạo ra một website chỉn chu, dễ dùng và có cá tính riêng – từ giao diện đến nội dung, tất cả đều hướng đến sự hiệu quả và phù hợp với bạn.</p>"
+    },
+    "serviceIds": {
+      "type": "array",
+      "default": []
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"]
+  }
+}
