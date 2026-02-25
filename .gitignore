@@ -7,3 +7,4 @@ local-site.json
 .claude/
 .codex/
 .github/skills/
+.agent/

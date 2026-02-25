@@ -341,7 +341,7 @@ function theLanguageSwitcher($showName = true, $showFlag = false) {
       echo '<ul class="language-switcher">';
       foreach ($languages as $lang) {
           $icon_html = '<span class="iconify" data-icon="ant-design:global-outlined"></span>';
-          echo '<li><a href="'. esc_url($lang['url']) .'" hreflang="'. esc_attr($lang['slug']) .'">' . $icon_html . ' ' . esc_html($lang['name']) . '</a></li>';
+          echo '<li><a href="'. esc_url($lang['url']) .'" class="btn btn-outline" hreflang="'. esc_attr($lang['slug']) .'">' . $icon_html . ' ' . esc_html($lang['name']) . '</a></li>';
       }
       echo '</ul>';
   }

@@ -57,6 +57,8 @@ $optionsPage = Container::make('theme_options', __('Laca Theme', 'laca'))
 			->set_html('----<i> Socials | Mạng xã hội </i>----'),
 		Field::make('text', 'facebook' . currentLanguage(), __('', 'laca'))->set_width(50)
 			->set_attribute('placeholder', 'facebook'),
+		Field::make('text', 'linkedin' . currentLanguage(), __('', 'laca'))->set_width(50)
+			->set_attribute('placeholder', 'linkedin'),
 		Field::make('text', 'instagram' . currentLanguage(), __('', 'laca'))->set_width(50)
 			->set_attribute('placeholder', 'instagram'),
 		Field::make('text', 'tiktok' . currentLanguage(), __('', 'laca'))->set_width(50)
