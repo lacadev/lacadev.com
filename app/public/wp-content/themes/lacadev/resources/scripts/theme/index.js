@@ -38,6 +38,12 @@ function initializePageFeatures() {
 	initAnimations();
 	initHeaderScroll();
 	initMobileMenu();
+	animateText();
+	
+	// Refresh ScrollTrigger after items are initialized
+	setTimeout(() => {
+		ScrollTrigger.refresh();
+	}, 500);
 }
 
 /**
