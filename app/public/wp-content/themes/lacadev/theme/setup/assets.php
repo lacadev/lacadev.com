@@ -184,6 +184,24 @@ function app_action_admin_enqueue_assets()
 }
 
 /**
+ * Preload critical assets in admin_head
+ */
+add_action('admin_head', function() {
+    $template_dir = get_template_directory_uri();
+    
+    // Preload important fonts
+    $fonts = [
+        'dist/fonts/BeVietnamPro-Regular.bbe77399f9.ttf',
+        'dist/fonts/BeVietnamPro-SemiBold.fbc3f74acb.ttf',
+        'dist/fonts/Quicksand-Regular.61504eaec8.ttf',
+    ];
+
+    foreach ($fonts as $font) {
+        echo '<link rel="preload" href="' . $template_dir . '/' . $font . '" as="font" type="font/ttf" crossorigin>' . "\n";
+    }
+}, 1);
+
+/**
  * Enqueue login assets.
  *
  * @return void
@@ -231,14 +249,17 @@ function app_action_editor_enqueue_assets()
     );
 
     /**
-     * Enqueue styles.
-     */
+    * Enqueue styles.
+    */
     Assets::enqueueStyle(
         'theme-editor-css-bundle',
         $template_dir . '/dist/styles/editor.css'
     );
 
-    // Inject theme colors as CSS variables for the editor
+    // Support for block editor styles (classic and modern)
+    add_editor_style($template_dir . '/dist/styles/editor.css');
+
+    // Inject theme colors and fonts as CSS variables for the editor
     $primary_color = getOption('primary_color');
     $secondary_color = getOption('secondary_color');
     $bg_color = getOption('bg_color');
@@ -255,6 +276,7 @@ function app_action_editor_enqueue_assets()
             --primary-color-dark: {$primary_color_dark};
             --secondary-color-dark: {$secondary_color_dark};
             --bg-color-dark: {$bg_color_dark};
+            font-family: 'Quicksand', sans-serif !important;
         }
     ";
     wp_add_inline_style('theme-editor-css-bundle', $custom_css);
@@ -347,8 +369,17 @@ add_action('wp_head', function() {
          echo '<link rel="preload" href="' . $template_dir . '/dist/styles/theme.css" as="style">' . "\n";
     }
 
-    // 3. Preload important fonts (Example)
-    // echo '<link rel="preload" href="' . $template_dir . '/resources/fonts/primary-font.woff2" as="font" type="font/woff2" crossorigin>' . "\n";
+    // 3. Preload important fonts (Agent Skills: Performance)
+    // Preload Regular and SemiBold weights to prevent Flash of Unstyled Text (FOUT)
+    $fonts = [
+        'dist/fonts/BeVietnamPro-Regular.bbe77399f9.ttf',
+        'dist/fonts/BeVietnamPro-SemiBold.fbc3f74acb.ttf',
+        'dist/fonts/Quicksand-Regular.61504eaec8.ttf',
+    ];
+
+    foreach ($fonts as $font) {
+        echo '<link rel="preload" href="' . $template_dir . '/' . $font . '" as="font" type="font/ttf" crossorigin>' . "\n";
+    }
 }, 1);
 
 /**

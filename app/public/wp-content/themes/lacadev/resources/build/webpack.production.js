@@ -199,7 +199,12 @@ module.exports = {
             {
                 test: utils.tests.styles,
                 use: [
-                    MiniCssExtractPlugin.loader,
+                    {
+                        loader: MiniCssExtractPlugin.loader,
+                        options: {
+                            publicPath: '../', // Fix: CSS ở styles/, assets ở fonts/ hoặc images/ → cần ../
+                        },
+                    },
                     {
                         loader: 'css-loader',
                         options: {

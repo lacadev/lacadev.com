@@ -4,6 +4,9 @@
  * Wraps block styles to work within Gutenberg editor context
  */
 
+// Import fonts
+@use "../theme/base/fonts";
+
 // Import theme utilities
 @use "../theme/abstracts/variables.scss" as *;
 @use "../theme/abstracts/mixin.scss" as *;
@@ -15,6 +18,12 @@
 // Editor wrapper - ensures styles apply in Gutenberg context
 .editor-styles-wrapper,
 .block-editor-writing-flow {
+  font-family: $secondaryFont !important;
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: $primaryFont !important;
+  }
+  
   // Include all block styles from _blocks.scss mixin
   @include blocks.block-styles;
 }
