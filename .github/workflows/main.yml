@@ -56,7 +56,7 @@ jobs:
         run: cp config.json.dist config.json
 
       - name: Run Build
-        run: yarn build
+        run: yarn build:theme && yarn build:blocks
         
       # Note: The 'lint' script in package.json calls 'lint:wpcs' etc.
       - name: Run Lint
