@@ -70,7 +70,7 @@ if (!empty($attributes['className'])) {
                     $is_even = ($index % 2 !== 0);
                     $excerpt = get_the_excerpt();
                     // Limit excerpt length for this specific design
-                    $excerpt = wp_trim_words($excerpt, 25, '...');
+                    $excerpt = wp_trim_words($excerpt, 50, '...');
                 ?>
                     <div class="staggered-item <?php echo $is_even ? 'staggered-item--even' : 'staggered-item--odd'; ?>">
                         <div class="staggered-item__content">

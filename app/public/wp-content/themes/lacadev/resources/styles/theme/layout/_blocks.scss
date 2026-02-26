@@ -396,10 +396,11 @@
       }
 
       .item__desc {
-        text-align: center;
-        color: $primaryColor;
-        line-height: 1.5;
+        font-size: 1.6rem;
         font-weight: $regular;
+        line-height: 1.5;
+        color: $primaryColor;
+        text-align: center;
       }
     }
   }
@@ -530,6 +531,7 @@
         }
 
         .staggered-item__desc {
+          font-size: 1.6rem;
           padding: 0 6rem;
         }
       }
