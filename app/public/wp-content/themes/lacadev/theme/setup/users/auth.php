@@ -5,13 +5,34 @@ use Overtrue\Socialite\SocialiteManager;
 add_action('wp_ajax_nopriv_user_login', 'mm_user_login');
 add_action('wp_ajax_user_login', 'mm_user_login');
 
-define('SOCIAL_DRIVER', [
-    'google'   => [
-        'client_id'     => get_option('google_client_id'),
-        'client_secret' => get_option('google_client_secret'),
-        'redirect'      => get_option('google_redirect_uri'),
-    ],
-]);
+/**
+ * Lấy cấu hình Socialite cho Google một cách "lazy"
+ * để tránh gọi carbon_get_theme_option() quá sớm
+ * trước khi Carbon Fields đăng ký xong các fields.
+ *
+ * @return array
+ */
+function lacadev_get_social_driver_config()
+{
+    // Phòng trường hợp Carbon Fields chưa sẵn sàng
+    if (!function_exists('carbon_get_theme_option')) {
+        return [
+            'google' => [
+                'client_id'     => '',
+                'client_secret' => '',
+                'redirect'      => home_url('/wp-admin/admin-ajax.php?action=google_admin_callback'),
+            ],
+        ];
+    }
+
+    return [
+        'google' => [
+            'client_id'     => carbon_get_theme_option('google_client_id'),
+            'client_secret' => carbon_get_theme_option('google_client_secret'),
+            'redirect'      => home_url('/wp-admin/admin-ajax.php?action=google_admin_callback'),
+        ],
+    ];
+}
 function mm_user_login()
 {
     if (empty($_POST)) {
@@ -128,7 +149,12 @@ function googleLogin() {
     }
 
     $redirect = !empty($_GET['redirect_to']) ? $_GET['redirect_to'] : null;
-    $socialite = new SocialiteManager(SOCIAL_DRIVER);
+    // Debug cấu hình Google để kiểm tra client_id có đang rỗng không
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log('[lacadev][google_login] DRIVER_CONFIG = ' . print_r(lacadev_get_social_driver_config(), true));
+    }
+
+    $socialite = new SocialiteManager(lacadev_get_social_driver_config());
 
     $driver = $socialite->driver('google');
 
@@ -137,8 +163,22 @@ function googleLogin() {
         $driver->withRedirectUrl($redirect);
     }
 
-    $response  = $driver->redirect();
-    echo $response;
+    // Thực hiện redirect HTTP đúng chuẩn, không in ra nội dung "HTTP/1.0 302 Found ..."
+    $response = $driver->redirect();
+
+    if (is_object($response) && method_exists($response, 'send')) {
+        // RedirectResponse từ thư viện Socialite
+        $response->send();
+    } else {
+        // Fallback: cố gắng lấy URL và dùng wp_safe_redirect
+        if (is_object($response) && method_exists($response, 'getTargetUrl')) {
+            $targetUrl = $response->getTargetUrl();
+        } else {
+            $targetUrl = (string) $response;
+        }
+        wp_safe_redirect($targetUrl);
+    }
+    exit;
 }
 
 function socialCallbackRedirectUrl()
@@ -161,7 +201,7 @@ add_action('wp_ajax_google_admin_callback', 'googleAdminCallback');
  * Xử lý callback đăng nhập/đăng ký admin bằng Google
  */
 function googleAdminCallback() {
-    $socialite = new SocialiteManager(SOCIAL_DRIVER);
+    $socialite = new SocialiteManager(lacadev_get_social_driver_config());
     $user = $socialite->driver('google')->user();
 
     if (!$user || empty($user->getEmail())) {
@@ -176,17 +216,21 @@ function googleAdminCallback() {
         wp_set_current_user($admin_user->ID);
         wp_set_auth_cookie($admin_user->ID);
 
-        echo '<script>opener.socialLoginReturn({
-            success: true,
-            notification: {
-                title: "' . __('Xin chào, ', 'laca') . $admin_user->user_email . '", 
-                message: "' . __('Chúc mừng bạn đã đăng nhập thành công với quyền admin', 'laca') . '"
-            },
-            redirect: "/wp-admin/"
-        });window.close();</script>';
+        // Kích hoạt hook wp_login để các tính năng chào mừng (popup) vẫn hoạt động
+        /**
+         * @see mm_set_login_alert_flag() trong app/helpers/login.php
+         */
+        do_action('wp_login', $admin_user->user_login, $admin_user);
+
+        // Redirect thẳng về trang quản trị thay vì dùng window.opener JS
+        $redirect = admin_url();
+        wp_safe_redirect($redirect);
         exit;
     } else {
-        echo '<script>alert("Tài khoản Google này không có quyền admin!");window.close();</script>';
+        // Nếu không phải admin thì quay lại trang login với thông báo lỗi đơn giản
+        $login_url = wp_login_url();
+        $login_url = add_query_arg('google_admin_error', 'no_admin', $login_url);
+        wp_safe_redirect($login_url);
         exit;
     }
 }
@@ -208,7 +252,7 @@ add_action('login_form', function () {
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
                 </svg>
             </span>
-            <span class="button-text">Tiếp tục với Google</span>
+            <span class="button-text">Google</span>
         </a>
     </div>
     <?php

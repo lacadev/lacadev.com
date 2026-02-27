@@ -16,9 +16,12 @@ class AdminSettings
 	{
 		$this->currentUser = wp_get_current_user();
 
-		if ($this->isSuperUser()) {
-			$this->createAdminOptions();
-		} else {
+		// Luôn luôn đăng ký các options (Carbon Fields containers)
+		// để front-end có thể đọc được bằng carbon_get_theme_option(),
+		// sau đó mới áp dụng các giới hạn hiển thị cho non-super user.
+		$this->createAdminOptions();
+
+		if (!$this->isSuperUser()) {
 			$this->hideSuperUsers();
 			$this->setupErrorMessage();
 			$this->checkIsMaintenance();

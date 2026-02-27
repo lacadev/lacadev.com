@@ -52,6 +52,7 @@ if (version_compare(get_bloginfo('version'), '5.2', '<')) {
     add_filter('login_headertext', 'app_filter_login_headertext');
 }
 add_filter('login_headertext', 'app_filter_login_headertext');
+add_filter('login_message', 'app_login_google_admin_message');
 
 /**
  * ------------------------------------------------------------------------

@@ -1,105 +1,252 @@
 /**
- * Contact Page Logic
+ * Contact Page Logic - Enhanced UX/UI
  */
 
+import Swal from 'sweetalert2';
+
 export const initContactPage = () => {
-    const form = document.getElementById('laca-contact-form');
-    if (!form) return;
+    console.log('📧 Contact Page: Initializing...');
+    
+    try {
+        const form = document.getElementById('laca-contact-form');
+        if (!form) {
+            console.warn('Contact form not found on this page');
+            return;
+        }
 
-    const siteKey = form.getAttribute('data-sitekey');
-    const theme = document.documentElement.getAttribute('data-theme');
-    const isDark = theme === 'dark';
+        // Safety check for themeData
+        if (typeof themeData === 'undefined' || !themeData.ajaxurl) {
+            console.error('❌ themeData not found. Contact form cannot function.');
+            return;
+        }
 
-    // 1. Initial Status Check
-    fetch(themeData.ajaxurl + '?action=laca_check_submission_status')
-        .then(response => response.json())
-        .then(res => {
-            if (res.success && res.data.submitted) {
-                Swal.fire({
-                    title: 'Chào bạn quay lại!',
-                    text: res.data.message,
-                    icon: 'info',
-                    showCancelButton: true,
-                    confirmButtonText: 'Tôi muốn gửi tiếp',
-                    cancelButtonText: 'Đã rõ',
-                    background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#1a1a1a' : '#fff',
-                    color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : '#000',
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.setAttribute('data-resubmit', 'true');
+        const siteKey = form.getAttribute('data-sitekey') || '';
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const formStatus = document.querySelector('.contact-form-wrapper .form-status');
+        
+        console.log('✅ Contact form elements initialized:', {
+            hasForm: !!form,
+            hasSiteKey: !!siteKey,
+            hasSubmitBtn: !!submitBtn,
+            hasFormStatus: !!formStatus
+        });
+
+        // Helper: Get theme colors
+        const getThemeColors = () => ({
+            background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#1a1a1a' : '#fff',
+            color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : '#000',
+        });
+
+        // Helper: Show inline error
+        const showFieldError = (fieldId, message) => {
+            const field = document.getElementById(fieldId);
+            const errorSpan = document.getElementById(`${fieldId.replace('form-', '')}-error`);
+            if (field && errorSpan) {
+                field.classList.add('invalid');
+                field.setAttribute('aria-invalid', 'true');
+                errorSpan.textContent = message;
+                errorSpan.style.display = 'block';
+            }
+        };
+
+        // Helper: Clear field error
+        const clearFieldError = (fieldId) => {
+            const field = document.getElementById(fieldId);
+            const errorSpan = document.getElementById(`${fieldId.replace('form-', '')}-error`);
+            if (field && errorSpan) {
+                field.classList.remove('invalid');
+                field.setAttribute('aria-invalid', 'false');
+                errorSpan.textContent = '';
+                errorSpan.style.display = 'none';
+            }
+        };
+
+        // Helper: Clear all errors
+        const clearAllErrors = () => {
+            ['form-name', 'form-email', 'form-message'].forEach(clearFieldError);
+        };
+
+        // Helper: Validate email
+        const isValidEmail = (email) => {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        };
+
+        // Helper: Client-side validation
+        const validateForm = () => {
+            clearAllErrors();
+            let isValid = true;
+
+            const name = document.getElementById('form-name').value.trim();
+            const email = document.getElementById('form-email').value.trim();
+            const message = document.getElementById('form-message').value.trim();
+
+            if (!name || name.length < 2) {
+                showFieldError('form-name', 'Vui lòng nhập tên (ít nhất 2 ký tự)');
+                isValid = false;
+            }
+
+            if (!email) {
+                showFieldError('form-email', 'Vui lòng nhập email');
+                isValid = false;
+            } else if (!isValidEmail(email)) {
+                showFieldError('form-email', 'Email không hợp lệ');
+                isValid = false;
+            }
+
+            if (!message || message.length < 10) {
+                showFieldError('form-message', 'Vui lòng nhập nội dung (ít nhất 10 ký tự)');
+                isValid = false;
+            }
+
+            return isValid;
+        };
+
+        // Add real-time validation on blur
+        ['form-name', 'form-email', 'form-message'].forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.addEventListener('blur', () => {
+                    if (field.value.trim()) {
+                        clearFieldError(fieldId);
                     }
                 });
             }
         });
 
-    // 2. Form Submission Handling
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const submitBtn = form.querySelector('button[type="submit"]');
-        submitBtn.classList.add('loading');
-        submitBtn.disabled = true;
+        // 1. Initial Status Check (returning users)
+        fetch(themeData.ajaxurl + '?action=laca_check_submission_status')
+            .then(response => response.json())
+            .then(res => {
+                if (res.success && res.data.submitted) {
+                    Swal.fire({
+                        title: 'Chào bạn quay lại!',
+                        text: res.data.message,
+                        icon: 'info',
+                        showCancelButton: true,
+                        confirmButtonText: 'Tôi muốn gửi tiếp',
+                        cancelButtonText: 'Đã rõ',
+                        ...getThemeColors()
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.setAttribute('data-resubmit', 'true');
+                        }
+                    });
+                }
+            })
+            .catch(err => console.error("Error checking submission status:", err));
 
-        // Get reCAPTCHA token
-        grecaptcha.ready(function() {
-            grecaptcha.execute(siteKey, {action: 'contact'}).then(function(token) {
+        // 2. Form Submission Handler
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Client-side validation
+            if (!validateForm()) {
+                return;
+            }
+
+            // UI: Start loading state
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+            submitBtn.setAttribute('aria-busy', 'true');
+            if (formStatus) {
+                formStatus.textContent = 'Đang gửi...';
+            }
+
+            const processSubmit = function(token) {
+                console.log('🔐 reCAPTCHA token received:', {
+                    hasToken: !!token,
+                    tokenLength: token ? token.length : 0,
+                    tokenPreview: token ? token.substring(0, 20) + '...' : 'EMPTY'
+                });
+
                 document.getElementById('recaptcha-response').value = token;
-                
-                // Prepare Data
+
+                // Prepare FormData
                 const formData = new FormData(form);
                 if (form.getAttribute('data-resubmit') === 'true') {
                     formData.append('resubmit_confirmed', 'true');
                 }
 
-                // Send AJAX
+                // Debug FormData
+                console.log('📤 Sending data:', {
+                    action: formData.get('action'),
+                    hasNonce: !!formData.get('nonce'),
+                    hasToken: !!formData.get('recaptcha_response'),
+                    name: formData.get('name'),
+                    email: formData.get('email')
+                });
+
+                // Send AJAX Request
                 fetch(themeData.ajaxurl, {
                     method: 'POST',
                     body: formData
                 })
                 .then(response => response.json())
                 .then(res => {
+                    console.log('📥 Server response:', res);
+
+                    // UI: Stop loading
                     submitBtn.classList.remove('loading');
                     submitBtn.disabled = false;
+                    submitBtn.setAttribute('aria-busy', 'false');
+                    if (formStatus) {
+                        formStatus.textContent = '';
+                    }
 
                     if (res.success) {
+                        // Success
                         Swal.fire({
-                            title: 'Thành công!',
+                            title: '✓ Thành công!',
                             text: res.data.message,
                             icon: 'success',
-                            background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#1a1a1a' : '#fff',
-                            color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : '#000',
+                            confirmButtonText: 'Đóng',
+                            ...getThemeColors()
                         });
                         form.reset();
+                        clearAllErrors();
                     } else {
-                        // Handle recently submitted error specifically
+                        // Error handling
+                        console.error('❌ Submission failed:', res.data);
+
                         if (res.data && res.data.code === 'recently_submitted') {
                             Swal.fire({
-                                title: 'Thông báo',
+                                title: '⚠ Thông báo',
                                 text: res.data.message,
                                 icon: 'warning',
                                 showCancelButton: true,
-                                confirmButtonText: 'Tôi vẫn muốn gửi tiếp',
-                                cancelButtonText: 'Để sau vậy',
-                                background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#1a1a1a' : '#fff',
-                                color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : '#000',
+                                confirmButtonText: 'Tôi vẫn muốn gửi',
+                                cancelButtonText: 'Để sau',
+                                ...getThemeColors()
                             }).then((result) => {
                                 if (result.isConfirmed) {
                                     form.setAttribute('data-resubmit', 'true');
                                     Swal.fire({
-                                        text: 'Bạn đã có thể gửi lại lời nhắn.',
+                                        text: '✓ Bạn có thể gửi lại.',
                                         icon: 'success',
                                         timer: 1500,
-                                        showConfirmButton: false
+                                        showConfirmButton: false,
+                                        ...getThemeColors()
                                     });
                                 }
                             });
                         } else {
+                            // Build error message with debug info
+                            let errorMessage = res.data.message || 'Đã có lỗi xảy ra.';
+                            let debugInfo = '';
+
+                            if (res.data.debug) {
+                                debugInfo = '\n\n🔍 Debug Info:\n';
+                                for (const [key, value] of Object.entries(res.data.debug)) {
+                                    debugInfo += `${key}: ${JSON.stringify(value)}\n`;
+                                }
+                            }
+
                             Swal.fire({
-                                title: 'Thất bại!',
-                                text: res.data.message || 'Đã có lỗi xảy ra.',
+                                title: '✕ Thất bại',
+                                html: `<p>${errorMessage}</p>${debugInfo ? `<pre style="font-size: 0.8em; text-align: left; background: #f5f5f5; padding: 10px; border-radius: 5px; margin-top: 10px;">${debugInfo}</pre>` : ''}`,
                                 icon: 'error',
-                                background: document.documentElement.getAttribute('data-theme') === 'dark' ? '#1a1a1a' : '#fff',
-                                color: document.documentElement.getAttribute('data-theme') === 'dark' ? '#fff' : '#000',
+                                confirmButtonText: 'Thử lại',
+                                ...getThemeColors()
                             });
                         }
                     }
@@ -107,9 +254,47 @@ export const initContactPage = () => {
                 .catch(err => {
                     submitBtn.classList.remove('loading');
                     submitBtn.disabled = false;
-                    Swal.fire('Lỗi!', 'Không thể kết nối đến máy chủ.', 'error');
+                    submitBtn.setAttribute('aria-busy', 'false');
+                    if (formStatus) {
+                        formStatus.textContent = '';
+                    }
+
+                    console.error('Network error:', err);
+                    Swal.fire({
+                        title: '✕ Lỗi kết nối',
+                        text: 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet.',
+                        icon: 'error',
+                        confirmButtonText: 'Đã hiểu',
+                        ...getThemeColors()
+                    });
                 });
-            });
+            };
+
+            // Execute reCAPTCHA (if available)
+            if (typeof grecaptcha !== 'undefined' && siteKey) {
+                grecaptcha.ready(function() {
+                    grecaptcha.execute(siteKey, {action: 'contact'}).then(processSubmit);
+                });
+            } else {
+                // Fallback: Submit without reCAPTCHA
+                console.warn("reCAPTCHA not loaded or siteKey missing, bypassing verification");
+                processSubmit('');
+            }
         });
-    });
+
+    } catch (err) {
+        console.error("Critical error in contact page:", err);
+        
+        // Safe alert fallback if Swal is not available
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Lỗi JavaScript',
+                html: 'Đã xảy ra lỗi: <code>' + err.message + '</code><br><small>Vui lòng thử hard reload (Cmd+Shift+R)</small>',
+                icon: 'error',
+                confirmButtonText: 'Đã hiểu'
+            });
+        } else {
+            alert('Lỗi JavaScript: ' + err.message + '\n\nVui lòng hard reload trang (Cmd+Shift+R hoặc Ctrl+Shift+F5)');
+        }
+    }
 };

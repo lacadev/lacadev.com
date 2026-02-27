@@ -81,14 +81,17 @@ $site_key = carbon_get_theme_option('recaptcha_site_key');
 
                         <div class="social-circles">
                             <?php 
-                            $socials = ['facebook', 'linkedin', 'instagram', 'tiktok', 'youtube'];
-                            foreach ($socials as $soc) :
-                                $url = getOption($soc);
+                            $socials = [
+                                'facebook'  => 'Facebook',
+                                'linkedin'  => 'LinkedIn',
+                                'instagram' => 'Instagram',
+                                'tiktok'    => 'TikTok',
+                                'youtube'   => 'YouTube',
+                            ];
+                            foreach ($socials as $key => $label) : 
+                                $url = getOption($key);
                                 if ($url) : ?>
-                                    <a href="<?php echo esc_url($url); ?>" target="_blank" class="social-circle">
-                                        <span class="screen-reader-text"><?php echo ucfirst($soc); ?></span>
-                                        <i class="fab fa-<?php echo $soc; ?>"></i>
-                                    </a>
+                                    <a href="<?php echo esc_url($url); ?>" target="_blank" rel="nofollow" class="social-link"><?php echo esc_html($label); ?></a>
                                 <?php endif;
                             endforeach; ?>
                         </div>
@@ -97,37 +100,95 @@ $site_key = carbon_get_theme_option('recaptcha_site_key');
 
                 <!-- Contact Form -->
                 <div class="contact-form-wrapper" data-aos="fade-left">
-                    <form id="laca-contact-form" class="glass" data-sitekey="<?php echo esc_attr($site_key); ?>">
+                    <form id="laca-contact-form" method="POST" action="<?php echo esc_url(admin_url('admin-ajax.php')); ?>" class="glass" data-sitekey="<?php echo esc_attr($site_key); ?>" novalidate>
                         <?php wp_nonce_field('laca_contact_nonce', 'nonce'); ?>
                         <input type="hidden" name="action" value="laca_contact_submit">
                         <input type="hidden" name="recaptcha_response" id="recaptcha-response">
                         
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="form-name"><?php _e('Bạn tên là gì?', 'laca'); ?> <span>*</span></label>
-                                <input type="text" id="form-name" name="name" placeholder="<?php _e('Họ và tên của bạn', 'laca'); ?>" required>
+                                <label for="form-name"><?php _e('Bạn tên là gì?', 'laca'); ?> <span class="required">*</span></label>
+                                <input 
+                                    type="text" 
+                                    id="form-name" 
+                                    name="name" 
+                                    placeholder="<?php _e('Họ và tên của bạn', 'laca'); ?>" 
+                                    required
+                                    minlength="2"
+                                    aria-required="true"
+                                    aria-describedby="name-error">
+                                <span class="error-message" id="name-error" role="alert"></span>
                             </div>
                             <div class="form-group">
-                                <label for="form-email"><?php _e('Email liên hệ', 'laca'); ?> <span>*</span></label>
-                                <input type="email" id="form-email" name="email" placeholder="<?php _e('Để tôi có thể gửi phản hồi', 'laca'); ?>" required>
+                                <label for="form-email"><?php _e('Email liên hệ', 'laca'); ?> <span class="required">*</span></label>
+                                <input 
+                                    type="email" 
+                                    id="form-email" 
+                                    name="email" 
+                                    placeholder="<?php _e('Để tôi có thể gửi phản hồi', 'laca'); ?>" 
+                                    required
+                                    aria-required="true"
+                                    aria-describedby="email-error">
+                                <span class="error-message" id="email-error" role="alert"></span>
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label for="form-subject"><?php _e('Tiêu đề', 'laca'); ?></label>
-                            <input type="text" id="form-subject" name="subject" placeholder="<?php _e('Tóm tắt ngắn gọn mục đích liên hệ', 'laca'); ?>">
+                            <input 
+                                type="text" 
+                                id="form-subject" 
+                                name="subject" 
+                                placeholder="<?php _e('Tóm tắt ngắn gọn mục đích liên hệ', 'laca'); ?>"
+                                aria-describedby="subject-hint">
                         </div>
 
                         <div class="form-group">
-                            <label for="form-message"><?php _e('Nội dung', 'laca'); ?> <span>*</span></label>
-                            <textarea id="form-message" name="message" rows="5" placeholder="<?php _e('Nơi bạn viết nên những ý tưởng hoặc lời nhắn gửi...', 'laca'); ?>" required></textarea>
+                            <label for="form-message"><?php _e('Nội dung', 'laca'); ?> <span class="required">*</span></label>
+                            <textarea 
+                                id="form-message" 
+                                name="message" 
+                                rows="5" 
+                                placeholder="<?php _e('Nơi bạn viết nên những ý tưởng hoặc lời nhắn gửi...', 'laca'); ?>" 
+                                required
+                                minlength="10"
+                                aria-required="true"
+                                aria-describedby="message-error"></textarea>
+                            <span class="error-message" id="message-error" role="alert"></span>
                         </div>
 
+                        <?php if (!empty($site_key)) : ?>
+                        <div class="recaptcha-notice">
+                            <small>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                                    <path d="M12 16v-4M12 8h.01"/>
+                                </svg>
+                                <?php _e('Trang này được bảo vệ bởi reCAPTCHA và tuân thủ', 'laca'); ?> 
+                                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener"><?php _e('Chính sách bảo mật', 'laca'); ?></a> 
+                                <?php _e('và', 'laca'); ?> 
+                                <a href="https://policies.google.com/terms" target="_blank" rel="noopener"><?php _e('Điều khoản dịch vụ', 'laca'); ?></a> 
+                                <?php _e('của Google.', 'laca'); ?>
+                            </small>
+                        </div>
+                        <?php endif; ?>
+
                         <div class="form-submit">
-                            <button type="submit" class="btn btn-primary">
-                                <span class="text"><?php _e('Gửi lời nhắn', 'laca'); ?></span>
-                                <span class="loader"></span>
+                            <button type="submit" class="btn btn-primary" id="laca-submit-btn" aria-busy="false">
+                                <span class="btn-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="22" y1="2" x2="11" y2="13"/>
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                                    </svg>
+                                </span>
+                                <span class="btn-text"><?php _e('Gửi lời nhắn', 'laca'); ?></span>
+                                <span class="btn-loader">
+                                    <svg class="spinner" width="20" height="20" viewBox="0 0 24 24">
+                                        <circle class="path" cx="12" cy="12" r="10" fill="none" stroke-width="3"/>
+                                    </svg>
+                                </span>
                             </button>
+                            <p class="form-status" role="status" aria-live="polite"></p>
                         </div>
                     </form>
                 </div>

@@ -856,7 +856,20 @@ $close-trans-time: 150ms;
   right: 0;
   position: fixed;
   z-index: 99999;
-  display: block; // Changed from flex to match sample float/absolute logic
+  display: none; // Hidden by default
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  
+  // Show loader when html has 'loading' class (early activation)
+  html.loading & {
+    display: block;
+    opacity: 1;
+  }
+  
+  &.active {
+    display: block;
+    opacity: 1;
+  }
 
   .text-loader {
     position: absolute;

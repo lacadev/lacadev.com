@@ -106,18 +106,18 @@ module.exports = {
                 exclude: /\.min\.js$/, // Don't minify already minified files
                 terserOptions: {
                     compress: {
-                        drop_console: true, // Remove console.log in production
+                        drop_console: false, // Keep console.log for debugging
                         drop_debugger: true,
-                        pure_funcs: ['console.info', 'console.debug', 'console.warn'],
+                        pure_funcs: [],
                     },
                     mangle: {
                         // Rename variables but keep global functions safe
-                        reserved: ['globalFunctions', 'themeData', 'ajaxurl_params', 'adminI18n', 'Swal', 'LacaDashboard', 'lacaDashboard'],
+                        reserved: ['globalFunctions', 'themeData', 'ajaxurl_params', 'adminI18n', 'Swal', 'grecaptcha', 'LacaDashboard', 'lacaDashboard'],
                         // CRITICAL: Don't mangle property names (breaks alert.title, data.success, etc)
                         properties: false,
                     },
                     format: {
-                        comments: false, // Remove all comments
+                        comments: false,
                     },
                 }
             }),

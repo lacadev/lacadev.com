@@ -14,19 +14,37 @@ gsap.registerPlugin( ScrollTrigger );
 
 let flickerInterval;
 
+/**
+ * Check và show loader NGAY nếu cần (trước DOMContentLoaded)
+ * Để tránh flash of content
+ */
+const shouldShowLoader = () => {
+	const LOADER_KEY = 'laca_loader_shown';
+	const HOURS_24 = 24 * 60 * 60 * 1000;
+	const lastShown = localStorage.getItem( LOADER_KEY );
+	const now = Date.now();
+	
+	return !lastShown || ( now - parseInt( lastShown ) ) >= HOURS_24;
+};
+
+// Show loader immediately if needed
+if ( shouldShowLoader() ) {
+	console.log( '🎬 Preparing page loader...' );
+	document.documentElement.classList.add( 'loading' );
+}
+
 document.addEventListener( 'DOMContentLoaded', () => {
 	const swup = new Swup();
+	
 	initializePageFeatures();
+	
+	// Initialize page loader (will check localStorage again)
 	initPageLoader();
 
-	// Hiển thị loader khi chuyển trang qua Swup
-	swup.hooks.on( 'visit:start', () => {
-		showPageLoader();
-	} );
-
+	// Swup navigation - không show loader
 	swup.hooks.on( 'content:replace', () => {
+		console.log( '🔄 Swup navigation - re-initializing features' );
 		initializePageFeatures();
-		hidePageLoader();
 	} );
 } );
 
@@ -58,6 +76,7 @@ function showPageLoader() {
 		return;
 	}
 
+	loader.classList.add( 'active' );
 	gsap.set( [ loader, textLoader ], { display: 'block', opacity: 1 } );
 	document.body.classList.add( 'overflow-hidden' );
 	startFlicker();
@@ -89,8 +108,11 @@ function hidePageLoader() {
 				ease: 'power2.inOut',
 				onComplete: () => {
 					loader.style.display = 'none';
+					loader.classList.remove( 'active' );
 					document.body.classList.remove( 'overflow-hidden' );
+					document.documentElement.classList.remove( 'loading' );
 					stopFlicker();
+					console.log( '✅ Page loader hidden' );
 				},
 			} );
 		},
@@ -130,6 +152,7 @@ function stopFlicker() {
 
 /**
  * Khởi tạo Page Loader lần đầu
+ * CHỈ hiển thị lần đầu vào web hoặc sau 24h
  */
 function initPageLoader() {
 	const loader = document.querySelector( '.page-loader' );
@@ -137,8 +160,32 @@ function initPageLoader() {
 		return;
 	}
 
+	// Check localStorage: đã show loader trong vòng 24h chưa?
+	const LOADER_KEY = 'laca_loader_shown';
+	const HOURS_24 = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+	
+	const lastShown = localStorage.getItem( LOADER_KEY );
+	const now = Date.now();
+	
+	// Nếu đã show trong 24h → Skip loader, ẩn ngay
+	if ( lastShown && ( now - parseInt( lastShown ) ) < HOURS_24 ) {
+		console.log( '⚡ Page loader skipped (shown within 24h)' );
+		loader.style.display = 'none';
+		loader.classList.remove( 'active' );
+		document.body.classList.remove( 'overflow-hidden' );
+		document.documentElement.classList.remove( 'loading' );
+		return;
+	}
+
+	// Lần đầu HOẶC đã qua 24h → Show loader
+	console.log( '🎬 Page loader activated (first visit or 24h passed)' );
+	loader.classList.add( 'active' );
 	document.body.classList.add( 'overflow-hidden' );
+	document.documentElement.classList.add( 'loading' );
 	startFlicker();
+
+	// Save timestamp
+	localStorage.setItem( LOADER_KEY, now.toString() );
 
 	// Hiển thị trong 1s (1000ms)
 	const startTime = Date.now();
@@ -159,6 +206,7 @@ function initPageLoader() {
 	// Fallback an toàn sau 5s
 	setTimeout( () => {
 		if ( loader.style.display !== 'none' ) {
+			console.warn( '⏱️ Page loader timeout - forcing hide' );
 			hidePageLoader();
 		}
 	}, 5000 );
@@ -414,6 +462,12 @@ function setupGsap404() {
 
 function animateText( selector ) {
 	const hasAnim = document.querySelectorAll( '.slogan p' );
+
+	if (typeof SplitText === 'undefined') {
+		console.warn('SplitText is not defined, skipping text animation.');
+		return;
+	}
+
 	hasAnim.forEach( ( element ) => {
 		const splitType = 'lines, chars';
 		const splitto = new SplitText( element, {
