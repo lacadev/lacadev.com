@@ -18,9 +18,6 @@ if (!empty($service_ids)) {
     ]);
     if ($query->have_posts()) {
         $services = $query->posts;
-        // START: N+1 Prevention
-        update_post_caches($services, 'service', true, true);
-        // END: N+1 Prevention
     }
     wp_reset_postdata();
 }

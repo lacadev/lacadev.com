@@ -31,10 +31,24 @@ function laca_send_json_error($data = null, $status_code = null) {
 }
 
 /**
+ * Get Real IP Address
+ */
+function lacadev_get_real_ip() {
+    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ip = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
+    } elseif (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+        $ip = $_SERVER['HTTP_CLIENT_IP'];
+    } else {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    }
+    return filter_var(trim($ip), FILTER_VALIDATE_IP) ?: 'unknown';
+}
+
+/**
  * Rate limiting helper for AJAX requests
  */
 function lacadev_check_rate_limit($action_name, $limit = 20, $period = 60) {
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $ip = lacadev_get_real_ip();
     $transient_key = 'rate_limit_' . $action_name . '_' . md5($ip);
     $request_count = get_transient($transient_key);
     
@@ -64,11 +78,11 @@ function lacadev_improve_search_relevance($search, $wp_query) {
         return $search;
     }
     
-    $search_term = $wpdb->esc_like($wp_query->query_vars['s']);
+    $search_term = $wpdb->esc_like(trim($wp_query->query_vars['s']));
     
-    // Search ONLY in post_title with accent-insensitive collation
-    // utf8mb4_unicode_ci ignores accents: "se" matches "sẽ", "sê", "sế", etc.
-    $search = " AND ({$wpdb->posts}.post_title COLLATE utf8mb4_unicode_ci LIKE '%{$search_term}%')";
+    // Search ONLY in post_title with accent-insensitive collation 
+    // Secure query with $wpdb->prepare to prevent SQLi
+    $search = $wpdb->prepare(" AND ({$wpdb->posts}.post_title COLLATE utf8mb4_unicode_ci LIKE %s)", '%' . $search_term . '%');
     
     return $search;
 }
@@ -92,213 +106,86 @@ function mms_ajax_search() {
     // Add search relevance filter (title-only, accent-insensitive)
     add_filter('posts_search', 'lacadev_improve_search_relevance', 10, 2);
     
-    $html = '';
-    $has_results = false;
-    
-    // Get all public post types
-    $post_types = get_post_types(['public' => true], 'objects');
-    
-    // Organize post types by category
-    $organized_types = [
-        'product' => [],
-        'post' => [],
-        'page' => [],
-        'other' => []
-    ];
-    
-    foreach ($post_types as $post_type) {
-        $type_name = $post_type->name;
-        
-        // Skip attachments
-        if ($type_name === 'attachment') {
-            continue;
-        }
-        
-        // Categorize
-        if ($type_name === 'product') {
-            $organized_types['product'][] = $type_name;
-        } elseif ($type_name === 'post') {
-            $organized_types['post'][] = $type_name;
-        } elseif ($type_name === 'page') {
-            $organized_types['page'][] = $type_name;
-        } else {
-            $organized_types['other'][] = $type_name;
-        }
-    }
-    
-    // Search Products (WooCommerce)
-    if (!empty($organized_types['product']) && class_exists('WooCommerce')) {
-        $products = new WP_Query([
-            'post_type' => 'product',
-            'posts_per_page' => 2, // Only show 2 items
-            's' => $search_query,
-            'post_status' => 'publish',
-            'no_found_rows' => false,
-            'orderby' => 'date',
-            'order' => 'DESC',
-        ]);
-        
-        if ($products->have_posts()) {
-            $has_results = true;
-            $displayed_count = $products->post_count;
-            $total_products = $products->found_posts;
-            
-            $html .= '<div class="search-results__section">';
-            $html .= '<h3 class="search-results__title"><strong>Sản phẩm liên quan</strong> <span class="search-results__count">(hiển thị ' . $displayed_count . '/' . $total_products . ' sản phẩm)</span>:</h3>';
-            $html .= '<div class="search-results__list">';
-            
-            while ($products->have_posts()) {
-                $products->the_post();
-                
-                $html .= '<a href="' . esc_url(get_permalink()) . '" class="search-results__item">';
-                $html .= '<div class="search-results__image">';
-                $html .= getResponsivePostThumbnail(get_the_ID(), 'mobile', ['alt' => get_the_title()]);
-                $html .= '</div>';
-                $html .= '<div class="search-results__content">';
-                $html .= '<h4 class="search-results__item-title">' . esc_html(get_the_title()) . '</h4>';
-                $html .= '</div>';
-                $html .= '</a>';
-            }
-            
-            $html .= '</div></div>';
-            wp_reset_postdata();
-        }
-    }
-    
-    // Search Posts
-    if (!empty($organized_types['post'])) {
-        $posts = new WP_Query([
-            'post_type' => 'post',
-            'posts_per_page' => 2, // Only show 2 items
-            's' => $search_query,
-            'post_status' => 'publish',
-            'no_found_rows' => false,
-            'orderby' => 'date',
-            'order' => 'DESC',
-        ]);
-        
-        if ($posts->have_posts()) {
-            $has_results = true;
-            $displayed_count = $posts->post_count;
-            $total_posts = $posts->found_posts;
-            
-            $html .= '<div class="search-results__section">';
-            $html .= '<h3 class="search-results__title"><strong>Bài viết liên quan</strong> <span class="search-results__count">(hiển thị ' . $displayed_count . '/' . $total_posts . ' bài viết)</span>:</h3>';
-            $html .= '<div class="search-results__list">';
-            
-            while ($posts->have_posts()) {
-                $posts->the_post();
-                
-                $html .= '<a href="' . esc_url(get_permalink()) . '" class="search-results__item">';
-                $html .= '<div class="search-results__image">';
-                $html .= getResponsivePostThumbnail(get_the_ID(), 'mobile', ['alt' => get_the_title()]);
-                $html .= '</div>';
-                $html .= '<div class="search-results__content">';
-                $html .= '<h4 class="search-results__item-title">' . esc_html(get_the_title()) . '</h4>';
-                $html .= '</div>';
-                $html .= '</a>';
-            }
-            
-            $html .= '</div></div>';
-            wp_reset_postdata();
-        }
-    }
-    
-    // Search Pages
-    if (!empty($organized_types['page'])) {
-        $pages = new WP_Query([
-            'post_type' => 'page',
-            'posts_per_page' => 2, // Only show 2 items
-            's' => $search_query,
-            'post_status' => 'publish',
-            'no_found_rows' => false,
-            'orderby' => 'date',
-            'order' => 'DESC',
-        ]);
-        
-        if ($pages->have_posts()) {
-            $has_results = true;
-            $displayed_count = $pages->post_count;
-            $total_pages = $pages->found_posts;
-            
-            $html .= '<div class="search-results__section">';
-            $html .= '<h3 class="search-results__title"><strong>Trang liên quan</strong> <span class="search-results__count">(hiển thị ' . $displayed_count . '/' . $total_pages . ' trang)</span>:</h3>';
-            $html .= '<div class="search-results__list">';
-            
-            while ($pages->have_posts()) {
-                $pages->the_post();
-                
-                $html .= '<a href="' . esc_url(get_permalink()) . '" class="search-results__item">';
-                $html .= '<div class="search-results__image">';
-                $html .= getResponsivePostThumbnail(get_the_ID(), 'mobile', ['alt' => get_the_title()]);
-                $html .= '</div>';
-                $html .= '<div class="search-results__content">';
-                $html .= '<h4 class="search-results__item-title">' . esc_html(get_the_title()) . '</h4>';
-                $html .= '</div>';
-                $html .= '</a>';
-            }
-            
-            $html .= '</div></div>';
-            wp_reset_postdata();
-        }
-    }
-    
-    // Search Other Custom Post Types
-    if (!empty($organized_types['other'])) {
-        foreach ($organized_types['other'] as $custom_type) {
-            $custom_posts = new WP_Query([
-                'post_type' => $custom_type,
-                'posts_per_page' => 2, // Only show 2 items
-                's' => $search_query,
-                'post_status' => 'publish',
-                'no_found_rows' => false,
-                'orderby' => 'date',
-                'order' => 'DESC',
-            ]);
-            
-            if ($custom_posts->have_posts()) {
-                $has_results = true;
-                $post_type_obj = get_post_type_object($custom_type);
-                $type_label = $post_type_obj->labels->name ?? $custom_type;
-                $displayed_count = $custom_posts->post_count;
-                $total_custom = $custom_posts->found_posts;
-                
-                $html .= '<div class="search-results__section">';
-                $html .= '<h3 class="search-results__title"><strong>' . esc_html($type_label) . ' liên quan</strong> <span class="search-results__count">(hiển thị ' . $displayed_count . '/' . $total_custom . ')</span>:</h3>';
-                $html .= '<div class="search-results__list">';
-                
-                while ($custom_posts->have_posts()) {
-                    $custom_posts->the_post();
-                    
-                    $html .= '<a href="' . esc_url(get_permalink()) . '" class="search-results__item">';
-                    $html .= '<div class="search-results__image">';
-                    $html .= getResponsivePostThumbnail(get_the_ID(), 'mobile', ['alt' => get_the_title()]);
-                    $html .= '</div>';
-                    $html .= '<div class="search-results__content">';
-                    $html .= '<h4 class="search-results__item-title">' . esc_html(get_the_title()) . '</h4>';
-                    $html .= '</div>';
-                    $html .= '</a>';
-                }
-                
-                $html .= '</div></div>';
-                wp_reset_postdata();
-            }
-        }
-    }
-    
-    // No results found
-    if (!$has_results) {
+    $post_types = get_post_types(['public' => true]);
+    unset($post_types['attachment']); // Remove standard attachment from search
+
+    // 1 Query to Rule Them All
+    $query = new WP_Query([
+        'post_type'      => array_keys($post_types),
+        'posts_per_page' => 10, // Giới hạn tổng record tránh overload
+        's'              => $search_query,
+        'post_status'    => 'publish',
+        'no_found_rows'  => true, // Tăng cường hiệu năng, bỏ qua đếm SQL_CALC_FOUND_ROWS
+        'orderby'        => 'date',
+        'order'          => 'DESC'
+    ]);
+
+    // Bỏ filter sau khi đã query
+    remove_filter('posts_search', 'lacadev_improve_search_relevance', 10);
+
+    if (!$query->have_posts()) {
         $html = '<div class="search-results__empty">';
         $html .= '<p>Không tìm thấy kết quả nào cho "<strong>' . esc_html($search_query) . '</strong>"</p>';
         $html .= '</div>';
+        echo $html;
+        wp_die();
     }
-    
-    // Remove search filter after use
-    remove_filter('posts_search', 'lacadev_improve_search_relevance', 10);
-    
-    // Return HTML
+
+    // Grouping records by post type using PHP (no extra queries)
+    $grouped_results = [];
+    foreach ($query->posts as $post) {
+        $grouped_results[$post->post_type][] = $post;
+    }
+
+    $html = '';
+    // Custom label ordering
+    $preferred_order = ['product', 'post', 'page'];
+    uksort($grouped_results, function ($a, $b) use ($preferred_order) {
+        $pos_a = array_search($a, $preferred_order);
+        $pos_b = array_search($b, $preferred_order);
+        if ($pos_a !== false && $pos_b !== false) return $pos_a <=> $pos_b;
+        if ($pos_a !== false) return -1;
+        if ($pos_b !== false) return 1;
+        return strcmp($a, $b);
+    });
+
+    // Render grouped views correctly
+    foreach ($grouped_results as $type => $posts) {
+        $post_type_obj = get_post_type_object($type);
+        $type_label = $post_type_obj->labels->name ?? ucfirst($type);
+        $html .= lacadev_render_search_section($type_label, $posts);
+    }
+
     echo $html;
     wp_die();
+}
+
+/**
+ * Html Partial cho mỗi section
+ */
+function lacadev_render_search_section($title, $posts) {
+    ob_start();
+    ?>
+    <div class="search-results__section">
+        <h3 class="search-results__title">
+            <strong><?php echo esc_html($title); ?> liên quan</strong> 
+            <span class="search-results__count">(<?php echo count($posts); ?> kết quả)</span>:
+        </h3>
+        <div class="search-results__list">
+            <?php foreach ($posts as $p): ?>
+                <a href="<?php echo esc_url(get_permalink($p->ID)); ?>" class="search-results__item">
+                    <div class="search-results__image">
+                        <?php echo getResponsivePostThumbnail($p->ID, 'mobile', ['alt' => get_the_title($p->ID)]); ?>
+                    </div>
+                    <div class="search-results__content">
+                        <h4 class="search-results__item-title"><?php echo esc_html(get_the_title($p->ID)); ?></h4>
+                    </div>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php
+    return ob_get_clean();
 }
 
 // =============================================================================
@@ -422,7 +309,7 @@ add_action('wp_ajax_laca_check_submission_status', 'lacadev_check_submission_sta
 add_action('wp_ajax_nopriv_laca_check_submission_status', 'lacadev_check_submission_status');
 
 function lacadev_check_submission_status() {
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $ip = lacadev_get_real_ip();
     $last_submission = get_transient('laca_contact_' . md5($ip));
     
     if ($last_submission) {
@@ -447,7 +334,7 @@ function lacadev_handle_contact_submit() {
     check_ajax_referer('laca_contact_nonce', 'nonce');
 
     // 2. Rate Limiting Check
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $ip = lacadev_get_real_ip();
     $transient_key = 'laca_contact_' . md5($ip);
     $last_submission = get_transient($transient_key);
     

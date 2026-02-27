@@ -34,7 +34,10 @@ if ($mode === 'manual' && !empty($post_ids)) {
     }
 
     if ($order_by === 'rand') {
-        $args['orderby'] = 'rand';
+        // PERFORMANCE FIX: Prevent slow queries caused by ORDER BY RAND()
+        $args['orderby'] = 'date';
+        $args['order'] = 'DESC';
+        $do_shuffle = true;
     } elseif ($order_by === 'comment_count') {
         $args['orderby'] = 'comment_count';
         $args['order'] = 'DESC';
@@ -46,13 +49,9 @@ if ($mode === 'manual' && !empty($post_ids)) {
 
 $query = new WP_Query($args);
 
-// START: N+1 Prevention
-if ($query->have_posts()) {
-    update_post_caches($query->posts, 'post', true, true);
-    // Pre-cache terms for specific taxonomy if needed
-    update_object_term_cache(wp_list_pluck($query->posts, 'ID'), 'post');
+if (isset($do_shuffle) && $do_shuffle && $query->have_posts()) {
+    shuffle($query->posts);
 }
-// END: N+1 Prevention
 
 $class_name = 'block-blog';
 if (!empty($attributes['className'])) {
