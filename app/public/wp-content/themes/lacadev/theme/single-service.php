@@ -33,9 +33,24 @@
 			</div>
 		<?php endif; ?>
 
-		<!-- Content Body -->
-		<div class="service-body">
-			<?php theContent(); ?>
+		<div class="service-content-wrapper">
+			<!-- Content Body -->
+			<div class="service-body">
+				<?php theContent(); ?>
+			</div>
+
+			<div class="service-share">
+				<?php get_template_part('template-parts/share_box'); ?>
+			</div>
+
+			<div class="service-comments">
+				<?php
+				// If comments are open or we have at least one comment, load up the comment template.
+				if ( comments_open() || get_comments_number() ) :
+					comments_template();
+				endif;
+				?>
+			</div>
 		</div>
 	</div>
 </article>

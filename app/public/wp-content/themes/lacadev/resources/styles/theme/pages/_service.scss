@@ -49,9 +49,12 @@
         }
     }
 
-    .service-body {
+    .service-content-wrapper {
         max-width: 900px;
         margin: 0 auto 100px;
+    }
+
+    .service-body {
         font-size: 1.8rem;
         line-height: 1.8;
 
@@ -72,6 +75,14 @@
                 margin-bottom: 10px;
             }
         }
+    }
+
+    .service-share {
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color, #eee);
+        display: flex;
+        justify-content: flex-end;
     }
 }
 

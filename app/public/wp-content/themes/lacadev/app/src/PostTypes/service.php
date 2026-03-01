@@ -17,6 +17,7 @@ class Service extends \App\Abstracts\AbstractPostType
             'thumbnail',
             'excerpt',
             'page-attributes',
+            'comments',
         ];
 
         $this->menuIcon         = 'dashicons-admin-generic';

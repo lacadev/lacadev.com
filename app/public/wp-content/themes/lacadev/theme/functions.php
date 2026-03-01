@@ -216,3 +216,62 @@ add_filter('query_vars', 'lacadev_register_search_query_vars');
 // =============================================================================
 
 new \App\PostTypes\service();
+
+// =============================================================================
+// COMMENTS CALLBACK
+// =============================================================================
+function lacadev_custom_comments_callback( $comment, $args, $depth ) {
+    $GLOBALS['comment'] = $comment;
+    
+    $tag = ( isset($args['style']) && 'b' === $args['style'] ) ? 'b' : 'li';
+    $add_below = 'div-comment';
+    ?>
+    <<?php echo $tag; ?> <?php comment_class( empty( $args['has_children'] ) ? 'custom-comment' : 'parent custom-comment' ); ?> id="comment-<?php comment_ID(); ?>">
+        <article id="div-comment-<?php comment_ID(); ?>" class="comment-body">
+            <div class="comment-meta">
+                <div class="comment-author vcard">
+                    <?php 
+                    $avatar_size = $args['avatar_size'] ?? 48;
+                    if ( 0 != $avatar_size ) {
+                        echo get_avatar( $comment, $avatar_size );
+                    }
+                    ?>
+                    <?php printf( '<span class="author-name">%s</span>', get_comment_author_link( $comment ) ); ?>
+                </div><!-- .comment-author -->
+
+                <div class="comment-metadata">
+                    <a href="<?php echo esc_url( get_comment_link( $comment, $args ) ); ?>">
+                        <time datetime="<?php comment_time( 'c' ); ?>">
+                            <?php printf( __( '%s ago', 'laca' ), human_time_diff( get_comment_time('U'), current_time('timestamp') ) ); ?>
+                        </time>
+                    </a>
+                </div><!-- .comment-metadata -->
+            </div><!-- .comment-meta -->
+
+            <?php if ( '0' == $comment->comment_approved ) : ?>
+            <p class="comment-awaiting-moderation"><?php _e( 'Your comment is awaiting moderation.', 'laca' ); ?></p>
+            <?php endif; ?>
+
+            <div class="comment-content">
+                <?php comment_text(); ?>
+            </div><!-- .comment-content -->
+
+            <div class="comment-actions">
+                <?php
+                comment_reply_link(
+                    array_merge(
+                        $args,
+                        array(
+                            'add_below' => $add_below,
+                            'depth'     => $depth,
+                            'max_depth' => $args['max_depth'] ?? 5,
+                            'before'    => '<div class="reply">',
+                            'after'     => '</div>',
+                        )
+                    )
+                );
+                ?>
+            </div>
+        </article><!-- .comment-body -->
+    <?php
+}
