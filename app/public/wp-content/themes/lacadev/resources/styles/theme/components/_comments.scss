@@ -16,6 +16,15 @@
     padding: 0;
     margin: 0 0 3rem;
 
+    .avatar {
+      position: relative;
+      top: unset;
+      left: unset;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+    }
+
     .custom-comment {
       margin-bottom: 2rem;
       border: 1px solid var(--border-color, #eee);

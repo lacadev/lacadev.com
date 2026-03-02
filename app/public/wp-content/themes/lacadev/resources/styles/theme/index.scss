@@ -8,6 +8,7 @@
 @use "./components/breadcumb.scss";
 @use "./components/share-post.scss";
 @use "./components/comments.scss";
+@use "./components/toc.scss";
 
 @use "./layout/general.scss" as *;
 @use "./layout/header.scss" as *;
@@ -18,7 +19,6 @@
 @use "./pages/404.scss" as *;
 @use "./pages/cpt.scss" as *;
 @use "./pages/contact.scss" as *;
-@use "./pages/service.scss" as *;
 
 #wpadminbar .logo-admin-bar {
   max-height: 1.2rem !important;

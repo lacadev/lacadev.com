@@ -12,47 +12,35 @@
 	theBreadcrumb();
 ?>
 
-<article class="single-post-template single-service-template">
+<article class="single-post-template single-template">
 	<!-- Hero Section -->
-	<section class="service-hero">
-		<div class="container">
-			<h1 class="service-title"><?php the_title(); ?></h1>
-			<div class="service-meta">
-				<span class="meta-item"><?php the_category(', '); ?></span>
-				<span class="meta-separator">•</span>
-				<span class="meta-item"><?php echo get_the_date(); ?></span>
-			</div>
-			<div class="toc">
-				<?php 
-					if ( function_exists( 'lwptoc_display' ) ) : 
-						lwptoc_display(); 
-					endif; 
-				?>
-			</div>
-		</div>
-	</section>
+	<?php get_template_part('template-parts/post-hero'); ?>
 
 	<div class="container">
 		<!-- Featured Image -->
 		<?php if (has_post_thumbnail()) : ?>
-			<div class="service-featured-image">
+			<div class="post-featured-image">
 				<?php echo getResponsivePostThumbnail(get_the_ID(), 'full'); ?>
 			</div>
 		<?php endif; ?>
 
-		<div class="service-content-wrapper">
+		<div class="post-content-wrapper">
+			<div class="toc">
+				<?php echo do_shortcode('[ez-toc]') ?>
+			</div>
 			<!-- Content Body -->
-			<div class="service-body">
+			<div class="post-body">
 				<?php theContent(); ?>
 			</div>
 
-			<div class="service-share">
+			<div class="post-share">
 				<?php get_template_part('template-parts/share_box'); ?>
 			</div>
 
-			<div class="service-comments">
+			<?php get_template_part('template-parts/rating-box'); ?>
+
+			<div class="post-comments">
 				<?php
-				// If comments are open or we have at least one comment, load up the comment template.
 				if ( comments_open() || get_comments_number() ) :
 					comments_template();
 				endif;
