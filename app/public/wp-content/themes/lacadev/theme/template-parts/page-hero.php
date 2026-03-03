@@ -33,12 +33,22 @@ if (is_archive()) {
     }
 }
 
-// Special case for Service Archive if we want custom text
-if (is_post_type_archive('service') && empty($excerpt)) {
-    $excerpt = __('Khám phá các giải pháp công nghệ chuyên sâu giúp bạn bứt phá hành trình số.', 'laca');
-}
 $title_class = 'page-title';
+
+// Special case for Service Archive if we want custom text from Theme Options
 if (is_post_type_archive('service')) {
+    $service_title = getOption('service_page_title');
+    $service_desc = getOption('service_page_description');
+
+    if ($service_title) {
+        $title = $service_title;
+    }
+    if ($service_desc) {
+        $excerpt = $service_desc;
+    } elseif (empty($excerpt)) {
+        $excerpt = __('Khám phá các giải pháp công nghệ chuyên sâu giúp bạn bứt phá hành trình số.', 'laca');
+    }
+
     $title_class .= ' block-title-scroll';
 }
 ?>

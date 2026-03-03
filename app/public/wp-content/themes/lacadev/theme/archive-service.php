@@ -12,8 +12,9 @@
 	theBreadcrumb();
 ?>
 
-<main class="block-service archive-service">
+<div class="block-service archive-service">
 	<?php get_template_part('template-parts/page-hero'); ?>
+
 	<div class="container">
 
 		<div class="block-service__list">
@@ -35,5 +36,4 @@
 		
 		<?php thePagination(); ?>
 	</div>
-</main>
-			
+</div>

@@ -185,8 +185,8 @@ if (!defined('ABSPATH')) {
 
                         <!-- dark mode -->
                         <div id="darkmode" class="btn">
-                            <div class="btn-outline btn-outline-1"></div>
-                            <div class="btn-outline btn-outline-2"></div>
+                            <div class="btn-darkmode btn-darkmode-1"></div>
+                            <div class="btn-darkmode btn-darkmode-2"></div>
                             <label class="darkmode-icon">
                                 <input type="checkbox" 
                                     aria-label="<?php esc_attr_e('Chuyển chế độ tối/sáng', 'laca'); ?>" 

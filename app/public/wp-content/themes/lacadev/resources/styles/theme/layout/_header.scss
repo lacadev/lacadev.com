@@ -479,17 +479,17 @@ header {
     z-index: 2;
     border: none;
     
-    .btn-outline {
+    .btn-darkmode {
       position: absolute;
       width: 5rem;
       height: 5rem;
       border: 1px solid $primaryColor;
     }
-    .btn-outline-1 {
+    .btn-darkmode-1 {
       border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
       animation: morph 4s linear infinite;
     }
-    .btn-outline-2 {
+    .btn-darkmode-2 {
       border-radius: 53% 47% 43% 58% / 51% 39% 61% 49%;
     }
 
