@@ -38,8 +38,10 @@ class Project extends \App\Abstracts\AbstractPostType
                     ->add_options([
                         'yes' => 'Có',
                         'no' => 'Không',
-                    ]),
+                    ])
+                    ->set_width(40),
                 Field::make('text', 'live_url', __('Live Demo URL', 'laca'))
+                    ->set_width(60)
                     ->set_attribute('placeholder', 'https://...'),
                 Field::make('image', 'quick_view_img', __('Quick view', 'laca'))
                     ->set_width(30),
