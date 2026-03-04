@@ -119,24 +119,26 @@ export default function Edit( { attributes, setAttributes } ) {
 
 			<section { ...blockProps }>
 				<div className="container">
-					<RichText
-						tagName="h2"
-						className="block-title block-title-scroll"
-						value={ title }
-						onChange={ ( value ) =>
-							setAttributes( { title: value } )
-						}
-						placeholder={ __( 'Nhập tiêu đề…', 'laca' ) }
-					/>
-					<RichText
-						tagName="div"
-						className="block-desc"
-						value={ description }
-						onChange={ ( value ) =>
-							setAttributes( { description: value } )
-						}
-						placeholder={ __( 'Nhập mô tả…', 'laca' ) }
-					/>
+					<div className="block-header">
+						<RichText
+							tagName="h2"
+							className="block-title block-title-scroll"
+							value={ title }
+							onChange={ ( value ) =>
+								setAttributes( { title: value } )
+							}
+							placeholder={ __( 'Nhập tiêu đề…', 'laca' ) }
+						/>
+						<RichText
+							tagName="div"
+							className="block-desc"
+							value={ description }
+							onChange={ ( value ) =>
+								setAttributes( { description: value } )
+							}
+							placeholder={ __( 'Nhập mô tả…', 'laca' ) }
+						/>
+					</div>
 
 					{ serviceIds.length === 0 ? (
 						<Placeholder
@@ -197,7 +199,9 @@ export default function Edit( { attributes, setAttributes } ) {
 								className="btn btn-minimal"
 								style={ { display: 'inline-flex' } }
 							>
-								<span className="btn-icon"></span>
+								<span className="btn-icon">
+										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="20" y2="4"></line><polyline points="10 4 20 4 20 14"></polyline></svg>
+								</span>
 								<span className="btn-text">{ buttonText }</span>
 							</div>
 						</div>

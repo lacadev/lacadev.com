@@ -1,9 +1,33 @@
 @use "../abstracts/variables.scss" as *;
 @use "../abstracts/mixin.scss" as *;
+@use "./blocks/service.scss";
+@use "./blocks/slogan.scss";
+@use "./blocks/about-laca.scss";
+@use "./blocks/blog.scss";
+@use "./blocks/staggered-blog.scss";
+@use "./blocks/statement.scss";
+@use "./blocks/progress.scss";
+@use "./blocks/tech-list.scss";
+@use "./blocks/marquee.scss";
+@use "./blocks/project.scss";
+@use "./blocks/button.scss";
+
 
 // Mixin containing all block styles
 // This allows reuse in both theme and editor contexts
 @mixin block-styles {
+  @include service.render;
+  @include slogan.render;
+  @include about-laca.render;
+  @include blog.render;
+  @include staggered-blog.render;
+  @include statement.render;
+  @include progress.render;
+  @include tech-list.render;
+  @include marquee.render;
+  @include project.render;
+  @include button.render;
+
   //common
   .btn {
     display: inline-flex;
@@ -93,7 +117,7 @@
           transform: translate(-5px, 5px);
           opacity: 0;
           transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-          color: #fff;
+          color: $primaryColorDark;
           z-index: 2;
         }
       }
@@ -177,10 +201,14 @@
   h2.block-title {
     margin-bottom: 2rem;
     text-transform: uppercase;
-    font-weight: $regular;
+    font-weight: $medium;
     color: $primaryColor;
     line-height: 1.2;
     text-align: center;
+
+    &.title-left {
+      text-align: left;
+    }
 
     @include resFont(1.8, 2.8);
   }
@@ -197,6 +225,10 @@
     margin: 0 auto;
     max-width: 92rem;
     text-align: center;
+
+    &.desc-left {
+      text-align: left;
+    }
   }
 
   .block-header {
@@ -220,540 +252,6 @@
     @include maxWidth($md) {
       margin-bottom: 5rem;
       padding: 4rem 0;
-    }
-  }
-
-  .home {
-    .block-slogan {
-      margin-top: 10rem;
-
-      @include maxWidth($md) {
-        margin-top: 6rem;
-      }
-    }
-  }
-
-  // Block Slogan
-  .block-slogan {
-    padding: 10rem 0;
-    text-align: center;
-    font-family: $primaryFont;
-    font-weight: $extraBold;
-    line-height: 1.4;
-
-    span {
-      text-transform: uppercase;
-      -webkit-text-fill-color: transparent;
-      -webkit-text-stroke: 2px $primaryColor;
-
-      @include maxWidth($md) {
-        -webkit-text-stroke: 1px $primaryColor;
-      }
-    }
-
-    p {
-      margin-bottom: 0;
-    }
-
-    &.editor-view {
-      padding: 4rem 0;
-    }
-
-    @include maxWidth($md) {
-      padding: 6rem 0;
-    }
-
-    @include resFont(3.2, 11);
-  }
-
-  // Block About La Ca Dev
-  .block-about-laca {
-    padding: 0 !important;
-    height: 80vh;
-    background-color: $backgroundColor;
-    overflow: hidden;
-
-    .img-container {
-      position: relative;
-      height: 80vh;
-      width: 100%;
-      max-width: 50rem;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      border-radius: 2rem;
-      will-change: max-width, border-radius;
-      transform: translateZ(0);
-      transition: none !important;
-    }
-
-    .parallax-bg {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%; 
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      z-index: 1;
-      transform: scale(1.1) translateZ(0); 
-      will-change: transform;
-      transition: none !important;
-      
-      &::after {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.4);
-      }
-    }
-
-    .content-wrapper {
-      position: relative;
-      z-index: 2;
-      color: #fff;
-      text-align: center;
-      max-width: 100rem;
-      margin: 0 auto;
-      opacity: 0; 
-      transform: translateY(30px);
-    }
-
-    .about-content {
-      line-height: 1.4;
-      word-break: break-word;
-    }
-
-    &.editor-view {
-      height: auto;
-      min-height: 400px;
-      padding: 4rem 0 !important;
-      font-family: $secondaryFont;
-
-      .parallax-bg {
-        height: 100%;
-      }
-
-      .bg-image-preview {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-size: cover;
-        background-position: center;
-        z-index: 1;
-            
-        &::after {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: rgba(0, 0, 0, 0.3);
-        }
-      }
-
-      .img-container {
-        max-width: 100%;
-      }
-
-      .content-wrapper {
-        opacity: 1;
-        transform: none;
-      }
-    }
-  }
-
-  // Block Service
-  .block-service {
-    &__list {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 3rem;
-
-      @include maxWidth($md) {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      @include maxWidth($sm) {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    &__item {
-
-      .item__link {
-        height: 100%;
-        padding: 4rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        background-color: #fff;
-        text-align: center;
-        color: #010101;
-        border-radius: 2rem;
-        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-
-        &:hover {
-          box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.08);
-        }
-      }
-
-      .item__icon {
-        margin-bottom: 3rem;
-        display: block;
-        line-height: 1;
-        font-weight: $bold;
-        color: $primaryColor;
-
-        @include resFont(6, 12);
-      }
-
-      .item__title {
-        margin-bottom: 2rem;
-        font-weight: $semiBold;
-        color: $primaryColor;
-
-        @include resFont(2, 3);
-      }
-
-      .item__desc {
-        font-size: 1.6rem;
-        font-weight: $regular;
-        line-height: 1.5;
-        color: $primaryColor;
-        text-align: center;
-      }
-    }
-  }
-
-  // Block Blog
-  .block-blog {
-    .blog-list {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 3rem;
-
-      @include maxWidth($md) {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      @include maxWidth($sm) {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .blog-card {
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 2.5rem;
-      background-color: #fff;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      height: 100%;
-      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-
-      &:hover {
-        box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.08);
-      }
-
-      .card-link {
-        text-decoration: none;
-        color: inherit;
-        display: block;
-        height: 100%;
-        padding: 2.5rem;
-      }
-
-      .card-image-wrap {
-        margin-bottom: 2rem;
-        border-radius: 2rem;
-        overflow: hidden;
-        
-        img {
-          width: 100%;
-          height: 22rem;
-          object-fit: cover;
-          display: block;
-          cursor: unset;
-        }
-      }
-
-      .card-body {
-        .card-title {
-          margin-bottom: 2.5rem;
-          font-weight: $semiBold;
-          line-height: 1.4;
-          color: $primaryColor;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-
-          @include resFont(1.8, 2);
-        }
-
-        .card-meta {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          font-size: 1.4rem;
-
-          .meta-author {
-            font-weight: $regular;
-          }
-        }
-      }
-    }
-  }
-
-  // Block Staggered Blog
-  .block-staggered-blog {
-    max-width: 120rem;
-    margin-left: auto;
-    margin-right: auto;
-
-    .staggered-list {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .staggered-item {
-      display: flex;
-      align-items: center;
-
-      &--even {
-        flex-direction: row-reverse;
-
-        @include maxWidth($md) {
-          flex-direction: column-reverse;
-          margin-top: 3rem;
-          margin-bottom: 3rem;
-        }
-      }
-
-      &__content {
-        flex: 1;
-
-        .staggered-item__title {
-          padding: 0 6rem;
-          margin-bottom: 2rem;
-          font-weight: $bold;
-          line-height: 1.2;
-
-          a {
-            color: inherit;
-            text-decoration: none;
-          }
-        }
-
-        .staggered-item__desc {
-          font-size: 1.6rem;
-          padding: 0 6rem;
-        }
-      }
-
-      &__image {
-        flex: 1;
-        width: 100%;
-
-        a {
-          display: block;
-          border-radius: 4rem;
-          overflow: hidden;
-          background: #f9f9f9;
-          aspect-ratio: 4/3;
-
-          @include maxWidth($md) {
-            border-radius: 2rem;
-          }
-        }
-
-        img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          display: block;
-          transition: transform 0.5s ease;
-          cursor: unset;
-        }
-      }
-
-      @include maxWidth($md) {
-        flex-direction: column-reverse;
-        gap: 3rem;
-        text-align: center;
-      }
-    }
-
-    &.editor-view {
-      .staggered-item {
-        margin-bottom: 4rem;
-      }
-    }
-  }
-
-  // Statement Block
-  .block-statement {
-    text-align: center;
-
-    .statement-subtitle {
-      margin-bottom: 3rem;
-      font-size: 1.4rem;
-      font-weight: $semiBold;
-      letter-spacing: 0.3em;
-      color: $primaryColor;
-      text-transform: uppercase;
-      opacity: 0.6;
-    }
-
-    .statement-title {
-      font-family: $primaryFont;
-      font-weight: $bold;
-      line-height: 1.1;
-      color: $primaryColor;
-      max-width: 100rem;
-      margin: 0 auto;
-      letter-spacing: -0.02em;
-    }
-  }
-
-  // Process Block
-  .block-process {
-
-    .process-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 3rem;
-
-      @include maxWidth($md) {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 5rem;
-      }
-
-      @include maxWidth($sm) {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .process-item {
-      position: relative;
-      padding: 4rem;
-      background-color: #fff;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-      border-radius: 2rem;
-      transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
-
-      &:hover {
-        transform: translateY(-1rem);
-        background: #fff;
-        box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.08);
-        border-color: transparent;
-
-        .process-num {
-          color: $primaryColor;
-          transform: scale(1.1);
-        }
-      }
-    }
-
-    .process-num {
-      font-size: 6rem;
-      font-weight: $bold;
-      color: rgba(0, 0, 0, 0.05);
-      margin-bottom: 2rem;
-      line-height: 1;
-      transition: all 0.4s ease;
-    }
-
-    .process-step-title {
-      font-size: 2.4rem;
-      font-weight: $bold;
-      margin-bottom: 1.5rem;
-      color: $primaryColor;
-    }
-
-    .process-step-desc {
-      font-size: 1.6rem;
-      line-height: 1.6;
-    }
-  }
-
-  // Tech List Block
-  .block-tech-list {
-    .tech-list-grid {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      gap: 5rem;
-
-      @include maxWidth($md) {
-        gap: 3rem;
-      }
-
-      @include maxWidth($sm) {
-        gap: 2rem;
-      }
-    }
-
-    .tech-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      transition: all 0.3s ease;
-      padding: 2rem 3rem;
-      border-radius: 1.5rem;
-      border: 1px solid transparent;
-
-      &:hover {
-        transform: translateY(-0.5rem);
-        background: #fff;
-        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.05);
-        
-        .tech-icon-wrapper img {
-          filter: grayscale(0%) opacity(1);
-        }
-      }
-    }
-
-    .tech-icon-wrapper {
-      margin-bottom: 1.5rem;
-      height: 4.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      img {
-        max-height: 100%;
-        width: auto;
-        object-fit: contain;
-        filter: grayscale(100%) opacity(0.6);
-        transition: all 0.3s ease;
-      }
-
-      .tech-placeholder {
-        font-size: 4rem;
-        width: 4rem;
-        height: 4rem;
-        color: rgba(0,0,0,0.3);
-      }
-    }
-
-    .tech-name {
-      font-size: 1.6rem;
-      font-weight: $semiBold;
-      color: $primaryColor;
     }
   }
 
@@ -781,331 +279,38 @@
       color: #888;
     }
   }
-
-  // Marquee Block
-  .block-marquee {
-    background-color: $primaryColor;
-    margin: 3rem 0;
-    padding: 1rem 0;
-    overflow: hidden;
-    white-space: nowrap;
-    position: relative;
-    display: flex;
-    align-items: center;
-
-    .marquee-inner {
-      display: flex;
-      width: max-content;
-      animation: marquee-scroll 40s linear infinite;
-    }
-
-    .marquee-item {
-      font-weight: $bold;
-      color: #fff;
-      text-transform: uppercase;
-      font-family: $primaryFont;
-      opacity: 1;
-      letter-spacing: 0.05em;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      transition: opacity 0.3s ease;
-
-      .marquee-sep {
-        margin: 0 4rem;
-        opacity: 0.3;
-      }
-
-      @include resFont(2, 2.6);
-    }
-
-    &:hover .marquee-inner {
-      animation-play-state: paused;
-    }
-  }
-
-  // Project Block
-  .laca-project-block {
-    &__grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 3.5rem;
-
-      @include maxWidth($md) {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      @include maxWidth($sm) {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    &__item {
-      &.hidden-on-mobile {
-        @include maxWidth($md) {
-          display: none !important;
-        }
-      }
-      &.hidden-on-desktop {
-        @media (min-width: #{$md + 1}px) {
-          display: none !important;
-        }
-      }
-
-      .laca-project-block__card-link {
-        display: block;
-        text-decoration: none;
-        color: inherit;
-        
-        .laca-project-block__image-wrap {
-          position: relative;
-          width: 100%;
-          background: #f8f8f8;
-          border-radius: 1.5rem;
-          overflow: hidden;
-          aspect-ratio: 1 / 1;
-          
-          .laca-project-block__img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-            transition: transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
-            position: relative;
-            z-index: 1;
-          }
-
-          .laca-project-block__hover-img-wrap {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            border-radius: 1.5rem;
-            z-index: 5;
-            pointer-events: none;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.4s ease, visibility 0.4s ease;
-
-            .laca-project-block__hover-img {
-              width: 100%;
-              height: auto;
-              min-height: 100%;
-              object-fit: initial;
-              display: block;
-              position: absolute;
-              top: 0;
-              left: 0;
-              transform: translateY(0);
-              will-change: transform, top;
-              transition: top 6s linear, transform 6s linear;
-            }
-          }
-        }
-
-        &:hover {
-          .laca-project-block__img {
-            transform: scale(1.05);
-          }
-          
-          .laca-project-block__hover-img-wrap {
-            opacity: 1;
-            visibility: visible;
-
-            .laca-project-block__hover-img {
-              top: 100%;
-              transform: translateY(-100%);
-            }
-          }
-        }
-      }
-    }
-
-    &__header {
-      margin-bottom: 5rem;
-    }
-
-    &__title {
-      font-weight: $bold;
-      line-height: 1.3;
-      margin-bottom: 2rem;
-      @include resFont(1.8, 2);
-    }
-
-    &__desc {
-      @include resFont(1.5, 1.8);
-      color: rgba(#000, 0.6);
-      max-width: 60rem;
-    }
-
-    &__tabs {
-      margin-bottom: 4rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.5rem;
-      justify-content: center;
-
-      .tab-item {
-        padding: 0;
-        background: transparent;
-        border: none;
-        color: rgba(#000, 0.4);
-        font-family: $primaryFont;
-        font-weight: $medium;
-        font-size: 1.6rem;
-        cursor: pointer;
-        position: relative;
-        transition: all 0.3s ease;
-
-        &::after {
-          content: "";
-          position: absolute;
-          bottom: -0.5rem;
-          left: 0;
-          width: 100%;
-          height: 1px;
-          background: $primaryColor;
-          transform: scaleX(0);
-          transform-origin: right;
-          transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-        }
-
-        &:hover, &.is-active {
-          color: $primaryColor;
-        }
-
-        &.is-active::after {
-          transform: scaleX(1);
-          transform-origin: left;
-        }
-      }
-    }
-
-    &__grid-wrapper {
-      position: relative;
-      min-height: 300px;
-    }
-
-    .laca-skeleton-loader {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: grid;
-      grid-template-columns: var(--grid-cols, repeat(3, 1fr));
-      gap: 3.5rem;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s ease;
-      z-index: 5;
-
-      @include maxWidth($md) { --grid-cols: repeat(2, 1fr); }
-      @include maxWidth($sm) { --grid-cols: 1fr; }
-
-      &.is-loading {
-        opacity: 1;
-        pointer-events: auto;
-        background: $backgroundColor;
-      }
-
-      &::before, &::after {
-        content: "";
-        background: linear-gradient(90deg, transparent, rgba(#000, 0.05), transparent);
-        background-size: 200% 100%;
-        animation: skeleton-blink 1.5s infinite;
-        border-radius: 1.5rem;
-        aspect-ratio: 1/1;
-      }
-    }
-
-    &__footer {
-      margin-top: 5rem;
-    }
-  }
-
-  @keyframes skeleton-blink {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
-
-  // Button Block
-  .block-button {
-    display: flex;
-    width: 100%;
-
-    &.align-left { justify-content: flex-start; text-align: left; }
-    &.align-center { justify-content: center; text-align: center; }
-    &.align-right { justify-content: flex-end; text-align: right; }
-
-    .btn.is-full-width {
-      width: 100%;
-    }
-  }
-
-
-  @keyframes marquee-scroll {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-  }
-
-  .laca-project-block {
-    &.editor-view {
-      .laca-editor-placeholder {
-        grid-column: 1 / -1;
-        padding: 5rem;
-        text-align: center;
-        background: #f9f9f9;
-        border: 2px dashed #ccc;
-        border-radius: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 1.5rem;
-        color: #666;
-
-        p {
-          margin: 0;
-          font-size: 1.4rem;
-        }
-      }
-    }
-  }
 }
 
 // Apply block styles at root level for theme
 @include block-styles;
 
+// [data-theme="dark"], .dark {
+//   .block-marquee {
+//     background-color: #fff;
+//     .marquee-item {
+//       color: #000;
+//       .marquee-sep {
+//         color: rgba(0,0,0,0.3);
+//       }
+//     }
+//   }
 
-[data-theme="dark"], .dark {
-  .block-marquee {
-    background-color: #fff;
-    .marquee-item {
-      color: #000;
-      .marquee-sep {
-        color: rgba(0,0,0,0.3);
-      }
-    }
-  }
-
-  .laca-project-block {
-    &__tabs {
-      .tab-item {
-        color: rgba(#fff, 0.4);
-        &::after { background: #fff; }
-        &:hover, &.is-active { color: #fff; }
-      }
-    }
-    &__item .laca-project-block__image-wrap {
-      background: #1a1a1a;
-    }
-    .laca-skeleton-loader {
-      &.is-loading { background: var(--bg-color-dark); }
-      &::before, &::after {
-        background: linear-gradient(90deg, transparent, rgba(#fff, 0.05), transparent);
-      }
-    }
-  }
-}
+//   .laca-project-block {
+//     &__tabs {
+//       .tab-item {
+//         color: rgba(#fff, 0.4);
+//         &::after { background: #fff; }
+//         &:hover, &.is-active { color: #fff; }
+//       }
+//     }
+//     &__item .laca-project-block__image-wrap {
+//       background: #1a1a1a;
+//     }
+//     .laca-skeleton-loader {
+//       &.is-loading { background: var(--bg-color-dark); }
+//       &::before, &::after {
+//         background: linear-gradient(90deg, transparent, rgba(#fff, 0.05), transparent);
+//       }
+//     }
+//   }
+// }

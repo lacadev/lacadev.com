@@ -38,7 +38,7 @@ html {
   top: 0;
   left: 0;
   width: 100%;
-  padding: 2rem 0;
+  padding: 1rem 0;
   transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), background-color 0.3s ease, padding 0.3s ease, box-shadow 0.3s ease;
 
   &--hidden {
@@ -49,12 +49,18 @@ html {
     background-color: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
-    padding: 1.5rem 0;
+    padding: 0;
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
 
     html[data-theme="dark"] &,
     .dark & {
       background-color: rgba(17, 17, 17, 0.8);
+    }
+
+    .header__menu-list {
+        & > li > a {
+          padding: 2.5rem 0;
+        }
     }
   }
 
@@ -271,9 +277,7 @@ html {
       font-size: 1.4rem;
       font-weight: $semiBold;
       line-height: normal;
-      color: $primaryColor;
       text-transform: uppercase;
-      border: 1px solid $primaryColor;
       border-radius: 3rem;
 
       svg {
