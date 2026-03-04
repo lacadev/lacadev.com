@@ -114,16 +114,16 @@ if (!defined('ABSPATH')) {
 
 	<div class="wrapper" id="swup">
         <?php if (!is_404()) : ?>
-		<header id="header">
+		<header class="header" id="header">
 			<div class="container">
-                <div class="header-inner">
+                <div class="header__inner">
                     <!-- Main menu -->
-                    <div class="pc-menu">
+                    <div class="header__menu-desktop">
                         <?php
-                        echo '<nav class="nav-menu" aria-label="' . esc_attr__('Main menu', 'laca') . '">';
+                        echo '<nav class="header__nav" aria-label="' . esc_attr__('Main menu', 'laca') . '">';
                             wp_nav_menu([
                                 'theme_location' => 'main-menu',
-                                'menu_class'     => 'main-menu',
+                                'menu_class'     => 'header__menu-list',
                                 'container'      => false,
                                 'items_wrap'     => '<ul class="%2$s">%3$s</ul>',
                                 'walker'         => new Laca_Menu_Walker(),
@@ -132,9 +132,9 @@ if (!defined('ABSPATH')) {
                         ?>
                     </div>
 
-                    <div class="mobile-menu">
-                        <div class="act-menu not-active" id="btn-hamburger">
-                            <div class="burger-icon">
+                    <div class="header__menu-mobile">
+                        <div class="header__hamburger" id="btn-hamburger">
+                            <div class="header__hamburger-icon">
                                 <span></span>
                                 <span></span>
                                 <span></span>
@@ -149,30 +149,31 @@ if (!defined('ABSPATH')) {
                     $logo_url = wp_get_attachment_image_url($logo_id, 'full');
                     $logo_dark_url = wp_get_attachment_image_url($logo_dark_id, 'full');
                     ?>
-                    <div class="header-logo">
-                        <a href="<?php echo esc_url(home_url('/')); ?>">
+                    <div class="header__logo">
+                        <a href="<?php echo esc_url(home_url('/')); ?>" class="header__logo-link">
                             <?php if ($logo_url) : ?>
-                                <img src="<?php echo esc_url($logo_url); ?>" class="light" alt="<?php echo esc_attr(get_bloginfo('name')); ?>">
+                                <img src="<?php echo esc_url($logo_url); ?>" class="header__logo-img header__logo-img--light" alt="<?php echo esc_attr(get_bloginfo('name')); ?>">
                             <?php endif; ?>
                             <?php if ($logo_dark_url) : ?>
-                                <img src="<?php echo esc_url($logo_dark_url); ?>" class="dark" alt="<?php echo esc_attr(get_bloginfo('name')); ?>">
+                                <img src="<?php echo esc_url($logo_dark_url); ?>" class="header__logo-img header__logo-img--dark" alt="<?php echo esc_attr(get_bloginfo('name')); ?>">
                             <?php endif; ?>
                         </a>
                     </div>
 
-                    <div class="language-search">
+                    <div class="header__actions">
                         <!-- search -->
-                        <!-- <div class="header__bottom-search">
-                            <div class="header__bottom-search-inner">
-                                <form class="search-box" method="get" role="search" aria-label="<?php esc_attr_e('Tìm kiếm', 'laca'); ?>" action="<?php echo esc_url(home_url('/')) ?>">
+                        <!-- <div class="header__search">
+                            <div class="header__search-inner">
+                                <form class="header__search-box" method="get" role="search" aria-label="<?php esc_attr_e('Tìm kiếm', 'laca'); ?>" action="<?php echo esc_url(home_url('/')) ?>">
                                     <label for="search-input" class="screen-reader-text"><?php esc_html_e('Từ khóa tìm kiếm', 'laca'); ?></label>
                                     <input type="text" 
                                             id="search-input"
                                             name="s"
+                                            class="header__search-input"
                                             placeholder="<?php echo esc_attr__('Tìm kiếm ...', 'laca'); ?>" 
                                             aria-label="<?php esc_attr_e('Nhập từ khóa tìm kiếm', 'laca'); ?>"/>
-                                    <button type="reset" aria-label="<?php esc_attr_e('Xóa tìm kiếm', 'laca'); ?>"></button>
-                                    <div class="search-results" 
+                                    <button type="reset" class="header__search-reset" aria-label="<?php esc_attr_e('Xóa tìm kiếm', 'laca'); ?>"></button>
+                                    <div class="header__search-results" 
                                             role="status" 
                                             aria-live="polite" 
                                             aria-atomic="true"></div>
@@ -184,15 +185,15 @@ if (!defined('ABSPATH')) {
                         <?php theLanguageSwitcher(); ?>
 
                         <!-- dark mode -->
-                        <div id="darkmode" class="btn">
-                            <div class="btn-darkmode btn-darkmode-1"></div>
-                            <div class="btn-darkmode btn-darkmode-2"></div>
-                            <label class="darkmode-icon">
-                                <input type="checkbox" 
+                        <div id="darkmode" class="header__darkmode btn">
+                            <div class="header__darkmode-bg header__darkmode-bg--1"></div>
+                            <div class="header__darkmode-bg header__darkmode-bg--2"></div>
+                            <label class="header__darkmode-toggle">
+                                <input class="header__darkmode-input" type="checkbox" 
                                     aria-label="<?php esc_attr_e('Chuyển chế độ tối/sáng', 'laca'); ?>" 
                                     role="switch" 
                                     aria-checked="false"/>
-                                <div></div>
+                                <div class="header__darkmode-slider"></div>
                             </label>
                         </div>
                     </div>
@@ -201,16 +202,16 @@ if (!defined('ABSPATH')) {
 			</div>
 
             <!-- Mobile Overlay Menu -->
-            <div class="mobile-overlay">
-                <div class="mobile-overlay-bg"></div>
-                <div class="mobile-overlay-inner">
+            <div class="header__overlay">
+                <div class="header__overlay-bg"></div>
+                <div class="header__overlay-inner">
                     <?php theLanguageSwitcher(); ?>
-                    <div class="mobile-nav-label"><?php _e('NAVIGATION', 'laca'); ?></div>
+                    <div class="header__overlay-label"><?php _e('NAVIGATION', 'laca'); ?></div>
                     <?php
-                    echo '<nav class="nav-menu">';
+                    echo '<nav class="header__overlay-nav">';
                         wp_nav_menu([
                             'theme_location' => 'main-menu',
-                            'menu_class'     => 'main-menu',
+                            'menu_class'     => 'header__overlay-menu-list',
                             'container'      => false,
                             'items_wrap'     => '<ul class="%2$s">%3$s</ul>',
                             'walker'         => new Laca_Menu_Walker(),
@@ -218,10 +219,10 @@ if (!defined('ABSPATH')) {
                     echo '</nav>';
                     ?>
                     
-                    <div class="mobile-footer">
-                        <div class="mobile-socials">
-                            <a href="#" target="_blank">Facebook</a>
-                            <a href="#" target="_blank">Instagram</a>
+                    <div class="header__overlay-footer">
+                        <div class="header__overlay-socials">
+                            <a href="#" target="_blank" class="header__overlay-social-link">Facebook</a>
+                            <a href="#" target="_blank" class="header__overlay-social-link">Instagram</a>
                         </div>
                     </div>
                 </div>

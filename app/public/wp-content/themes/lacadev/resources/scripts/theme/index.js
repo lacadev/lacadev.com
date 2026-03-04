@@ -265,7 +265,7 @@ function initAnimations() {
 function initHoverService() {}
 
 function initToggleDarkMode() {
-	const toggleInput = document.querySelector( '.darkmode-icon input' );
+	const toggleInput = document.querySelector( '.header__darkmode-input' );
 	const rootElement = document.documentElement;
 	const prefersDark = window.matchMedia(
 		'(prefers-color-scheme: dark)'
@@ -366,7 +366,7 @@ function initHeaderScroll() {
  */
 function initMobileMenu() {
 	const burgerBtn = document.getElementById( 'btn-hamburger' );
-	const overlay = document.querySelector( '.mobile-overlay' );
+	const overlay = document.querySelector( '.header__overlay' );
 
 	if ( ! burgerBtn || ! overlay ) {
 		return;
