@@ -34,6 +34,7 @@ new \App\Settings\AdminSettings();
 new \App\Settings\AutoDownloadImage();
 new \App\Settings\ThemeSettings();
 new \App\Settings\LacaTools\Optimize();
+new \App\Settings\LacaTools\ManagementExperience();
 
 // phpcs:disable
 /**

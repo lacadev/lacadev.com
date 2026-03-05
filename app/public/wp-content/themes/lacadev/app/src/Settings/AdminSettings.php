@@ -922,19 +922,68 @@ class AdminSettings
 						->set_help_text('Bot thường < 0.5. Người dùng thật thường > 0.5.'),
 				]);
 
-			Container::make('theme_options', __('Login Socials', 'laca'))
-			->set_page_parent($options)
-			->set_page_file(__('laca-login-socials', 'laca'))
-			->add_tab(__('Google', 'laca'), [
-				Field::make('checkbox', 'enable_login_google', __('Bật Login Google', 'laca')),
-				Field::make('text', 'google_client_id', __('Client ID', 'laca'))
-					->set_width(50),
-				Field::make('text', 'google_client_secret', __('Client Secret', 'laca'))
-					->set_width(50),
-				Field::make('text', 'google_redirect_uri', __('Redirect URI', 'laca'))
-					->set_attribute('readOnly', true)
-					->set_default_value(home_url('/wp-admin/admin-ajax.php?action=social_login_callback&driver=google')),
-			]);
-		});
+            Container::make('theme_options', __('Login Socials', 'laca'))
+            ->set_page_parent($options)
+            ->set_page_file(__('laca-login-socials', 'laca'))
+            ->add_tab(__('Google', 'laca'), [
+                Field::make('checkbox', 'enable_login_google', __('Bật Login Google', 'laca')),
+                Field::make('text', 'google_client_id', __('Client ID', 'laca'))
+                    ->set_width(50),
+                Field::make('text', 'google_client_secret', __('Client Secret', 'laca'))
+                    ->set_width(50),
+                Field::make('text', 'google_redirect_uri', __('Redirect URI', 'laca'))
+                    ->set_attribute('readOnly', true)
+                    ->set_default_value(home_url('/wp-admin/admin-ajax.php?action=social_login_callback&driver=google')),
+            ]);
+
+            // Workspace / HD Sử dụng & Dashboard Widgets Settings
+            Container::make('theme_options', __('Quản trị & HD Sử dụng', 'laca'))
+                ->set_page_parent($options)
+                ->set_page_file(__('laca-management-settings', 'laca'))
+                ->add_tab(__('Dashboard Widget', 'laca'), [
+                    Field::make('html', 'dashboard_widget_desc')
+                        ->set_html('<div class="carbon-field-description">Cấu hình hiển thị Widget <b>"Tổng hợp Nội dung"</b> trên màn hình Dashboard chính.</div>'),
+                    
+                    Field::make('multiselect', 'dashboard_widget_post_types', __('Các Post Type hiển thị', 'laca'))
+                        ->set_options(function() {
+                            $types = get_post_types(['public' => true], 'objects');
+                            $options = [];
+                            foreach ($types as $pt) {
+                                if (in_array($pt->name, ['attachment'])) continue;
+                                $options[$pt->name] = $pt->label;
+                            }
+                            return $options;
+                        })
+                        ->set_default_value(['post']),
+
+                    Field::make('text', 'dashboard_widget_limit', __('Số lượng bài hiển thị', 'laca'))
+                        ->set_attribute('type', 'number')
+                        ->set_default_value('5')
+                        ->set_width(50),
+                ])
+                ->add_tab(__('Nội dung HD Sử dụng', 'laca'), [
+                    Field::make('html', 'help_page_desc')
+                        ->set_html('<div class="carbon-field-description">Nội dung này sẽ hiển thị ở menu <b>"HD Sử dụng"</b> dành cho khách hàng.</div>'),
+
+                    Field::make('text', 'help_page_title', __('Tiêu đề trang', 'laca'))
+                        ->set_default_value('Hướng dẫn quản trị Website Professional'),
+                        
+                    Field::make('textarea', 'help_page_intro', __('Đoạn giới thiệu', 'laca'))
+                        ->set_default_value('Chào mừng bạn đến với hệ thống quản trị website nâng cao. Hệ thống đã được tối ưu để bạn quản lý nội dung dễ dàng nhất.'),
+
+                    Field::make('complex', 'help_page_blocks', __('Các khối hướng dẫn (Blog, WooCommerce...)', 'laca'))
+                        ->set_layout('tabbed-horizontal')
+                        ->add_fields([
+                            Field::make('text', 'title', __('Tiêu đề khối', 'laca')),
+                            Field::make('color', 'border_color', __('Màu viền (Border top)', 'laca'))->set_default_value('#2271b1'),
+                            Field::make('rich_text', 'content', __('Nội dung hướng dẫn (Link, Video, Text)', 'laca')),
+                        ]),
+
+                    Field::make('separator', 'help_separator', __('Thông tin hỗ trợ kỹ thuật', 'laca')),
+                    Field::make('text', 'help_support_phone', __('Điện thoại/Zalo', 'laca')),
+                    Field::make('text', 'help_support_email', __('Email', 'laca')),
+                    Field::make('text', 'help_support_website', __('Website', 'laca')),
+                ]);
+        });
 	}
 }

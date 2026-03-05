@@ -11,6 +11,20 @@ class ThemeSettings {
         $this->AddActiveClassToCurrentMenu();
         $this->addHeaderData();
         $this->addFooterData();
+        $this->trackPostViews();
+    }
+
+    /**
+     * Tự động tăng lượt xem khi vào trang single
+     */
+    public function trackPostViews() {
+        add_action('wp_head', function() {
+            if (is_single()) {
+                if (function_exists('updateViewCount')) {
+                    updateViewCount(get_the_ID());
+                }
+            }
+        });
     }
 
     public function useGmailSmtp() {
