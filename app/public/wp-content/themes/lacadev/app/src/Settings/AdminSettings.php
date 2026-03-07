@@ -236,7 +236,7 @@ class AdminSettings
 		add_action('admin_bar_menu', static function ($wp_admin_bar) use ($author) {
 			$args = [
 				'id'    => 'logo_author',
-				'title' => '<img src="' . get_site_url() . "/wp-content/themes/lacadev/resources/images/dev/moomsdev-black.png" . '" class="logo-admin-bar" alt="' . AUTHOR['name'] . '">',
+				'title' => '<img src="' . get_site_url() . "/wp-content/themes/lacadev/resources/images/dev/moomsdev-white.png" . '" class="logo-admin-bar" alt="' . AUTHOR['name'] . '">',
 				'href'  => $author['website'],
 				'meta'  => [
 					'target' => '_blank',
@@ -946,14 +946,15 @@ class AdminSettings
                     
                     Field::make('multiselect', 'dashboard_widget_post_types', __('Các Post Type hiển thị', 'laca'))
                         ->set_options(function() {
-                            $types = get_post_types(['public' => true], 'objects');
+                            $types = get_post_types(['public' => true, 'show_in_menu' => true], 'objects');
                             $options = [];
                             foreach ($types as $pt) {
-                                if (in_array($pt->name, ['attachment'])) continue;
+                                if (in_array($pt->name, ['attachment', 'wp_block', 'wp_template', 'wp_template_part'])) continue;
                                 $options[$pt->name] = $pt->label;
                             }
                             return $options;
                         })
+                        ->set_help_text(__('Để trống để tự động hiển thị tất cả các loại nội dung quan trọng (Posts, Services, Projects, Properties...).', 'laca'))
                         ->set_default_value(['post']),
 
                     Field::make('text', 'dashboard_widget_limit', __('Số lượng bài hiển thị', 'laca'))

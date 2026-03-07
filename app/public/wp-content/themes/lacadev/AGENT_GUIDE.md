@@ -74,6 +74,12 @@ Dưới đây là danh sách các kỹ năng chuyên biệt đã được tích 
 | **wp-block-development** | Hỗ trợ chuyên sâu phát triển Block (Gutenberg): metadata, attributes, render.php. | `@wp-block-development create dynamic block` | Tạo Gutenberg blocks |
 | **wp-rest-api** | Phát triển và tối ưu hướng kết nối qua WordPress REST API endpoints. | `@wp-rest-api create custom endpoint` | Tạo REST API endpoints |
 | **wp-interactivity-api** | Triển khai các tính năng tương tác (Interactivity API) hiện đại của WP. | `@wp-interactivity-api add interactive features` | Tính năng tương tác động |
+| **wp-block-themes** | Block theme: theme.json, templates/parts, patterns, style variations, Site Editor. | `@wp-block-themes edit theme.json` | Phát triển block themes |
+| **wp-abilities-api** | WordPress Abilities API: register abilities, categories, REST exposure, permission checks. | `@wp-abilities-api register new ability` | Quản lý Abilities API |
+| **wp-phpstan** | Cấu hình, chạy và fix PHPStan static analysis cho WordPress projects. | `@wp-phpstan fix phpstan errors` | Static analysis PHP |
+| **wp-playground** | WP Playground: disposable WP instances, blueprints, version switching, Xdebug. | `@wp-playground spin up test instance` | Test nhanh, không cần full stack |
+| **wp-project-triage** | Phân tích cấu trúc repo WP: xác định loại project, tooling, versions, signals. | `@wp-project-triage inspect repo` | Triage dự án WP |
+| **wp-wpcli-and-ops** | WP-CLI operations: search-replace, db, plugin/theme, cron, cache, multisite, automation. | `@wp-wpcli-and-ops safe search-replace` | Quản trị WP qua CLI |
 
 ### B. UI/UX & Frontend Design
 
@@ -84,6 +90,7 @@ Dưới đây là danh sách các kỹ năng chuyên biệt đã được tích 
 | **frontend-design** | Tạo giao diện production-grade với intentional aesthetics, high craft, non-generic visual identity. | `@frontend-design build distinctive UI` | UI có tính thẩm mỹ cao |
 | **tailwind-design-system** | Xây dựng design system scalable với Tailwind CSS, design tokens, component libraries. | `@tailwind-design-system setup component library` | Standardize UI components |
 | **accessibility-compliance-accessibility-audit** | Kiểm tra tuân thủ WCAG 2.2, inclusive design, assistive technology compatibility. | `@accessibility-compliance-accessibility-audit check WCAG` | Đảm bảo accessibility |
+| **wcag-audit-patterns** | WCAG 2.2 audit chi tiết: automated testing, manual verification, remediation guidance. | `@wcag-audit-patterns audit WCAG 2.2` | Audit accessibility nâng cao |
 | **react-ui-patterns** | Modern React UI patterns cho loading states, error handling, data fetching. | `@react-ui-patterns implement loading states` | React component patterns |
 
 ### C. Performance & Optimization
@@ -102,6 +109,8 @@ Dưới đây là danh sách các kỹ năng chuyên biệt đã được tích 
 | Kỹ năng | Mô tả chi tiết | Câu lệnh sử dụng ví dụ | Khi nào dùng |
 | :--- | :--- | :--- | :--- |
 | **security-auditor** | Chuyên gia bảo mật: vulnerability assessment, threat modeling, OAuth2/OIDC, OWASP standards. | `@security-auditor audit entire codebase` | Kiểm tra bảo mật toàn diện |
+| **frontend-security-coder** | XSS prevention, output sanitization, client-side security patterns. | `@frontend-security-coder review client security` | Bảo mật phía client |
+| **backend-security-coder** | Input validation, authentication, API security phía server. | `@backend-security-coder review server security` | Bảo mật phía server |
 | **wordpress-penetration-testing** | Kiểm tra bảo mật chuyên sâu WordPress: quét lỗ hổng, exploit vulnerabilities. | `@wordpress-penetration-testing scan for vulnerabilities` | Pentest WordPress site |
 | **web-security-testing** | Web application security testing: OWASP Top 10, injection, XSS, authentication flaws. | `@web-security-testing test for XSS` | Test web vulnerabilities |
 | **security-scanning-security-hardening** | Multi-layer security scanning và hardening across application, infrastructure, compliance. | `@security-scanning-security-hardening harden server` | Thắt chặt bảo mật hệ thống |
@@ -124,12 +133,16 @@ Dưới đây là danh sách các kỹ năng chuyên biệt đã được tích 
 | Kỹ năng | Mô tả chi tiết | Câu lệnh sử dụng ví dụ | Khi nào dùng |
 | :--- | :--- | :--- | :--- |
 | **php-pro** | Chuyên gia PHP: generators, iterators, SPL, modern OOP, high-performance optimization. | `@php-pro refactor complex logic` | Tối ưu PHP code |
+| **javascript-pro** | Master ES6+, async patterns, browser/Node compatibility, event loops, promises. | `@javascript-pro optimize async code` | JS nâng cao, async debugging |
 | **git-advanced-workflows** | Git nâng cao: rebasing, cherry-picking, bisect, worktrees, reflog, clean history. | `@git-advanced-workflows clean commit history` | Quản lý Git phức tạp |
 | **code-reviewer** | Elite code review expert: AI-powered analysis, security scanning, performance optimization. | `@code-reviewer review pull request` | Review code chất lượng cao |
 | **typescript-expert** | TypeScript expert: type-level programming, performance optimization, monorepo management. | `@typescript-expert fix type issues` | TypeScript advanced |
 | **cc-skill-coding-standards** | Tiêu chuẩn lập trình phổ quát, bao gồm các pattern tốt nhất cho Frontend. | `@cc-skill-coding-standards audit source code` | Đảm bảo chuẩn code chung |
 | **frontend-dev-guidelines** | Quy tắc frontend hiện đại, cấu trúc mã nguồn dễ bảo trì và mở rộng. | `@frontend-dev-guidelines setup component` | Thiết lập kiến trúc Frontend |
 | **clean-code** | Áp dụng nguyên lý Clean Code, giúp mã (đặc biệt CSS/SCSS) dễ đọc, tránh specificity issues. | `@clean-code refactor scss code` | Dọn dẹp, refactor mã nguồn |
+| **error-handling-patterns** | Xử lý lỗi graceful: exceptions, Result types, error propagation, degradation. | `@error-handling-patterns implement fallback` | Xử lý lỗi widget/block |
+| **i18n-localization** | Đa ngôn ngữ: detecting hardcoded strings, locale files, RTL support, translation. | `@i18n-localization check hardcoded strings` | Hỗ trợ đa ngôn ngữ |
+| **mobile-design** | Mobile-first design doctrine: touch interaction, performance, platform conventions, offline. | `@mobile-design audit mobile UX` | Thiết kế mobile-first |
 
 #### 🏛️ Kiến thức Chuyên sâu về CSS/SCSS Architecture
 Ngoài các module trên, Agent được trang bị kiến thức sâu rộng về các chuẩn CSS để duy trì mã nguồn Frontend bền vững:
@@ -310,5 +323,18 @@ Sau:   100 page loads = 1 giây total
 - 📄 `LOADER_TEST_COMMANDS.md` - Testing cheat sheet
 
 ---
-Cập nhật lần cuối bởi Antigravity Agent - Extended WordPress Skills Collection
+
+## 7. Workflows LacaDev
+
+Các workflow tự động hóa dành riêng cho theme LacaDev, có thể kích hoạt bằng lệnh `/`:
+
+| Workflow | Mô tả | Lệnh kích hoạt |
+| :--- | :--- | :--- |
+| **create-laca-block** | Tạo mới hoặc chuyển đổi Gutenberg Block chuẩn kiến trúc LacaDev. Bao gồm: block.json, edit.js, render.php, SCSS (BEM), và kiểm tra bảo mật/SEO. | `/create-laca-block` |
+| **review-legacy-theme** | Đánh giá, tư vấn và hướng dẫn nâng cấp (refactor) theme WordPress cũ lên chuẩn kiến trúc LacaDev. Audit bảo mật, hiệu năng, CSS Architecture. | `/review-legacy-theme` |
+
+---
+Cập nhật lần cuối bởi Antigravity Agent - Extended WordPress Skills Collection (2026-03-06)
+
+**Tổng cộng: 40+ skills chuyên biệt + 2 workflows + 11 WordPress Agent Skills**
 

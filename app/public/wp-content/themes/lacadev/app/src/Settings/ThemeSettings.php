@@ -19,7 +19,7 @@ class ThemeSettings {
      */
     public function trackPostViews() {
         add_action('wp_head', function() {
-            if (is_single()) {
+            if (is_single() || is_page()) {
                 if (function_exists('updateViewCount')) {
                     updateViewCount(get_the_ID());
                 }
@@ -65,8 +65,6 @@ class ThemeSettings {
      * Thêm class active vào current menu
      *
      * @param $classes
-     *
-     * @return array
      */
     public function AddActiveClassToCurrentMenu() {
         add_filter('nav_menu_css_class', static function ($classes) {

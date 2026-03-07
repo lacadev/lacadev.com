@@ -184,6 +184,11 @@ abstract class AbstractPostType
 			register_extended_post_type(
 				$this->post_type,
 				[
+					'public'              => true,
+					'show_ui'             => $this->showUi,
+					'capability_type'     => 'post',
+					'show_in_nav_menus'   => $this->showInNavMenus,
+					'show_in_menu'        => $this->showInMenu,
 					'show_in_feed'        => true,
 					'archive'             => [
 						'nopaging' => $this->archiveNoPaging,
@@ -198,7 +203,7 @@ abstract class AbstractPostType
 					'hierarchical'        => $this->hierarchical,
 					'show_in_rest'        => $this->showInRest,
 					'rest_base'           => $this->post_type,
-					'show_in_admin_bar'   => true,
+					'show_in_admin_bar'   => $this->show_in_admin_bar,
 					'menu_position'       => 25,
 					'has_archive' => true,
 					"rewrite" => ["with_front" => true],
