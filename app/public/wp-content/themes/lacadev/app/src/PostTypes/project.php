@@ -20,7 +20,7 @@ class Project extends \App\Abstracts\AbstractPostType
 
         $this->menuIcon         = 'dashicons-layout';
         $this->post_type        = 'project';
-        $this->singularName     = $this->pluralName = __('Project', 'laca');
+        $this->singularName     = $this->pluralName = __('Project manager', 'laca');
         $this->titlePlaceHolder = __('Tên dự án / website', 'laca');
         $this->slug             = 'projects';
         parent::__construct();

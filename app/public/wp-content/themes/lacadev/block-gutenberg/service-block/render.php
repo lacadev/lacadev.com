@@ -1,7 +1,14 @@
 <?php
 $title = !empty($attributes['title']) ? $attributes['title'] : '';
 $description = !empty($attributes['description']) ? $attributes['description'] : '';
+$post_type = !empty($attributes['postType']) ? $attributes['postType'] : 'service';
+$taxonomy = isset($attributes['taxonomy']) ? $attributes['taxonomy'] : '';
+$term_ids = !empty($attributes['termIds']) ? $attributes['termIds'] : [];
+$mode = !empty($attributes['mode']) ? $attributes['mode'] : 'manual';
+$post_ids = !empty($attributes['postIds']) ? $attributes['postIds'] : [];
+// Back-compat: old `serviceIds`
 $service_ids = !empty($attributes['serviceIds']) ? $attributes['serviceIds'] : [];
+$effective_post_ids = !empty($post_ids) ? $post_ids : $service_ids;
 
 $class_name = 'block-service';
 if (!empty($attributes['className'])) {
@@ -9,12 +16,12 @@ if (!empty($attributes['className'])) {
 }
 
 $services = [];
-if (!empty($service_ids)) {
+if (!empty($effective_post_ids)) {
     $query = new WP_Query([
-        'post_type' => 'service',
-        'post__in' => $service_ids,
+        'post_type' => $post_type,
+        'post__in' => $effective_post_ids,
         'posts_per_page' => -1,
-        'orderby' => 'post__in'
+        'orderby' => 'post__in',
     ]);
     if ($query->have_posts()) {
         $services = $query->posts;
@@ -73,5 +80,5 @@ if (!empty($service_ids)) {
                 </div>
             <?php endif; ?>
         <?php endif; ?>
-    </div>`
+    </div>
 </section>

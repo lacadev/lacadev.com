@@ -2,8 +2,8 @@
   "$schema": "https://schemas.wp.org/trunk/block.json",
   "apiVersion": 3,
   "name": "lacadev/service-block",
-  "title": "Laca Service",
-  "description": "Hiển thị danh sách dịch vụ",
+  "title": "Layout: Icon Cards",
+  "description": "Hiển thị danh sách nội dung dạng card + ký tự icon (chọn được Post Type + taxonomy)",
   "category": "lacadev-blocks",
   "icon": "megaphone",
   "editorScript": "lacadev-block-service-block-editor",
@@ -12,6 +12,26 @@
   "keywords": ["service", "laca"],
   "textdomain": "laca",
   "attributes": {
+    "postType": {
+      "type": "string",
+      "default": "service"
+    },
+    "taxonomy": {
+      "type": "string",
+      "default": ""
+    },
+    "termIds": {
+      "type": "array",
+      "default": []
+    },
+    "mode": {
+      "type": "string",
+      "default": "manual"
+    },
+    "postIds": {
+      "type": "array",
+      "default": []
+    },
     "title": {
       "type": "string",
       "default": "LA CÀ DEV CÓ GÌ"

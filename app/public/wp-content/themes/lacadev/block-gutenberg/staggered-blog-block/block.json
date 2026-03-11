@@ -2,8 +2,8 @@
   "$schema": "https://schemas.wp.org/trunk/block.json",
   "apiVersion": 3,
   "name": "lacadev/staggered-blog-block",
-  "title": "Staggered Blog",
-  "description": "Hiển thị bài viết theo dạng so le (alternating layout)",
+  "title": "Layout: Staggered List",
+  "description": "Hiển thị nội dung theo dạng so le (staggered/alternating). Chọn được Post Type + taxonomy.",
   "category": "lacadev-blocks",
   "icon": "layout",
   "editorScript": "lacadev-block-staggered-blog-block-editor",
@@ -12,6 +12,18 @@
   "keywords": ["blog", "post", "staggered", "laca"],
   "textdomain": "laca",
   "attributes": {
+    "postType": {
+      "type": "string",
+      "default": "post"
+    },
+    "taxonomy": {
+      "type": "string",
+      "default": "category"
+    },
+    "termIds": {
+      "type": "array",
+      "default": []
+    },
     "title": {
       "type": "string",
       "default": ""

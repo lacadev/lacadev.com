@@ -7,12 +7,16 @@ $title = !empty($attributes['title']) ? $attributes['title'] : '';
 $description = !empty($attributes['description']) ? $attributes['description'] : '';
 $mode = !empty($attributes['mode']) ? $attributes['mode'] : 'auto';
 $order_by = !empty($attributes['orderBy']) ? $attributes['orderBy'] : 'date';
+$post_type = !empty($attributes['postType']) ? $attributes['postType'] : 'post';
+$taxonomy = isset($attributes['taxonomy']) ? $attributes['taxonomy'] : 'category';
+$term_ids = !empty($attributes['termIds']) ? $attributes['termIds'] : [];
 $category_ids = !empty($attributes['categoryIds']) ? $attributes['categoryIds'] : [];
+$effective_term_ids = !empty($term_ids) ? $term_ids : $category_ids;
 $post_ids = !empty($attributes['postIds']) ? $attributes['postIds'] : [];
 $count = !empty($attributes['count']) ? $attributes['count'] : 3;
 
 $args = [
-    'post_type' => 'post',
+    'post_type' => $post_type,
     'post_status' => 'publish',
     'ignore_sticky_posts' => 1,
 ];
@@ -24,8 +28,14 @@ if ($mode === 'manual' && !empty($post_ids)) {
 } else {
     $args['posts_per_page'] = $count;
     
-    if (!empty($category_ids)) {
-        $args['category__in'] = $category_ids;
+    if (!empty($taxonomy) && !empty($effective_term_ids)) {
+        $args['tax_query'] = [
+            [
+                'taxonomy' => $taxonomy,
+                'field'    => 'term_id',
+                'terms'    => $effective_term_ids,
+            ],
+        ];
     }
 
     if ($order_by === 'rand') {

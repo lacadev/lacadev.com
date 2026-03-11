@@ -2,8 +2,8 @@
   "$schema": "https://schemas.wp.org/trunk/block.json",
   "apiVersion": 3,
   "name": "lacadev/blog-block",
-  "title": "Laca Blog",
-  "description": "Hiển thị danh sách bài viết blog",
+  "title": "Layout: Card Grid",
+  "description": "Hiển thị danh sách bài viết theo dạng card-grid (chọn được Post Type + taxonomy)",
   "category": "lacadev-blocks",
   "icon": "admin-post",
   "editorScript": "lacadev-block-blog-block-editor",
@@ -12,6 +12,18 @@
   "keywords": ["blog", "post", "laca"],
   "textdomain": "laca",
   "attributes": {
+    "postType": {
+      "type": "string",
+      "default": "post"
+    },
+    "taxonomy": {
+      "type": "string",
+      "default": "category"
+    },
+    "termIds": {
+      "type": "array",
+      "default": []
+    },
     "title": {
       "type": "string",
       "default": "Popular Blogs"

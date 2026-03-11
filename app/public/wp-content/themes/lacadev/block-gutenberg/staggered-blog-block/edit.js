@@ -20,6 +20,9 @@ import { useSelect } from '@wordpress/data';
 
 export default function Edit( { attributes, setAttributes } ) {
 	const {
+		postType,
+		taxonomy,
+		termIds,
 		title,
 		description,
 		mode,
@@ -35,21 +38,60 @@ export default function Edit( { attributes, setAttributes } ) {
 		className: 'block-staggered-blog editor-view',
 	} );
 
-	// Fetch categories
-	const categories = useSelect( ( select ) => {
-		return select( 'core' ).getEntityRecords( 'taxonomy', 'category', {
+	const postTypes = useSelect( ( select ) => {
+		const types = select( 'core' ).getPostTypes
+			? select( 'core' ).getPostTypes( { per_page: -1 } )
+			: [];
+		return ( types || [] )
+			.filter( ( t ) => t.viewable )
+			.map( ( t ) => ( {
+				label: t.labels?.singular_name || t.name,
+				value: t.slug,
+			} ) );
+	}, [] );
+
+	const taxonomies = useSelect( ( select ) => {
+		const list = select( 'core' ).getTaxonomies
+			? select( 'core' ).getTaxonomies( { per_page: -1 } )
+			: [];
+		return ( list || [] )
+			.filter(
+				( t ) =>
+					Array.isArray( t.types ) && t.types.includes( postType )
+			)
+			.map( ( t ) => ( {
+				label: t.labels?.singular_name || t.name,
+				value: t.slug,
+				restBase: t.rest_base || t.slug,
+			} ) );
+	}, [ postType ] );
+
+	const selectedTax = taxonomies.find( ( t ) => t.value === taxonomy );
+	const taxonomyRestBase = selectedTax?.restBase || taxonomy;
+
+	const terms = useSelect( ( select ) => {
+		if ( ! taxonomy ) {
+			return [];
+		}
+		return select( 'core' ).getEntityRecords( 'taxonomy', taxonomy, {
 			per_page: -1,
 			hide_empty: true,
 		} );
-	}, [] );
+	}, [ taxonomy ] );
 
-	// Fetch posts
-	const posts = useSelect( ( select ) => {
-		return select( 'core' ).getEntityRecords( 'postType', 'post', {
-			per_page: 20,
-			status: 'publish',
-		} );
-	}, [] );
+	// Back-compat
+	const effectiveTermIds =
+		termIds && termIds.length > 0 ? termIds : categoryIds || [];
+
+	const manualPosts = useSelect(
+		( select ) => {
+			return select( 'core' ).getEntityRecords( 'postType', postType, {
+				per_page: 50,
+				status: 'publish',
+			} );
+		},
+		[ postType ]
+	);
 
 	// Fetch posts based on attributes
 	const displayPosts = useSelect(
@@ -68,15 +110,17 @@ export default function Edit( { attributes, setAttributes } ) {
 				query.include = postIds;
 				query.orderby = 'include';
 			} else {
-				if ( categoryIds && categoryIds.length > 0 ) {
-					query.categories = categoryIds;
+				if ( taxonomy && effectiveTermIds && effectiveTermIds.length > 0 ) {
+					query[ taxonomyRestBase ] = effectiveTermIds
+						.map( ( id ) => String( id ) )
+						.join( ',' );
 				}
 				query.orderby = orderBy === 'rand' ? 'date' : orderBy;
 			}
 
-			return getEntityRecords( 'postType', 'post', query );
+			return getEntityRecords( 'postType', postType, query );
 		},
-		[ mode, postIds, count, orderBy, categoryIds ]
+		[ mode, postIds, count, orderBy, taxonomy, taxonomyRestBase, postType, effectiveTermIds ]
 	);
 
 	const toggleItem = ( list, id ) => {
@@ -94,6 +138,38 @@ export default function Edit( { attributes, setAttributes } ) {
 		<>
 			<InspectorControls>
 				<PanelBody title={ __( 'Cấu hình Staggered Blog', 'laca' ) }>
+					<SelectControl
+						label={ __( 'Post Type', 'laca' ) }
+						value={ postType }
+						options={ postTypes }
+						onChange={ ( value ) => {
+							setAttributes( {
+								postType: value,
+								taxonomy: '',
+								termIds: [],
+								categoryIds: [],
+								postIds: [],
+							} );
+						} }
+					/>
+					<SelectControl
+						label={ __( 'Taxonomy (lọc)', 'laca' ) }
+						value={ taxonomy }
+						options={ [
+							{ label: __( 'Không lọc', 'laca' ), value: '' },
+							...taxonomies.map( ( t ) => ( {
+								label: t.label,
+								value: t.value,
+							} ) ),
+						] }
+						onChange={ ( value ) =>
+							setAttributes( {
+								taxonomy: value,
+								termIds: [],
+								categoryIds: [],
+							} )
+						}
+					/>
 					<TextControl
 						label={ __( 'Tiêu đề block (Tùy chọn)', 'laca' ) }
 						value={ title }
@@ -135,7 +211,9 @@ export default function Edit( { attributes, setAttributes } ) {
 									{ __( 'Lọc theo chuyên mục:', 'laca' ) }
 								</strong>
 							</p>
-							{ ! categories ? (
+							{ ! taxonomy ? (
+								<p>{ __( 'Chọn taxonomy để bật bộ lọc.', 'laca' ) }</p>
+							) : ! terms ? (
 								<Spinner />
 							) : (
 								<div
@@ -147,19 +225,20 @@ export default function Edit( { attributes, setAttributes } ) {
 										marginBottom: '15px',
 									} }
 								>
-									{ categories.map( ( cat ) => (
+									{ terms.map( ( term ) => (
 										<CheckboxControl
-											key={ cat.id }
-											label={ cat.name }
-											checked={ categoryIds.includes(
-												cat.id
+											key={ term.id }
+											label={ term.name }
+											checked={ effectiveTermIds.includes(
+												term.id
 											) }
 											onChange={ () =>
 												setAttributes( {
-													categoryIds: toggleItem(
-														categoryIds,
-														cat.id
+													termIds: toggleItem(
+														effectiveTermIds,
+														term.id
 													),
+													categoryIds: [],
 												} )
 											}
 										/>
@@ -207,7 +286,7 @@ export default function Edit( { attributes, setAttributes } ) {
 									{ __( 'Chọn bài viết hiển thị:', 'laca' ) }
 								</strong>
 							</p>
-							{ ! posts ? (
+							{ ! manualPosts ? (
 								<Spinner />
 							) : (
 								<div
@@ -218,7 +297,7 @@ export default function Edit( { attributes, setAttributes } ) {
 										padding: '10px',
 									} }
 								>
-									{ posts.map( ( post ) => (
+									{ manualPosts.map( ( post ) => (
 										<CheckboxControl
 											key={ post.id }
 											label={ post.title.rendered }

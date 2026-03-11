@@ -2,8 +2,8 @@
   "$schema": "https://schemas.wp.org/trunk/block.json",
   "apiVersion": 3,
   "name": "lacadev/project-block",
-  "title": "Laca Project V2",
-  "description": "Hiển thị danh sách dự án (Project) với phân loại Tab",
+  "title": "Layout: Tabbed Grid",
+  "description": "Hiển thị nội dung dạng lưới + tab theo taxonomy (chọn được Post Type + taxonomy)",
   "category": "lacadev-blocks",
   "icon": "portfolio",
   "editorScript": "lacadev-block-project-block-editor",
@@ -12,6 +12,18 @@
   "keywords": ["project", "portfolio", "laca"],
   "textdomain": "laca",
   "attributes": {
+    "postType": {
+      "type": "string",
+      "default": "template"
+    },
+    "taxonomy": {
+      "type": "string",
+      "default": "template_cat"
+    },
+    "termIds": {
+      "type": "array",
+      "default": []
+    },
     "title": {
       "type": "string",
       "default": "Selected Works"

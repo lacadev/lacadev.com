@@ -10,42 +10,185 @@ import {
 	TextControl,
 	TextareaControl,
 	CheckboxControl,
+	SelectControl,
 	Placeholder,
 	Spinner,
 } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
 
 export default function Edit( { attributes, setAttributes } ) {
-	const { title, description, serviceIds, buttonText, buttonUrl } =
-		attributes;
+	const {
+		postType,
+		taxonomy,
+		termIds,
+		mode,
+		postIds,
+		serviceIds,
+		title,
+		description,
+		buttonText,
+		buttonUrl,
+	} = attributes;
 
 	const blockProps = useBlockProps( {
 		className: 'block-service editor-view',
 	} );
 
-	// Fetch services posts
-	const services = useSelect( ( select ) => {
-		return select( 'core' ).getEntityRecords( 'postType', 'service', {
-			per_page: -1,
-			status: 'publish',
-		} );
+	const postTypes = useSelect( ( select ) => {
+		const types = select( 'core' ).getPostTypes
+			? select( 'core' ).getPostTypes( { per_page: -1 } )
+			: [];
+		return ( types || [] )
+			.filter( ( t ) => t.viewable )
+			.map( ( t ) => ( {
+				label: t.labels?.singular_name || t.name,
+				value: t.slug,
+			} ) );
 	}, [] );
 
-	const toggleService = ( id ) => {
-		const newIds = [ ...serviceIds ];
-		if ( newIds.includes( id ) ) {
-			const index = newIds.indexOf( id );
-			newIds.splice( index, 1 );
-		} else {
-			newIds.push( id );
+	const taxonomies = useSelect( ( select ) => {
+		const list = select( 'core' ).getTaxonomies
+			? select( 'core' ).getTaxonomies( { per_page: -1 } )
+			: [];
+		return ( list || [] )
+			.filter(
+				( t ) =>
+					Array.isArray( t.types ) && t.types.includes( postType )
+			)
+			.map( ( t ) => ( {
+				label: t.labels?.singular_name || t.name,
+				value: t.slug,
+				restBase: t.rest_base || t.slug,
+			} ) );
+	}, [ postType ] );
+
+	const selectedTax = taxonomies.find( ( t ) => t.value === taxonomy );
+	const taxonomyRestBase = selectedTax?.restBase || taxonomy;
+
+	const terms = useSelect( ( select ) => {
+		if ( ! taxonomy ) {
+			return [];
 		}
-		setAttributes( { serviceIds: newIds } );
+		return select( 'core' ).getEntityRecords( 'taxonomy', taxonomy, {
+			per_page: -1,
+			hide_empty: true,
+		} );
+	}, [ taxonomy ] );
+
+	// Back-compat: old `serviceIds` maps to new `postIds`
+	const effectivePostIds =
+		postIds && postIds.length > 0 ? postIds : serviceIds || [];
+
+	const posts = useSelect(
+		( select ) => {
+			if ( mode === 'manual' ) {
+				return select( 'core' ).getEntityRecords( 'postType', postType, {
+					per_page: 50,
+					status: 'publish',
+				} );
+			}
+
+			const query = {
+				per_page: 50,
+				status: 'publish',
+			};
+
+			if ( taxonomy && termIds && termIds.length > 0 ) {
+				query[ taxonomyRestBase ] = termIds
+					.map( ( id ) => String( id ) )
+					.join( ',' );
+			}
+
+			return select( 'core' ).getEntityRecords( 'postType', postType, query );
+		},
+		[ postType, mode, taxonomy, termIds, taxonomyRestBase ]
+	);
+
+	const toggleItem = ( list, id ) => {
+		const newList = [ ...list ];
+		if ( newList.includes( id ) ) {
+			const index = newList.indexOf( id );
+			newList.splice( index, 1 );
+		} else {
+			newList.push( id );
+		}
+		return newList;
 	};
 
 	return (
 		<>
 			<InspectorControls>
 				<PanelBody title={ __( 'Cấu hình Dịch vụ', 'laca' ) }>
+					<SelectControl
+						label={ __( 'Post Type', 'laca' ) }
+						value={ postType }
+						options={ postTypes }
+						onChange={ ( value ) => {
+							setAttributes( {
+								postType: value,
+								taxonomy: '',
+								termIds: [],
+								mode: 'manual',
+								postIds: [],
+								serviceIds: [],
+							} );
+						} }
+					/>
+					<SelectControl
+						label={ __( 'Chế độ hiển thị', 'laca' ) }
+						value={ mode }
+						options={ [
+							{ label: __( 'Thủ công (Manual)', 'laca' ), value: 'manual' },
+							{ label: __( 'Tự động (Auto)', 'laca' ), value: 'auto' },
+						] }
+						onChange={ ( value ) =>
+							setAttributes( {
+								mode: value,
+								postIds: [],
+								serviceIds: [],
+							} )
+						}
+					/>
+					<SelectControl
+						label={ __( 'Taxonomy (lọc)', 'laca' ) }
+						value={ taxonomy }
+						options={ [
+							{ label: __( 'Không lọc', 'laca' ), value: '' },
+							...taxonomies.map( ( t ) => ( {
+								label: t.label,
+								value: t.value,
+							} ) ),
+						] }
+						onChange={ ( value ) =>
+							setAttributes( {
+								taxonomy: value,
+								termIds: [],
+							} )
+						}
+					/>
+					{ mode === 'auto' && taxonomy && (
+						<>
+							<p><strong>{ __( 'Lọc theo taxonomy:', 'laca' ) }</strong></p>
+							{ ! terms ? (
+								<Spinner />
+							) : (
+								<div style={ { maxHeight: '200px', overflowY: 'auto', border: '1px solid #ddd', padding: '10px', marginBottom: '15px' } }>
+									{ terms.map( ( term ) => (
+										<CheckboxControl
+											key={ term.id }
+											label={ term.name }
+											checked={ termIds.includes( term.id ) }
+											onChange={ () =>
+												setAttributes( {
+													termIds: toggleItem( termIds, term.id ),
+												} )
+											}
+										/>
+									) ) }
+								</div>
+							) }
+						</>
+					) }
 					<TextControl
 						label={ __( 'Tiêu đề', 'laca' ) }
 						value={ title }
@@ -91,24 +234,27 @@ export default function Edit( { attributes, setAttributes } ) {
 					<hr style={ { margin: '20px 0' } } />
 					<p>
 						<strong>
-							{ __( 'Chọn dịch vụ hiển thị:', 'laca' ) }
+							{ __( 'Chọn nội dung hiển thị:', 'laca' ) }
 						</strong>
 					</p>
-					{ ! services ? (
+					{ ! posts ? (
 						<Spinner />
 					) : (
 						<div
 							style={ { maxHeight: '300px', overflowY: 'auto' } }
 						>
-							{ services.map( ( service ) => (
+							{ posts.map( ( item ) => (
 								<CheckboxControl
-									key={ service.id }
-									label={ service.title.rendered }
-									checked={ serviceIds.includes(
-										service.id
+									key={ item.id }
+									label={ item.title.rendered }
+									checked={ effectivePostIds.includes(
+										item.id
 									) }
 									onChange={ () =>
-										toggleService( service.id )
+										setAttributes( {
+											postIds: toggleItem( effectivePostIds, item.id ),
+											serviceIds: [],
+										} )
 									}
 								/>
 							) ) }
@@ -140,7 +286,7 @@ export default function Edit( { attributes, setAttributes } ) {
 						/>
 					</div>
 
-					{ serviceIds.length === 0 ? (
+					{ effectivePostIds.length === 0 ? (
 						<Placeholder
 							icon="megaphone"
 							label={ __( 'Laca Service', 'laca' ) }
@@ -152,12 +298,12 @@ export default function Edit( { attributes, setAttributes } ) {
 						</Placeholder>
 					) : (
 						<div className="block-service__list">
-							{ ! services ? (
+							{ ! posts ? (
 								<Spinner />
 							) : (
-								services
+								posts
 									.filter( ( s ) =>
-										serviceIds.includes( s.id )
+										effectivePostIds.includes( s.id )
 									)
 									.map( ( service ) => (
 										<div

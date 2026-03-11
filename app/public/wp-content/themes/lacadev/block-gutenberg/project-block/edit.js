@@ -18,6 +18,9 @@ import { useSelect } from '@wordpress/data';
 
 export default function Edit( { attributes, setAttributes } ) {
 	const {
+		postType,
+		taxonomy,
+		termIds,
 		title,
 		description,
 		categoryIds,
@@ -32,18 +35,55 @@ export default function Edit( { attributes, setAttributes } ) {
 		className: 'laca-project-block editor-view',
 	} );
 
-	const categories = useSelect( ( select ) => {
-		return select( 'core' ).getEntityRecords( 'taxonomy', 'template_cat', {
+	const postTypes = useSelect( ( select ) => {
+		const types = select( 'core' ).getPostTypes
+			? select( 'core' ).getPostTypes( { per_page: -1 } )
+			: [];
+		return ( types || [] )
+			.filter( ( t ) => t.viewable )
+			.map( ( t ) => ( {
+				label: t.labels?.singular_name || t.name,
+				value: t.slug,
+			} ) );
+	}, [] );
+
+	const taxonomies = useSelect( ( select ) => {
+		const list = select( 'core' ).getTaxonomies
+			? select( 'core' ).getTaxonomies( { per_page: -1 } )
+			: [];
+		return ( list || [] )
+			.filter(
+				( t ) =>
+					Array.isArray( t.types ) && t.types.includes( postType )
+			)
+			.map( ( t ) => ( {
+				label: t.labels?.singular_name || t.name,
+				value: t.slug,
+				restBase: t.rest_base || t.slug,
+			} ) );
+	}, [ postType ] );
+
+	const selectedTax = taxonomies.find( ( t ) => t.value === taxonomy );
+	const taxonomyRestBase = selectedTax?.restBase || taxonomy;
+
+	const terms = useSelect( ( select ) => {
+		if ( ! taxonomy ) {
+			return [];
+		}
+		return select( 'core' ).getEntityRecords( 'taxonomy', taxonomy, {
 			per_page: -1,
 			hide_empty: true,
 		} );
-	}, [] );
+	}, [ taxonomy ] );
+
+	// Back-compat: old `categoryIds`
+	const effectiveTermIds =
+		termIds && termIds.length > 0 ? termIds : categoryIds || [];
 
 	const maxCount = Math.max( countDesktop, countMobile );
 
 	const { displayPosts, isLoading } = useSelect(
 		( select ) => {
-			console.log('--- Project Block Loading ---', { categoryIds, maxCount });
 			const { getEntityRecords, isResolving: isResolvingSelector } = select( 'core' );
 			const query = {
 				per_page: maxCount,
@@ -51,37 +91,67 @@ export default function Edit( { attributes, setAttributes } ) {
 				_embed: true,
 			};
 
-			if ( categoryIds && categoryIds.length > 0 ) {
-				// FORCE STRING FORMAT
-				query.template_cat = categoryIds.map(id => String(id)).join(',');
+			if ( taxonomy && effectiveTermIds && effectiveTermIds.length > 0 ) {
+				query[ taxonomyRestBase ] = effectiveTermIds.map(id => String(id)).join(',');
 			}
 
-			const records = getEntityRecords( 'postType', 'template', query );
-			const resolving = isResolvingSelector( 'getEntityRecords', [ 'postType', 'template', query ] );
+			const records = getEntityRecords( 'postType', postType, query );
+			const resolving = isResolvingSelector( 'getEntityRecords', [ 'postType', postType, query ] );
 			
 			return {
 				displayPosts: records || [],
 				isLoading: resolving,
 			};
 		},
-		[ maxCount, categoryIds, orderBy ]
+		[ maxCount, effectiveTermIds, taxonomy, taxonomyRestBase, postType, orderBy ]
 	);
 
 	const toggleCategory = ( id ) => {
-		const newList = [ ...categoryIds ];
+		const newList = [ ...effectiveTermIds ];
 		if ( newList.includes( id ) ) {
 			const index = newList.indexOf( id );
 			newList.splice( index, 1 );
 		} else {
 			newList.push( id );
 		}
-		setAttributes( { categoryIds: newList } );
+		setAttributes( { termIds: newList, categoryIds: [] } );
 	};
 
 	return (
 		<>
 			<InspectorControls>
 				<PanelBody title={ __( 'Cấu hình Project Block', 'laca' ) }>
+					<SelectControl
+						label={ __( 'Post Type', 'laca' ) }
+						value={ postType }
+						options={ postTypes }
+						onChange={ ( value ) => {
+							setAttributes( {
+								postType: value,
+								taxonomy: '',
+								termIds: [],
+								categoryIds: [],
+							} );
+						} }
+					/>
+					<SelectControl
+						label={ __( 'Taxonomy (Tab)', 'laca' ) }
+						value={ taxonomy }
+						options={ [
+							{ label: __( 'Không dùng tab', 'laca' ), value: '' },
+							...taxonomies.map( ( t ) => ( {
+								label: t.label,
+								value: t.value,
+							} ) ),
+						] }
+						onChange={ ( value ) =>
+							setAttributes( {
+								taxonomy: value,
+								termIds: [],
+								categoryIds: [],
+							} )
+						}
+					/>
 					<TextControl
 						label={ __( 'Tiêu đề block', 'laca' ) }
 						value={ title }
@@ -100,15 +170,17 @@ export default function Edit( { attributes, setAttributes } ) {
 					<hr />
 					
 					<p><strong>{ __( 'Chọn danh mục hiển thị (Tab)', 'laca' ) }</strong></p>
-					{ ! categories ? (
+					{ ! taxonomy ? (
+						<p>{ __( 'Chọn taxonomy để bật tab.', 'laca' ) }</p>
+					) : ! terms ? (
 						<Spinner />
 					) : (
 						<div style={ { maxHeight: '200px', overflowY: 'auto', border: '1px solid #ddd', padding: '10px', marginBottom: '15px' } }>
-							{ categories.map( ( cat ) => (
+							{ terms.map( ( cat ) => (
 								<CheckboxControl
 									key={ cat.id }
 									label={ cat.name }
-									checked={ categoryIds.includes( cat.id ) }
+									checked={ effectiveTermIds.includes( cat.id ) }
 									onChange={ () => toggleCategory( cat.id ) }
 								/>
 							) ) }
@@ -200,10 +272,10 @@ export default function Edit( { attributes, setAttributes } ) {
 						</div>
 					) }
 
-					{ categoryIds && categoryIds.length > 0 && (
+					{ taxonomy && effectiveTermIds && effectiveTermIds.length > 0 && (
 						<div className="laca-project-block__tabs">
 							<div className="tab-item is-active">{ __( 'All', 'laca' ) }</div>
-							{ categories && categories.filter(c => categoryIds.includes(c.id)).map(cat => (
+							{ terms && terms.filter(c => effectiveTermIds.includes(c.id)).map(cat => (
 								<div key={cat.id} className="tab-item">{cat.name}</div>
 							))}
 						</div>

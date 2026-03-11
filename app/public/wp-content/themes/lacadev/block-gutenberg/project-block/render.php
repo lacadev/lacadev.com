@@ -5,7 +5,11 @@
 
 $title          = ! empty( $attributes['title'] ) ? $attributes['title'] : '';
 $description    = ! empty( $attributes['description'] ) ? $attributes['description'] : '';
+$post_type      = ! empty( $attributes['postType'] ) ? $attributes['postType'] : 'template';
+$taxonomy       = array_key_exists( 'taxonomy', $attributes ) ? $attributes['taxonomy'] : 'template_cat';
+$term_ids       = ! empty( $attributes['termIds'] ) ? $attributes['termIds'] : [];
 $category_ids   = ! empty( $attributes['categoryIds'] ) ? $attributes['categoryIds'] : [];
+$effective_term_ids = ! empty( $term_ids ) ? $term_ids : $category_ids;
 $order_by       = ! empty( $attributes['orderBy'] ) ? $attributes['orderBy'] : 'date';
 $count_desktop  = ! empty( $attributes['countDesktop'] ) ? (int) $attributes['countDesktop'] : 6;
 $count_mobile   = ! empty( $attributes['countMobile'] ) ? (int) $attributes['countMobile'] : 4;
@@ -14,7 +18,7 @@ $max_count = max( $count_desktop, $count_mobile );
 
 // Prepare initial query for "All" tab
 $args = [
-	'post_type'           => 'template',
+	'post_type'           => $post_type,
 	'post_status'         => 'publish',
 	'ignore_sticky_posts' => 1,
 	'posts_per_page'      => $max_count,
@@ -34,12 +38,12 @@ if ( $order_by === 'rand' ) {
 }
 
 // If categories are selected, limit "All" tab to those categories
-if ( ! empty( $category_ids ) ) {
+if ( ! empty( $taxonomy ) && ! empty( $effective_term_ids ) ) {
 	$args['tax_query'] = [
 		[
-			'taxonomy' => 'template_cat',
+			'taxonomy' => $taxonomy,
 			'field'    => 'term_id',
-			'terms'    => $category_ids,
+			'terms'    => $effective_term_ids,
 		],
 	];
 }
@@ -53,9 +57,9 @@ if ( ! empty( $attributes['className'] ) ) {
 
 // Get selected category objects for tabs
 $selected_cats = [];
-if ( ! empty( $category_ids ) ) {
-	foreach ( $category_ids as $cat_id ) {
-		$term = get_term( $cat_id, 'template_cat' );
+if ( ! empty( $taxonomy ) && ! empty( $effective_term_ids ) ) {
+	foreach ( $effective_term_ids as $cat_id ) {
+		$term = get_term( $cat_id, $taxonomy );
 		if ( ! is_wp_error( $term ) && $term ) {
 			$selected_cats[] = $term;
 		}
@@ -67,7 +71,7 @@ if ( ! empty( $category_ids ) ) {
     data-order-by="<?php echo esc_attr( $order_by ); ?>"
     data-count-desktop="<?php echo esc_attr( $count_desktop ); ?>"
     data-count-mobile="<?php echo esc_attr( $count_mobile ); ?>"
-    data-category-ids="<?php echo esc_attr( implode(',', $category_ids) ); ?>"
+    data-category-ids="<?php echo esc_attr( implode(',', $effective_term_ids) ); ?>"
 >
     <div class="container laca-project-block__container">
         
