@@ -65,7 +65,8 @@ class Project extends \App\Abstracts\AbstractPostType
         add_action('admin_footer', [$this, 'addCurrencyFormatterScript']);
 
         // Tự động tính toán Payment Status
-        add_action('save_post_project', [$this, 'autoCalculatePaymentStatus'], 20, 2);
+        // Priority 9999: đảm bảo chạy SAU KHI Carbon Fields đã lưu xong tất cả meta
+        add_action('save_post_project', [$this, 'autoCalculatePaymentStatus'], 9999, 2);
     }
 
     public function encryptPasswordsOnSave($value, $name, $id, $type)
@@ -98,6 +99,96 @@ class Project extends \App\Abstracts\AbstractPostType
     {
         $container = Container::make('post_meta', __('⚙️ Quản lý Dự án | Project Manager', 'laca'))
             ->where('post_type', '=', $this->post_type);
+
+        // ---- Tab 1: Báo giá ----
+        $container->add_tab(__('📄 Báo giá', 'laca'), [
+            Field::make('separator', 'sep_quotation_intro', __('I. Giới thiệu', 'laca')),
+
+            Field::make('rich_text', 'quotation_intro', __('Nội dung giới thiệu', 'laca'))
+                ->set_help_text('Ví dụ: "mooms.dev xin gửi đến Quý khách báo giá chi tiết về việc xây dựng website cho [tên khách]."'),
+
+            Field::make('separator', 'sep_design_pages', __('II. Phạm vi công việc — Danh sách trang thiết kế', 'laca')),
+
+            Field::make('complex', 'design_pages', __('Danh sách trang thiết kế', 'laca'))
+                ->setup_labels([
+                    'plural_name'   => 'Trang',
+                    'singular_name' => 'Trang',
+                ])
+                ->add_fields([
+                    Field::make('text', 'page_name', __('Tên trang', 'laca'))
+                        ->set_width(40)
+                        ->set_attribute('placeholder', 'Trang chủ'),
+                    Field::make('text', 'page_demo_url', __('Website mẫu (URL)', 'laca'))
+                        ->set_width(60)
+                        ->set_attribute('placeholder', 'https://...'),
+                ])
+                ->set_header_template('<% if (page_name) { %><%-page_name%><% } else { %>Trang mới<% } %>'),
+
+            Field::make('rich_text', 'backend_features', __('Tính năng kỹ thuật / Lập trình Backend', 'laca'))
+                ->set_help_text('Mô tả các module, tính năng kỹ thuật chi tiết (CMS, SEO, tích hợp mạng xã hội, v.v.)'),
+
+            Field::make('separator', 'sep_timeline_phases', __('III. Thời gian thực hiện — Các giai đoạn', 'laca')),
+
+            Field::make('complex', 'timeline_phases', __('Giai đoạn thực hiện', 'laca'))
+                ->setup_labels([
+                    'plural_name'   => 'Giai đoạn',
+                    'singular_name' => 'Giai đoạn',
+                ])
+                ->add_fields([
+                    Field::make('text', 'phase_name', __('Tên giai đoạn', 'laca'))
+                        ->set_width(40)
+                        ->set_attribute('placeholder', 'Giai đoạn 1'),
+                    Field::make('text', 'phase_days', __('Số ngày', 'laca'))
+                        ->set_width(20)
+                        ->set_attribute('placeholder', '10'),
+                    Field::make('rich_text', 'phase_content', __('Nội dung công việc', 'laca'))
+                        ->set_width(40),
+                ])
+                ->set_header_template('<% if (phase_name) { %><%-phase_name%><% if (phase_days) { %> (<%-phase_days%> ngày)<% } %><% } %>'),
+
+            Field::make('separator', 'sep_quotation_items', __('IV. Chi phí thực hiện', 'laca')),
+
+            Field::make('complex', 'quotation_items', __('Bảng chi phí chi tiết', 'laca'))
+                ->setup_labels([
+                    'plural_name'   => 'Hạng mục',
+                    'singular_name' => 'Hạng mục',
+                ])
+                ->add_fields([
+                    Field::make('text', 'item_name', __('Mô tả hạng mục', 'laca'))
+                        ->set_width(40)
+                        ->set_attribute('placeholder', 'Thiết kế giao diện website'),
+                    Field::make('text', 'item_unit_price', __('Đơn giá', 'laca'))
+                        ->set_width(20)
+                        ->set_attribute('data-type', 'currency')
+                        ->set_attribute('placeholder', '14.000.000')
+                        ->set_classes('laca-pay-amount'),
+                    Field::make('text', 'item_qty', __('Số lượng', 'laca'))
+                        ->set_width(10)
+                        ->set_attribute('placeholder', '1'),
+                    Field::make('text', 'item_note', __('Thành tiền / Ghi chú', 'laca'))
+                        ->set_width(30)
+                        ->set_attribute('placeholder', 'Miễn phí năm đầu / theo yêu cầu'),
+                ])
+                ->set_header_template('<% if (item_name) { %><%-item_name%><% } %>'),
+
+            Field::make('separator', 'sep_workflow', __('V. Quy trình làm việc & VII. Yêu cầu khách hàng', 'laca')),
+
+            Field::make('rich_text', 'workflow_steps', __('Quy trình làm việc', 'laca'))
+                ->set_help_text('Ví dụ: Ứng 50% trước → Xây dựng demo → Chỉnh sửa → Bàn giao...'),
+
+            Field::make('rich_text', 'client_requirements', __('Yêu cầu từ phía khách hàng', 'laca'))
+                ->set_help_text('Những điều khách hàng cần chuẩn bị hoặc phối hợp.'),
+
+            Field::make('separator', 'sep_payment_terms', __('VIII. Phương thức thanh toán', 'laca')),
+
+            Field::make('rich_text', 'payment_terms', __('Điều khoản & phương thức thanh toán', 'laca'))
+                ->set_help_text('Ví dụ: Thanh toán bằng chuyển khoản, chia 2 đợt: 50% trước — 50% khi bàn giao.'),
+
+            Field::make('text', 'quotation_valid_days', __('Hiệu lực báo giá (ngày)', 'laca'))
+                ->set_attribute('placeholder', '15')
+                ->set_default_value('15')
+                ->set_help_text('Số ngày báo giá còn hiệu lực kể từ ngày lập.'),
+        ]);
 
         // ---- Tab 2: Thông tin Khách hàng ----
         $container->add_tab(__('👤 Khách hàng', 'laca'), [
@@ -271,7 +362,8 @@ class Project extends \App\Abstracts\AbstractPostType
             Field::make('text', 'domain_password', __('Mật khẩu (mã hóa khi lưu)', 'laca'))
                 ->set_width(50)
                 ->set_attribute('placeholder', '••••••••')
-                ->set_attribute('type', 'password'),
+                ->set_attribute('type', 'password')
+                ->set_classes('laca-password-input'),
 
             Field::make('date', 'domain_expiry', __('📅 Ngày hết hạn Domain', 'laca'))
                 ->set_width(50)
@@ -285,10 +377,6 @@ class Project extends \App\Abstracts\AbstractPostType
             // HOSTING
             Field::make('separator', 'sep_hosting', __('🖥️ Thông tin Hosting', 'laca')),
 
-            Field::make('text', 'hosting_provider', __('Nhà cung cấp hosting', 'laca'))
-                ->set_width(33.33)
-                ->set_attribute('placeholder', 'Azdigi / SiteGround / Vultr...'),
-
             Field::make('text', 'hosting_price', __('Giá gia hạn / năm', 'laca'))
                 ->set_width(33.33)
                 ->set_attribute('data-type', 'currency')
@@ -298,22 +386,38 @@ class Project extends \App\Abstracts\AbstractPostType
                 ->set_width(33.33)
                 ->set_storage_format('Y-m-d'),
 
+            Field::make('text', 'hosting_notify_days', __('Cảnh báo trước (ngày)', 'laca'))
+                ->set_width(33.33)
+                ->set_default_value('30')
+                ->set_attribute('placeholder', '30'),
+
+            Field::make('text', 'hosting_provider', __('Nhà cung cấp hosting', 'laca'))
+                ->set_width(33.33)
+                ->set_attribute('placeholder', 'Azdigi / SiteGround / Vultr...'),
+
+            Field::make('text', 'hosting_user', __('Tài khoản hosting', 'laca'))
+                ->set_width(33.33)
+                ->set_attribute('placeholder', 'username'),
+            
+            Field::make('text', 'hosting_password', __('Mật khẩu hosting', 'laca'))
+                ->set_width(33.33)
+                ->set_attribute('placeholder', '••••••••')
+                ->set_attribute('type', 'password')
+                ->set_classes('laca-password-input'),
+
             Field::make('text', 'hosting_url', __('URL cPanel / DirectAdmin', 'laca'))
                 ->set_width(33.33)
                 ->set_attribute('placeholder', 'https://cpanel.example.com:2083'),
 
-            Field::make('text', 'hosting_username', __('Tài khoản cPanel', 'laca'))
+            Field::make('text', 'cpanel_username', __('Tài khoản cPanel', 'laca'))
                 ->set_width(33.33)
                 ->set_attribute('placeholder', 'username'),
 
-            Field::make('text', 'hosting_password', __('Mật khẩu cPanel (mã hóa)', 'laca'))
+            Field::make('text', 'cpanel_password', __('Mật khẩu cPanel (mã hóa)', 'laca'))
                 ->set_width(33.33)
                 ->set_attribute('placeholder', '••••••••')
-                ->set_attribute('type', 'password'),
-
-            Field::make('text', 'hosting_notify_days', __('Cảnh báo trước (ngày)', 'laca'))
-                ->set_default_value('30')
-                ->set_attribute('placeholder', '30'),
+                ->set_attribute('type', 'password')
+                ->set_classes('laca-password-input'),
 
             // FTP
             Field::make('separator', 'sep_ftp', __('📂 FTP / SFTP', 'laca')),
@@ -325,9 +429,16 @@ class Project extends \App\Abstracts\AbstractPostType
             Field::make('text', 'ftp_username', __('FTP Username', 'laca'))
                 ->set_width(33.33)
                 ->set_attribute('placeholder', 'ftpuser'),
+
+            Field::make('text', 'ftp_password', __('Mật khẩu FTP', 'laca'))
+                ->set_width(33.33)
+                ->set_attribute('placeholder', '••••••••')
+                ->set_attribute('type', 'password')
+                ->set_classes('laca-password-input'),
+
         ]);
 
-
+        // ---- Tab 6: Bảo trì ----
         $container->add_tab(__('🔧 Bảo trì', 'laca'), [
             Field::make('select', 'maintenance_type', __('Loại bảo trì', 'laca'))
                 ->set_width(20)
@@ -763,11 +874,11 @@ class Project extends \App\Abstracts\AbstractPostType
                     <p style="margin:0 0 10px 0; color:#666; font-size:12px;">Cài đặt plugin vào <code>wp-content/mu-plugins/</code> ở web khách để auto tracking (Cập nhật, thay đổi code).</p>
                     <div class="laca-form-group">
                         <label style="font-weight:600;font-size:12px;">Endpoint URL</label>
-                        <input type="text" readonly value="<?php echo esc_url($endpoint); ?>">
+                        <input type="text" readonly value="<?php echo esc_url($endpoint); ?>" class="laca-copyable-input">
                     </div>
                     <div class="laca-form-group">
                         <label style="font-weight:600;font-size:12px;">Secret Key</label>
-                        <input type="text" readonly value="<?php echo esc_attr($secretKey); ?>">
+                        <input type="text" readonly value="<?php echo esc_attr($secretKey); ?>" class="laca-copyable-input">
                     </div>
                     <div style="margin-top:10px;">
                         <button type="button" class="button button-primary" id="btn_download_tracker">⬇️ Tải xuống MU-Plugin</button>
@@ -863,41 +974,50 @@ class Project extends \App\Abstracts\AbstractPostType
     {
         if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
         if ($post->post_type !== 'project') return;
-
-        // Bỏ qua nếu là revision
         if (wp_is_post_revision($postId)) return;
 
-        // Tính tổng tiền cần thu
-        $totalBuild = (int)carbon_get_post_meta($postId, 'price_build');
-        
-        // Lấy lịch sử thanh toán
-        $payHistory = carbon_get_post_meta($postId, 'payment_history');
-        
+        // =========================================================
+        // QUAN TRỌNG: Dùng get_post_meta() raw, KHÔNG dùng
+        // carbon_get_post_meta() vì CF có internal cache riêng
+        // và có thể trả về data cũ ngay trong cùng request save.
+        // Hook này chạy ở priority 9999 để CF đã save xong.
+        // =========================================================
+
+        // 1. Đọc giá build (CF lưu với prefix _ => meta key: _price_build)
+        $rawBuild   = get_post_meta($postId, '_price_build', true);
+        $totalBuild = (int) preg_replace('/[^0-9]/', '', (string) $rawBuild);
+
+        // 2. Đọc payment_history — CF lưu sub-field theo format PIPE:
+        //    _payment_history|pay_amount|0, _payment_history|pay_amount|1, ...
+        //    (Không phải underscore: _payment_history_0_pay_amount)
         $totalPaid = 0;
-        if (is_array($payHistory)) {
-            foreach ($payHistory as $pay) {
-                if (isset($pay['pay_amount']) && is_numeric($pay['pay_amount'])) {
-                    $totalPaid += (int)$pay['pay_amount'];
-                }
+        for ($i = 0; $i < 100; $i++) {
+            $metaKey = "_payment_history|pay_amount|{$i}";
+            if (!metadata_exists('post', $postId, $metaKey)) {
+                break;
             }
+            $amt = get_post_meta($postId, $metaKey, true);
+            $totalPaid += (int) preg_replace('/[^0-9]/', '', (string) $amt);
         }
 
-        $currentStatus = carbon_get_post_meta($postId, 'payment_status');
-        $newStatus = $currentStatus;
+        error_log("[LACA] autoCalculate post={$postId} totalBuild={$totalBuild} totalPaid={$totalPaid}");
+
+        // 3. Xác định trạng thái
+        $currentStatus = get_post_meta($postId, '_payment_status', true) ?: 'pending';
+        $newStatus     = $currentStatus;
 
         if ($totalBuild > 0) {
             if ($totalPaid <= 0) {
                 $newStatus = 'pending';
-            } elseif ($totalPaid > 0 && $totalPaid < $totalBuild) {
+            } elseif ($totalPaid < $totalBuild) {
                 $newStatus = 'partial';
-            } elseif ($totalPaid >= $totalBuild) {
+            } else {
                 $newStatus = 'paid';
             }
         }
 
-        // Cập nhật Database nếu có sự thay đổi
+        // 4. Lưu nếu thay đổi
         if ($newStatus !== $currentStatus) {
-            // Lưu trực tiếp post meta bỏ qua API carbon ảo
             update_post_meta($postId, '_payment_status', $newStatus);
         }
     }

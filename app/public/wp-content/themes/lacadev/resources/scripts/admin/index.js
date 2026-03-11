@@ -258,44 +258,10 @@ document.addEventListener( 'DOMContentLoaded', function () {
 	}
 } );
 
-// Xử lý hiển thị/ẩn password (cho field có data-field="password-field")
-document.addEventListener( 'DOMContentLoaded', function () {
-	const passwordFields = document.querySelectorAll(
-		'input[data-field="password-field"]'
-	);
-	if ( ! passwordFields || ! passwordFields.length ) {
-		return;
-	}
+// Log fields support (Laca Admin)
+// My project.js now handles password toggle and copy functionality for all fields
+// with .laca-password-input and .laca-copyable-input classes.
 
-	passwordFields.forEach( ( passwordField ) => {
-		// Tránh gắn trùng khi hot-reload
-		if (
-			passwordField.parentNode.querySelector(
-				'[data-toggle="password-toggle"]'
-			)
-		) {
-			return;
-		}
-
-		const toggleButton = document.createElement( 'button' );
-		toggleButton.type = 'button';
-		toggleButton.innerHTML = 'Show';
-		toggleButton.style.marginLeft = '5px';
-		toggleButton.style.cursor = 'pointer';
-		toggleButton.setAttribute( 'data-toggle', 'password-toggle' );
-		passwordField.parentNode.appendChild( toggleButton );
-
-		toggleButton.addEventListener( 'click', function () {
-			if ( passwordField.type === 'password' ) {
-				passwordField.type = 'text';
-				toggleButton.innerHTML = 'Hide';
-			} else {
-				passwordField.type = 'password';
-				toggleButton.innerHTML = 'Show';
-			}
-		} );
-	} );
-} );
 
 // ===== LacaDashboard - Vanilla JS conversion =====
 ( function () {

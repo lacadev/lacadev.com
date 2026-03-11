@@ -70,11 +70,17 @@ function lacadev_register_custom_blocks() {
         if (file_exists($block_json)) {
             // Check if block has render.php for dynamic rendering
             $render_php = $blocks_dir . '/' . $block . '/render.php';
-            $block_args = [
-                'editor_script' => 'lacadev-gutenberg-blocks',
-                // Styles come from theme's compiled CSS (dist/styles/theme.css and dist/styles/editor.css)
-                // No need to register block-specific styles
-            ];
+            
+            // Check if block has a specific build folder (self-contained block)
+            $has_individual_build = is_dir($blocks_dir . '/' . $block . '/build');
+            
+            $block_args = [];
+            
+            if (!$has_individual_build) {
+                // Backward compatibility for blocks that haven't been refactored
+                // They still use the global theme editor script
+                $block_args['editor_script'] = 'lacadev-gutenberg-blocks';
+            }
             
             // Add render callback if render.php exists
             if (file_exists($render_php)) {

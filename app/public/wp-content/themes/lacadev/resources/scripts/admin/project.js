@@ -181,4 +181,70 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(calcPaymentStatus, 1500);
     }
 
+    // 3. Password Toggle & Copy
+    function setupCopyableFields() {
+        const fields = document.querySelectorAll('.laca-password-input:not(.processed), .laca-copyable-input:not(.processed)');
+        fields.forEach(fieldWrapper => {
+            fieldWrapper.classList.add('processed');
+            
+            const input = fieldWrapper.querySelector('input');
+            if (!input) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'laca-input-with-actions';
+            input.parentNode.insertBefore(wrapper, input);
+            wrapper.appendChild(input);
+
+            const actions = document.createElement('div');
+            actions.className = 'laca-input-actions';
+            wrapper.appendChild(actions);
+
+            // Toggle Password
+            if (fieldWrapper.classList.contains('laca-password-input')) {
+                const toggleBtn = document.createElement('button');
+                toggleBtn.type = 'button';
+                toggleBtn.className = 'laca-toggle-pwd-btn';
+                toggleBtn.innerHTML = '👁️';
+                toggleBtn.title = 'Hiện/Ẩn mật khẩu';
+                toggleBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    input.type = input.type === 'password' ? 'text' : 'password';
+                    toggleBtn.innerHTML = input.type === 'password' ? '👁️' : '🔒';
+                };
+                actions.appendChild(toggleBtn);
+            }
+
+            // Copy Button
+            const copyBtn = document.createElement('button');
+            copyBtn.type = 'button';
+            copyBtn.className = 'laca-copy-btn';
+            copyBtn.innerHTML = '📋';
+            copyBtn.title = 'Copy';
+            copyBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const val = input.value;
+                if (!val) return;
+
+                const doCopy = () => {
+                    const originalText = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '✅';
+                    setTimeout(() => copyBtn.innerHTML = originalText, 2000);
+                };
+
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(val).then(doCopy);
+                } else {
+                    // Fallback
+                    input.select();
+                    document.execCommand('copy');
+                    doCopy();
+                }
+            };
+            actions.appendChild(copyBtn);
+        });
+    }
+
+    setInterval(setupCopyableFields, 1000);
 });

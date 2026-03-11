@@ -185,3 +185,974 @@ html[data-theme="light"] {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
   }
 }
+
+// =============================================================================
+// QUOTATION PAGE (single-project.php)
+// =============================================================================
+
+.quotation-page {
+  min-height: 100vh;
+  padding: 60px 20px 100px;
+  background: var(--bg-color);
+}
+
+.quotation-wrap {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+// --- Header ---
+.quotation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 40px;
+  margin-bottom: 40px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+
+  &__logo {
+    height: 36px;
+    width: auto;
+    object-fit: contain;
+  }
+
+  &__site-name {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: $primaryColor;
+    text-decoration: none;
+  }
+
+  &__meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  &__label {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    opacity: 0.35;
+  }
+
+  &__id {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  &__date {
+    font-size: 1.2rem;
+    opacity: 0.45;
+  }
+}
+
+html[data-theme="dark"] .quotation-header {
+  border-bottom-color: rgba(255,255,255,0.07);
+}
+
+// --- Hero ---
+.quotation-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 40px;
+  margin-bottom: 50px;
+  flex-wrap: wrap;
+
+  &__sup {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.35;
+    margin-bottom: 12px;
+  }
+
+  &__title {
+    font-size: clamp(2.8rem, 4vw, 4.5rem);
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    line-height: 1.1;
+    margin-bottom: 20px;
+  }
+
+  &__demo-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 1.3rem;
+    font-weight: 500;
+    color: $primaryColor;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+
+    &:hover { border-bottom-color: $primaryColor; }
+  }
+
+  &__right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 16px;
+    min-width: 180px;
+  }
+}
+
+.quotation-stat {
+  text-align: right;
+
+  &__value {
+    display: block;
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  &__label {
+    font-size: 1.1rem;
+    opacity: 0.4;
+  }
+}
+
+.quotation-timeline-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  font-size: 1.2rem;
+  opacity: 0.6;
+
+  strong { opacity: 1; font-weight: 700; }
+}
+
+// --- Divider ---
+.quotation-divider {
+  height: 1px;
+  background: rgba(0,0,0,0.07);
+  margin: 40px 0;
+
+  &--sm { margin: 16px 0; }
+
+  html[data-theme="dark"] & { background: rgba(255,255,255,0.07); }
+}
+
+// --- Grid ---
+.quotation-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 50px;
+  align-items: start;
+
+  @media (max-width: $sm) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// --- Section ---
+.quotation-section {
+  margin-bottom: 44px;
+
+  &__title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.35;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+}
+
+html[data-theme="dark"] .quotation-section__title {
+  border-bottom-color: rgba(255,255,255,0.06);
+}
+
+// --- Content ---
+.quotation-content {
+  font-size: 1.6rem;
+  line-height: 1.85;
+  opacity: 0.82;
+
+  p { margin-bottom: 18px; }
+
+  h2, h3, h4 { font-weight: 700; margin: 30px 0 12px; }
+
+  ul, ol {
+    padding-left: 20px;
+    margin-bottom: 18px;
+    li { margin-bottom: 8px; }
+  }
+}
+
+// --- Tech Tags ---
+.quotation-tech-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  &__label {
+    font-size: 1.1rem;
+    font-weight: 600;
+    opacity: 0.4;
+    white-space: nowrap;
+    padding-top: 6px;
+    min-width: 68px;
+  }
+}
+
+.quotation-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quotation-tag {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 100px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.08);
+
+  html[data-theme="dark"] & {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.1);
+  }
+
+  &--platform {
+    background: rgba(0,0,0,0.09);
+    font-weight: 700;
+  }
+
+  &--custom { border-style: dashed; }
+}
+
+// --- Maintenance ---
+.quotation-maintenance {
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  &__period {
+    font-size: 1.3rem;
+    opacity: 0.5;
+  }
+
+  &__scope {
+    font-size: 1.5rem;
+    line-height: 1.8;
+    opacity: 0.8;
+    padding: 20px;
+    background: rgba(0,0,0,0.03);
+    border-radius: 16px;
+    border: 1px solid rgba(0,0,0,0.06);
+
+    html[data-theme="dark"] & {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.07);
+    }
+  }
+}
+
+// --- Cards ---
+.quotation-card {
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 24px;
+
+  html[data-theme="dark"] & {
+    border-color: rgba(255,255,255,0.08);
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 20px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.45;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    background: rgba(0,0,0,0.025);
+
+    html[data-theme="dark"] & {
+      border-bottom-color: rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.03);
+    }
+  }
+
+  &__body { padding: 20px; }
+
+  &__subsection-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    opacity: 0.38;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+  }
+}
+
+// --- Meta Row ---
+.quotation-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  font-size: 1.4rem;
+
+  html[data-theme="dark"] & { border-bottom-color: rgba(255,255,255,0.05); }
+
+  &:last-child { border-bottom: none; }
+
+  &__label {
+    opacity: 0.4;
+    font-size: 1.2rem;
+    white-space: nowrap;
+  }
+
+  &__value {
+    font-weight: 600;
+    text-align: right;
+
+    &--link {
+      color: $primaryColor;
+      text-decoration: none;
+      &:hover { text-decoration: underline; }
+    }
+  }
+}
+
+// --- Price Rows ---
+.quotation-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  font-size: 1.4rem;
+
+  html[data-theme="dark"] & { border-bottom-color: rgba(255,255,255,0.05); }
+
+  &:last-child { border-bottom: none; }
+
+  &--main .quotation-price-row__value {
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  &--sm {
+    font-size: 1.25rem;
+    padding: 7px 0;
+  }
+
+  &--total, &--remaining { font-weight: 700; }
+
+  &__label {
+    opacity: 0.45;
+    font-size: 1.2rem;
+    flex: 1;
+  }
+
+  &__note { font-size: 1rem; opacity: 0.45; }
+
+  &__value {
+    font-weight: 600;
+    white-space: nowrap;
+
+    &--muted { opacity: 0.45; }
+    &--paid  { color: #16a34a; }
+    &--danger { color: #dc2626; }
+  }
+}
+
+html[data-theme="dark"] {
+  .quotation-price-row__value--paid  { color: #86efac; }
+  .quotation-price-row__value--danger { color: #fca5a5; }
+}
+
+// --- Badges ---
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 1.1rem;
+  font-weight: 700;
+
+  &--xs { padding: 2px 8px; font-size: 0.95rem; }
+
+  &--success { background: #dcfce7; color: #166534; }
+  &--info    { background: #dbeafe; color: #1e40af; }
+  &--warning { background: #fef9c3; color: #854d0e; }
+  &--danger  { background: #fee2e2; color: #991b1b; }
+  &--neutral { background: rgba(128,128,128,0.1); opacity: 0.7; }
+}
+
+html[data-theme="dark"] .badge {
+  &--success { background: rgba(22,163,74,0.15); color: #86efac; }
+  &--info    { background: rgba(59,130,246,0.15); color: #93c5fd; }
+  &--warning { background: rgba(234,179,8,0.15); color: #fde047; }
+  &--danger  { background: rgba(220,38,38,0.15); color: #fca5a5; }
+}
+
+// --- Footer ---
+.quotation-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+
+  &__thanks {
+    font-size: 1.4rem;
+    opacity: 0.4;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+}
+
+.btn-quotation {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 100px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  text-decoration: none;
+  border: none;
+  font-family: $primaryFont;
+
+  &--ghost {
+    background: transparent;
+    border: 1.5px solid rgba(0,0,0,0.14);
+    color: inherit;
+    opacity: 0.6;
+
+    &:hover { opacity: 1; border-color: rgba(0,0,0,0.28); }
+
+    html[data-theme="dark"] & {
+      border-color: rgba(255,255,255,0.14);
+      &:hover { border-color: rgba(255,255,255,0.28); }
+    }
+  }
+
+  &--primary {
+    background: $primaryColor;
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+
+    &:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.2);
+    }
+  }
+}
+
+// --- Print (legacy .quotation-page) ---
+@media print {
+  header, footer, .btn-quotation, .quotation-footer__actions { display: none !important; }
+
+  .quotation-page { padding: 0; }
+  .quotation-wrap { max-width: 100%; }
+
+  .quotation-grid {
+    grid-template-columns: 1fr 260px;
+    gap: 30px;
+  }
+
+  .badge, .quotation-tag {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+
+// =============================================================================
+// QUOTATION DOCUMENT (.quotation-doc)
+// Professional single-column document layout — minimalist, print-ready
+// =============================================================================
+
+.quotation-doc {
+  max-width: 860px;
+  margin: 3rem auto 5rem;
+  padding: 0 1.5rem;
+  font-family: $primaryFont;
+  color: #1a1a1a;
+  font-size: 1.5rem;
+  line-height: 1.7;
+
+  // ── HEADER ──────────────────────────────────────────────────────────
+  .qd-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid #1a1a1a;
+    margin-bottom: 2.5rem;
+
+    &__brand {
+      flex: 1;
+    }
+
+    &__logo {
+      max-height: 5rem;
+      width: auto;
+    }
+
+    &__site-name {
+      font-size: 2rem;
+      font-weight: $bold;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    &__title {
+      font-size: 2rem;
+      font-weight: $extraBold;
+      letter-spacing: 0.08em;
+      text-align: right;
+      margin: 0 0 1rem;
+      color: #1a1a1a;
+    }
+
+    &__meta-table {
+      font-size: 1.3rem;
+      border: none;
+      margin: 0;
+      width: auto;
+
+      td {
+        padding: 0.2rem 0.6rem 0.2rem 0;
+        border: none;
+        background: none;
+        white-space: nowrap;
+
+        &:first-child {
+          color: #666;
+          padding-right: 1.2rem;
+        }
+      }
+
+      strong {
+        font-weight: $semiBold;
+      }
+    }
+  }
+
+  // ── PARTIES (Bên A / Bên B) ─────────────────────────────────────────
+  .qd-parties {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .qd-party {
+    background: #f8f8f8;
+    border-radius: 8px;
+    padding: 1.5rem 1.8rem;
+    border-left: 3px solid #d0d0d0;
+
+    &--client {
+      border-left-color: $primaryColor;
+      background: rgba($primaryColor, 0.04);
+    }
+
+    &__role {
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #888;
+      margin: 0 0 0.4rem;
+    }
+
+    &__name {
+      font-size: 1.6rem;
+      font-weight: $bold;
+      margin: 0 0 0.8rem;
+    }
+
+    &__detail {
+      font-size: 1.35rem;
+      margin: 0.2rem 0;
+      color: #444;
+
+      a {
+        color: inherit;
+        text-decoration: underline;
+        text-decoration-color: transparent;
+        transition: text-decoration-color 0.2s;
+
+        &:hover { text-decoration-color: currentColor; }
+      }
+    }
+  }
+
+  // ── HORIZONTAL RULE ─────────────────────────────────────────────────
+  .qd-rule {
+    border: none;
+    border-top: 1px solid #e0e0e0;
+    margin: 0 0 3rem;
+  }
+
+  // ── SECTION ─────────────────────────────────────────────────────────
+  .qd-section {
+    margin-bottom: 3.5rem;
+
+    &__heading {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 1.55rem;
+      font-weight: $bold;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #1a1a1a;
+      border-bottom: 2px solid $primaryColor;
+      padding-bottom: 0.5rem;
+      margin: 0 0 1.8rem;
+    }
+
+    &--sign {
+      margin-top: 4rem;
+    }
+  }
+
+  .qd-section__num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 50%;
+    background: $primaryColor;
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: $bold;
+    flex-shrink: 0;
+  }
+
+  // ── SUBSECTION h3 ───────────────────────────────────────────────────
+  .qd-subsection {
+    font-size: 1.4rem;
+    font-weight: $semiBold;
+    color: #444;
+    margin: 1.8rem 0 1rem;
+    padding-left: 0.8rem;
+    border-left: 3px solid $primaryColor;
+  }
+
+  // ── PROSE & RICH TEXT ───────────────────────────────────────────────
+  .qd-prose {
+    font-size: 1.45rem;
+    line-height: 1.75;
+    color: #2a2a2a;
+
+    ul, ol {
+      padding-left: 1.8rem;
+      margin: 0.5rem 0;
+    }
+
+    p { margin: 0 0 0.8rem; }
+
+    &--sm {
+      font-size: 1.35rem;
+
+      p { margin: 0.2rem 0; }
+    }
+  }
+
+  // ── TABLES ──────────────────────────────────────────────────────────
+  .qd-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.4rem;
+    margin-bottom: 1.5rem;
+
+    th {
+      background: #f2f2f2;
+      font-weight: $semiBold;
+      text-align: left;
+      padding: 0.7rem 1rem;
+      border: 1px solid #e0e0e0;
+      color: #444;
+      font-size: 1.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    td {
+      padding: 0.7rem 1rem;
+      border: 1px solid #e8e8e8;
+      vertical-align: top;
+      color: #1a1a1a;
+    }
+
+    tbody tr:nth-child(even) td {
+      background: #fafafa;
+    }
+
+    &__col-num {
+      width: 4rem;
+      text-align: center;
+    }
+
+    &__col-price {
+      width: 14rem;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    &__col-qty {
+      width: 4rem;
+      text-align: center;
+    }
+
+    &__col-days {
+      width: 10rem;
+      text-align: center;
+    }
+
+    &__total-row {
+      td {
+        background: #f0f4ff;
+        border-top: 2px solid $primaryColor;
+        font-weight: $semiBold;
+      }
+    }
+
+    &__note-row td {
+      background: #fafafa;
+      color: #666;
+      font-size: 1.3rem;
+      font-style: italic;
+    }
+
+    &__remaining-row td {
+      color: #c0392b;
+      font-weight: $semiBold;
+    }
+
+    // Timeline table tweaks
+    &--timeline .qd-phase-name {
+      font-weight: $semiBold;
+      font-size: 1.3rem;
+      color: #333;
+      white-space: nowrap;
+    }
+  }
+
+  // ── AMOUNTS ─────────────────────────────────────────────────────────
+  .qd-amount {
+    font-variant-numeric: tabular-nums;
+    font-weight: $medium;
+
+    &--total {
+      font-weight: $bold;
+      color: $primaryColor;
+      font-size: 1.5rem;
+    }
+
+    &--paid { color: #27ae60; }
+    &--danger { color: #c0392b; }
+  }
+
+  // ── LINKS ───────────────────────────────────────────────────────────
+  .qd-link {
+    color: $primaryColor;
+    text-decoration: underline;
+    font-size: 1.3rem;
+    word-break: break-all;
+  }
+
+  .qd-demo-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: $primaryColor;
+    font-size: 1.3rem;
+    text-decoration: none;
+    border: 1px solid rgba($primaryColor, 0.35);
+    padding: 0.4rem 1rem;
+    border-radius: 4px;
+    margin-top: 0.8rem;
+    transition: background 0.2s;
+
+    &:hover { background: rgba($primaryColor, 0.06); }
+  }
+
+  // ── TAGS / BADGES ───────────────────────────────────────────────────
+  .qd-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .qd-tag {
+    display: inline-block;
+    padding: 0.3rem 0.9rem;
+    border-radius: 100px;
+    font-size: 1.2rem;
+    font-weight: $medium;
+    background: rgba($primaryColor, 0.08);
+    color: $primaryColor;
+    border: 1px solid rgba($primaryColor, 0.2);
+
+    &--platform {
+      background: rgba($primaryColor, 0.15);
+      font-weight: $semiBold;
+    }
+
+    &--builder { background: #f0f0f0; color: #555; border-color: #d0d0d0; }
+    &--custom   { background: #fff8e1; color: #796000; border-color: #f0d050; }
+  }
+
+  // ── FEATURE GRID ────────────────────────────────────────────────────
+  .qd-feature-grid { display: flex; flex-direction: column; gap: 1rem; }
+
+  .qd-feature-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.2rem;
+
+    &__label {
+      min-width: 10rem;
+      font-size: 1.3rem;
+      font-weight: $semiBold;
+      color: #555;
+      padding-top: 0.3rem;
+    }
+  }
+
+  // ── TIMELINE SUMMARY CHIPS ──────────────────────────────────────────
+  .qd-timeline-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .qd-timeline-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 1.2rem;
+    border-radius: 100px;
+    background: #f4f4f4;
+    font-size: 1.35rem;
+    border: 1px solid #e4e4e4;
+  }
+
+  // ── PRICE SUMMARY (fallback when no items) ──────────────────────────
+  .qd-price-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.4rem;
+    background: #f8f8f8;
+    border-radius: 6px;
+    border: 1px solid #e8e8e8;
+    margin-bottom: 0.6rem;
+
+    &__label { font-size: 1.4rem; color: #444; }
+    &__value  { font-size: 1.5rem; font-weight: $bold; }
+
+    &--muted .qd-price-summary__value { color: #777; font-weight: $regular; font-size: 1.35rem; }
+  }
+
+  // ── PAYMENT STATUS ───────────────────────────────────────────────────
+  .qd-payment-status {
+    margin-top: 1rem;
+    font-size: 1.35rem;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  // ── MAINTENANCE ──────────────────────────────────────────────────────
+  .qd-maintenance-header {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .qd-maintenance-period {
+    font-size: 1.3rem;
+    color: #666;
+  }
+
+
+  // ── RESPONSIVE ────────────────────────────────────────────────────────
+  @media (max-width: 640px) {
+    .qd-header { flex-direction: column; }
+    .qd-parties { grid-template-columns: 1fr; }
+    .qd-table { font-size: 1.25rem; }
+    .qd-table th, .qd-table td { padding: 0.5rem 0.7rem; }
+    .qd-feature-group { flex-direction: column; gap: 0.5rem; }
+  }
+}
+
+// ── PRINT STYLES ──────────────────────────────────────────────────────────────
+@media print {
+  .quotation-doc {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    font-size: 11pt;
+
+    .qd-section__num {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .qd-tag, .badge {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .qd-table th {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .qd-header { break-after: avoid; }
+    .qd-section { break-inside: avoid; }
+  }
+
+  // Ẩn WordPress header/footer khi in trang project
+  .site-header, .site-footer, #wpadminbar { display: none !important; }
+}

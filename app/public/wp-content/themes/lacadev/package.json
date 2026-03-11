@@ -10,10 +10,10 @@
   "scripts": {
     "dev": "concurrently \"yarn dev:theme\" \"yarn dev:blocks\"",
     "dev:theme": "cross-env NODE_ENV=development webpack --color --config resources/build/webpack.development.js",
-    "dev:blocks": "wp-scripts start block-gutenberg/index.js --output-path=./dist/gutenberg",
+    "dev:blocks": "wp-scripts start --config resources/build/webpack.blocks.js",
     "build": "yarn build:theme && yarn build:blocks && yarn critical",
     "build:theme": "cross-env NODE_ENV=production webpack --color --config resources/build/webpack.production.js",
-    "build:blocks": "wp-scripts build block-gutenberg/index.js --output-path=./dist/gutenberg",
+    "build:blocks": "wp-scripts build --config resources/build/webpack.blocks.js",
     "lint": "run-s -cl lint:scripts lint:styles",
     "lint:scripts": "wp-scripts lint-js 'resources/scripts' 'block-gutenberg'",
     "lint:styles": "stylelint 'resources/styles/**/*.{css,scss}'",

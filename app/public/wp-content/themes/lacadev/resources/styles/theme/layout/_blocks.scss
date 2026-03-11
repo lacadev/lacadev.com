@@ -1,33 +1,8 @@
 @use "../abstracts/variables.scss" as *;
 @use "../abstracts/mixin.scss" as *;
-@use "./blocks/service.scss";
-@use "./blocks/slogan.scss";
-@use "./blocks/about-laca.scss";
-@use "./blocks/blog.scss";
-@use "./blocks/staggered-blog.scss";
-@use "./blocks/statement.scss";
-@use "./blocks/progress.scss";
-@use "./blocks/tech-list.scss";
-@use "./blocks/marquee.scss";
-@use "./blocks/project.scss";
-@use "./blocks/button.scss";
 
-
-// Mixin containing all block styles
 // This allows reuse in both theme and editor contexts
 @mixin block-styles {
-  @include service.render;
-  @include slogan.render;
-  @include about-laca.render;
-  @include blog.render;
-  @include staggered-blog.render;
-  @include statement.render;
-  @include progress.render;
-  @include tech-list.render;
-  @include marquee.render;
-  @include project.render;
-  @include button.render;
-
   //common
   .btn {
     display: inline-flex;
