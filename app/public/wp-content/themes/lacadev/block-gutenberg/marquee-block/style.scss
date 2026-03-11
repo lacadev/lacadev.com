@@ -1,0 +1,49 @@
+@use "../../resources/styles/theme/abstracts/variables" as *;
+@use "../../resources/styles/theme/abstracts/mixin" as *;
+
+.block-marquee {
+  background-color: $primaryColor;
+  margin: 3rem 0;
+  padding: 1rem 0;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .marquee-inner {
+    display: flex;
+    width: max-content;
+    animation: marquee-scroll 40s linear infinite;
+  }
+
+  .marquee-item {
+    font-weight: $bold;
+    color: #fff;
+    text-transform: uppercase;
+    font-family: $primaryFont;
+    opacity: 1;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: opacity 0.3s ease;
+
+    .marquee-sep {
+      margin: 0 4rem;
+      opacity: 0.3;
+    }
+
+    @include resFont(2, 2.6);
+  }
+
+  &:hover .marquee-inner {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes marquee-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+

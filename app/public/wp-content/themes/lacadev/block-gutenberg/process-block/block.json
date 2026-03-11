@@ -6,6 +6,9 @@
   "description": "Hiển thị quy trình làm việc chuyên nghiệp",
   "category": "lacadev-blocks",
   "icon": "thumbs-up",
+  "editorScript": "lacadev-block-process-block-editor",
+  "editorStyle": "lacadev-block-process-block-editor",
+  "style": "lacadev-block-process-block",
   "keywords": ["process", "steps", "workflow"],
   "textdomain": "laca",
   "attributes": {

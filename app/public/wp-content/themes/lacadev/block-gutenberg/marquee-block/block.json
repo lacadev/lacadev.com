@@ -6,6 +6,9 @@
   "description": "Chữ chạy ngang màn hình tạo điểm nhấn",
   "category": "lacadev-blocks",
   "icon": "randomize",
+  "editorScript": "lacadev-block-marquee-block-editor",
+  "editorStyle": "lacadev-block-marquee-block-editor",
+  "style": "lacadev-block-marquee-block",
   "keywords": ["marquee", "ticker", "scrolling"],
   "textdomain": "laca",
   "attributes": {

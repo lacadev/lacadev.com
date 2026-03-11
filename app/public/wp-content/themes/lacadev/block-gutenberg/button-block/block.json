@@ -6,6 +6,9 @@
   "description": "Thêm nút bấm tùy chỉnh với nhiều kiểu dáng.",
   "category": "lacadev-blocks",
   "icon": "button",
+  "editorScript": "lacadev-block-button-block-editor",
+  "editorStyle": "lacadev-block-button-block-editor",
+  "style": "lacadev-block-button-block",
   "keywords": ["button", "link", "laca", "nút"],
   "textdomain": "laca",
   "attributes": {

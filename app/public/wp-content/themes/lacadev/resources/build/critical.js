@@ -7,6 +7,13 @@
 const path = require('path');
 const config = require('../../config.json');
 
+// Allow skipping critical CSS generation in environments where Chromium can't launch
+// Usage: SKIP_CRITICAL=1 yarn build
+if (process.env.SKIP_CRITICAL === '1') {
+    console.log('ℹ️  SKIP_CRITICAL=1, skipping Critical CSS generation.');
+    process.exit(0);
+}
+
 // Get dev URL from config or fallback
 const targetUrl = (config.development && config.development.url) ? config.development.url : 'http://lacadev.local';
 
@@ -52,6 +59,12 @@ const dimensions = [
         console.log('✅ Critical CSS generated successfully at: dist/styles/critical.css');
     } catch (err) {
         console.error('❌ Critical CSS Generation Failed:', err);
-        process.exit(1);
+        // Default to non-fatal so `yarn build` can succeed even if Puppeteer crashes.
+        // Set CRITICAL_STRICT=1 to fail the build on error.
+        if (process.env.CRITICAL_STRICT === '1') {
+            process.exit(1);
+        }
+        console.log('ℹ️  Continuing build (set CRITICAL_STRICT=1 to fail on critical errors).');
+        process.exit(0);
     }
 })();

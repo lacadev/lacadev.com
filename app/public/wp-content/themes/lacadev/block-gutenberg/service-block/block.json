@@ -6,6 +6,9 @@
   "description": "Hiển thị danh sách dịch vụ",
   "category": "lacadev-blocks",
   "icon": "megaphone",
+  "editorScript": "lacadev-block-service-block-editor",
+  "editorStyle": "lacadev-block-service-block-editor",
+  "style": "lacadev-block-service-block",
   "keywords": ["service", "laca"],
   "textdomain": "laca",
   "attributes": {

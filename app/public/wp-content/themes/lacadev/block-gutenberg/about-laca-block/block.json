@@ -6,6 +6,9 @@
   "description": "Block giới thiệu bản thân với hiệu ứng hình ảnh mở rộng khi scroll",
   "category": "lacadev-blocks",
   "icon": "welcome-widgets-menus",
+  "editorScript": "lacadev-block-about-laca-block-editor",
+  "editorStyle": "lacadev-block-about-laca-block-editor",
+  "style": "lacadev-block-about-laca-block",
   "keywords": ["about", "laca", "hero"],
   "textdomain": "laca",
   "attributes": {

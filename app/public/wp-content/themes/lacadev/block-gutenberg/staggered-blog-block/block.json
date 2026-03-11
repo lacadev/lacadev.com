@@ -6,6 +6,9 @@
   "description": "Hiển thị bài viết theo dạng so le (alternating layout)",
   "category": "lacadev-blocks",
   "icon": "layout",
+  "editorScript": "lacadev-block-staggered-blog-block-editor",
+  "editorStyle": "lacadev-block-staggered-blog-block-editor",
+  "style": "lacadev-block-staggered-blog-block",
   "keywords": ["blog", "post", "staggered", "laca"],
   "textdomain": "laca",
   "attributes": {

@@ -6,6 +6,9 @@
   "description": "Hiển thị danh sách bài viết blog",
   "category": "lacadev-blocks",
   "icon": "admin-post",
+  "editorScript": "lacadev-block-blog-block-editor",
+  "editorStyle": "lacadev-block-blog-block-editor",
+  "style": "lacadev-block-blog-block",
   "keywords": ["blog", "post", "laca"],
   "textdomain": "laca",
   "attributes": {

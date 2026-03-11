@@ -6,6 +6,9 @@
   "description": "Block hiển thị slogan của trang web",
   "category": "lacadev-blocks",
   "icon": "format-quote",
+  "editorScript": "lacadev-block-slogan-block-editor",
+  "editorStyle": "lacadev-block-slogan-block-editor",
+  "style": "lacadev-block-slogan-block",
   "example": {
     "attributes": {
       "slogan": "La Cà <span>Dev</span>"

@@ -229,63 +229,7 @@
       padding: 4rem 0;
     }
   }
-
-  // Dark Mode Adjustments
-  [data-theme="dark"], .dark {
-    .block-statement, .block-process {
-      background-color: var(--bg-color-dark);
-    }
-
-    .process-item {
-      background: rgba(255, 255, 255, 0.02);
-      border-color: rgba(255, 255, 255, 0.05);
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.05);
-        box-shadow: 0 1.5rem 3rem rgba(0,0,0,0.3);
-      }
-    }
-
-    .process-num {
-      color: rgba(255, 255, 255, 0.05);
-    }
-
-    .process-desc, .process-step-desc {
-      color: #888;
-    }
-  }
 }
 
 // Apply block styles at root level for theme
 @include block-styles;
-
-// [data-theme="dark"], .dark {
-//   .block-marquee {
-//     background-color: #fff;
-//     .marquee-item {
-//       color: #000;
-//       .marquee-sep {
-//         color: rgba(0,0,0,0.3);
-//       }
-//     }
-//   }
-
-//   .laca-project-block {
-//     &__tabs {
-//       .tab-item {
-//         color: rgba(#fff, 0.4);
-//         &::after { background: #fff; }
-//         &:hover, &.is-active { color: #fff; }
-//       }
-//     }
-//     &__item .laca-project-block__image-wrap {
-//       background: #1a1a1a;
-//     }
-//     .laca-skeleton-loader {
-//       &.is-loading { background: var(--bg-color-dark); }
-//       &::before, &::after {
-//         background: linear-gradient(90deg, transparent, rgba(#fff, 0.05), transparent);
-//       }
-//     }
-//   }
-// }

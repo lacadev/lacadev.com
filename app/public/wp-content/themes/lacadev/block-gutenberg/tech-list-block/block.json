@@ -6,6 +6,9 @@
   "description": "Hiển thị danh sách công nghệ sử dụng",
   "category": "lacadev-blocks",
   "icon": "desktop",
+  "editorScript": "lacadev-block-tech-list-block-editor",
+  "editorStyle": "lacadev-block-tech-list-block-editor",
+  "style": "lacadev-block-tech-list-block",
   "keywords": ["tech", "list", "công nghệ"],
   "textdomain": "laca",
   "attributes": {

@@ -15,18 +15,21 @@ if (!defined('ABSPATH')) {
  * Register Gutenberg blocks scripts and styles
  */
 function lacadev_register_gutenberg_blocks_assets() {
-    // Use dirname() to go up one level from theme/ directory
-    $theme_root = dirname(get_template_directory());
-    $asset_file = $theme_root . '/dist/gutenberg/index.asset.php';
+    // Theme root is one level above `theme/` folder (see APP_DIR constant in `theme/functions.php`)
+    if (!defined('APP_DIR')) {
+        return;
+    }
+
+    // Legacy/global bundle (only used for blocks that don't have their own build folder)
+    $asset_file = trailingslashit(APP_DIR) . 'dist/gutenberg/index.asset.php';
     
     if (!file_exists($asset_file)) {
-        error_log('Gutenberg blocks asset file not found: ' . $asset_file);
         return;
     }
     
     $asset = require $asset_file;
     
-    // For URLs, use get_stylesheet_directory_uri() and go up one level
+    // URL root of theme (one level above `theme/`)
     $theme_root_uri = dirname(get_stylesheet_directory_uri());
     
     // Register block editor script
@@ -34,7 +37,7 @@ function lacadev_register_gutenberg_blocks_assets() {
         'lacadev-gutenberg-blocks',
         $theme_root_uri . '/dist/gutenberg/index.js',
         $asset['dependencies'],
-        time(), // Force refresh by using current timestamp
+        $asset['version'],
         false
     );
 }
@@ -48,11 +51,14 @@ function lacadev_register_custom_blocks() {
     lacadev_register_gutenberg_blocks_assets();
     
     // Get all block directories - use file path, not URL
-    $theme_root = dirname(get_template_directory());
-    $blocks_dir = $theme_root . '/block-gutenberg';
+    if (!defined('APP_DIR')) {
+        return;
+    }
+
+    $blocks_dir = trailingslashit(APP_DIR) . 'block-gutenberg';
+    $theme_root_uri = dirname(get_stylesheet_directory_uri());
     
     if (!is_dir($blocks_dir)) {
-        error_log('Blocks directory not found: ' . $blocks_dir);
         return;
     }
     
@@ -76,9 +82,48 @@ function lacadev_register_custom_blocks() {
             
             $block_args = [];
             
-            if (!$has_individual_build) {
+            if ($has_individual_build) {
+                $asset_file = $blocks_dir . '/' . $block . '/build/index.asset.php';
+                $asset = [
+                    'dependencies' => [],
+                    'version' => null,
+                ];
+
+                if (file_exists($asset_file)) {
+                    $asset = require $asset_file;
+                }
+
+                $editor_script_handle = 'lacadev-block-' . $block . '-editor';
+                $editor_style_handle = 'lacadev-block-' . $block . '-editor';
+                $style_handle = 'lacadev-block-' . $block;
+
+                wp_register_script(
+                    $editor_script_handle,
+                    $theme_root_uri . '/block-gutenberg/' . $block . '/build/index.js',
+                    $asset['dependencies'] ?? [],
+                    $asset['version'] ?? null,
+                    true
+                );
+
+                wp_register_style(
+                    $editor_style_handle,
+                    $theme_root_uri . '/block-gutenberg/' . $block . '/build/index.css',
+                    [],
+                    $asset['version'] ?? null
+                );
+
+                wp_register_style(
+                    $style_handle,
+                    $theme_root_uri . '/block-gutenberg/' . $block . '/build/style-index.css',
+                    [],
+                    $asset['version'] ?? null
+                );
+
+                $block_args['editor_script'] = $editor_script_handle;
+                $block_args['editor_style'] = $editor_style_handle;
+                $block_args['style'] = $style_handle;
+            } else {
                 // Backward compatibility for blocks that haven't been refactored
-                // They still use the global theme editor script
                 $block_args['editor_script'] = 'lacadev-gutenberg-blocks';
             }
             
@@ -95,12 +140,10 @@ function lacadev_register_custom_blocks() {
             
             if ($result) {
                 $registered_count++;
-                error_log('Registered block: ' . $block . (file_exists($render_php) ? ' (dynamic)' : ' (static)'));
             }
         }
     }
     
-    error_log('Total blocks registered: ' . $registered_count);
 }
 add_action('init', 'lacadev_register_custom_blocks', 10);
 

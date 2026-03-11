@@ -6,6 +6,9 @@
   "description": "Hiển thị danh sách dự án (Project) với phân loại Tab",
   "category": "lacadev-blocks",
   "icon": "portfolio",
+  "editorScript": "lacadev-block-project-block-editor",
+  "editorStyle": "lacadev-block-project-block-editor",
+  "style": "lacadev-block-project-block",
   "keywords": ["project", "portfolio", "laca"],
   "textdomain": "laca",
   "attributes": {
