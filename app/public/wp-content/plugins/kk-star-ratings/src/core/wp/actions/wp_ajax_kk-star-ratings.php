@@ -82,7 +82,7 @@ function wp_ajax_kk_star_ratings()
         unset($payload['count'], $payload['score']);
 
         $payload = array_map(function ($item) {
-            return strip_shortcodes($item);
+            return str_replace(['[', ']'], '', strip_shortcodes($item));
         }, $payload);
 
         $html = trim(do_shortcode(to_shortcode(kksr('slug'), $payload)));

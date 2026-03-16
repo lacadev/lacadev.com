@@ -24,7 +24,7 @@ function add_meta_boxes($type, $post): void
 {
     $icon = $legend = '';
 
-    if ($post) {
+    if ($post instanceof \WP_Post) {
         $best = option('stars');
         [$count, $score] = calculate((int) $post->ID, 'default', $best);
         // $icon = '<span class="dashicons dashicons-star-half" style="margin-right: .25rem; font-size: 18px;"></span>';

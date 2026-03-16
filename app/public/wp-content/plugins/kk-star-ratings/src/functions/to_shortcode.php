@@ -22,7 +22,7 @@ function to_shortcode(string $tag, array $payload = [], string $contents = ''): 
     $fragments[] = "[{$tag}";
 
     $attrs = array_map(function ($key, $value) {
-        return "{$key}=\"{$value}\"";
+        return "{$key}=\"" . esc_attr($value) . "\"";
     }, array_keys($payload), array_values($payload));
 
     if ($attrs) {
