@@ -148,7 +148,11 @@ add_action('init', function() {
     if (class_exists('\App\Settings\LacaTools\TrackerEndpointHandler')) {
         (new \App\Settings\LacaTools\TrackerEndpointHandler())->init();
     }
-    
+
+    if (class_exists('\App\Settings\LacaTools\ClientPortalEndpoint')) {
+        (new \App\Settings\LacaTools\ClientPortalEndpoint())->init();
+    }
+
     if (class_exists('\App\Settings\LacaTools\ProjectTrackerGenerator')) {
         (new \App\Settings\LacaTools\ProjectTrackerGenerator())->init();
     }

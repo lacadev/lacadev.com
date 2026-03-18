@@ -151,6 +151,7 @@ add_action('after_setup_theme', function () {
     // Load advanced optimization modules
     require_once APP_APP_SETUP_DIR . 'assets.php';
     require_once APP_APP_SETUP_DIR . 'performance.php';
+    require_once APP_APP_SETUP_DIR . 'pwa.php';
 
     // Load Gutenberg blocks (Carbon Fields)
     // $blocks_dir = APP_APP_SETUP_DIR . '/blocks';

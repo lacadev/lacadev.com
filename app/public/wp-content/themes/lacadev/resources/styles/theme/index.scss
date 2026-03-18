@@ -10,6 +10,7 @@
 @use "./components/comments.scss";
 @use "./components/toc.scss";
 @use "./components/pagination.scss";
+@use "./components/micro-interactions.scss";
 
 @use "./layout/general.scss" as *;
 @use "./layout/header.scss" as *;
@@ -20,6 +21,7 @@
 @use "./pages/404.scss" as *;
 @use "./pages/cpt.scss" as *;
 @use "./pages/contact.scss" as *;
+@use "./pages/client-portal.scss" as *;
 
 #wpadminbar .logo-admin-bar {
   max-height: 1.2rem !important;

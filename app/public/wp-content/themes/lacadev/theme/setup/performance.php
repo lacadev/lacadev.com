@@ -52,7 +52,7 @@ class ThemePerformance
         // Remove unnecessary WordPress features
         remove_action('wp_head', 'rsd_link');
         remove_action('wp_head', 'wlwmanifest_link');
-        remove_action('wp_head', 'wp_generator');
+        // wp_generator đã được remove trong security.php — không duplicate ở đây
         remove_action('wp_head', 'feed_links', 2);
         remove_action('wp_head', 'feed_links_extra', 3);
         remove_action('wp_head', 'adjacent_posts_rel_link_wp_head', 10);
@@ -230,9 +230,13 @@ class ThemePerformance
                         navigator.serviceWorker.register('<?= get_template_directory_uri(); ?>/dist/sw.js', {
                             scope: '/'
                         }).then(function (registration) {
+                            <?php if ( defined('WP_DEBUG') && WP_DEBUG ) : ?>
                             console.log('SW registered:', registration.scope);
+                            <?php endif; ?>
                         }).catch(function (error) {
+                            <?php if ( defined('WP_DEBUG') && WP_DEBUG ) : ?>
                             console.log('SW registration failed:', error);
+                            <?php endif; ?>
                         });
                     });
                 }
@@ -242,11 +246,12 @@ class ThemePerformance
     }
 
     /**
-     * Add performance monitoring
+     * Add performance monitoring (chỉ chạy khi WP_DEBUG = true)
+     * Tắt hoàn toàn trên production để tránh expose metrics và console clutter
      */
     public static function add_performance_monitoring()
     {
-        if (!is_admin()) {
+        if ( ! is_admin() && defined('WP_DEBUG') && WP_DEBUG ) {
             ?>
             <script>
                 // Helper function to evaluate and log Web Vitals with detailed feedback

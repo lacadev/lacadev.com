@@ -3,6 +3,7 @@ import '@images/favicon.ico';
 import '@styles/theme';
 import './pages/*.js';
 import './ajax-search.js';
+import './micro-interactions.js';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Swup from 'swup';

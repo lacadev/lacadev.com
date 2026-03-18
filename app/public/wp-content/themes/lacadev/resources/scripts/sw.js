@@ -5,7 +5,7 @@
  * @version 1.0.0
  */
 
-const CACHE_VERSION = 'lacadev-v1.0.0';
+const CACHE_VERSION = 'lacadev-v1.1.0';
 const CACHE_NAME = `lacadev-cache-${ CACHE_VERSION }`;
 
 // Assets to cache on install
@@ -13,7 +13,7 @@ const STATIC_ASSETS = [
 	'/',
 	'/dist/styles/theme.css',
 	'/dist/theme.js',
-	'/dist/admin.js',
+	'/offline.php',
 ];
 
 // Install event - cache static assets
@@ -86,8 +86,16 @@ self.addEventListener( 'fetch', ( event ) => {
 		return;
 	}
 
-	// Skip AJAX requests
-	if ( url.pathname.includes( 'admin-ajax.php' ) ) {
+	// Skip AJAX and REST API requests (always fresh)
+	if (
+		url.pathname.includes( 'admin-ajax.php' ) ||
+		url.pathname.includes( '/wp-json/' )
+	) {
+		return;
+	}
+
+	// Skip non-GET requests (POST forms, etc.)
+	if ( request.method !== 'GET' ) {
 		return;
 	}
 
@@ -148,11 +156,11 @@ async function cacheFirst( request ) {
 	} catch ( error ) {
 		console.error( '[SW] Cache-first fetch failed:', error );
 		// Return offline fallback if available
-		const offlineFallback = await caches.match( '/offline.html' );
+		const offlineFallback = await caches.match( '/offline.php' );
 		if ( offlineFallback ) {
 			return offlineFallback;
 		}
-		return new Response( 'Offline', {
+		return new Response( 'Offline — Không có kết nối mạng', {
 			status: 503,
 			statusText: 'Service Unavailable',
 		} );
@@ -185,12 +193,12 @@ async function networkFirst( request ) {
 		}
 
 		// Return offline fallback
-		const offlineFallback = await caches.match( '/offline.html' );
+		const offlineFallback = await caches.match( '/offline.php' );
 		if ( offlineFallback ) {
 			return offlineFallback;
 		}
 
-		return new Response( 'Offline', {
+		return new Response( 'Offline — Không có kết nối mạng', {
 			status: 503,
 			statusText: 'Service Unavailable',
 		} );

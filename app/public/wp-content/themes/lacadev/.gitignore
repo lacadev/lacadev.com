@@ -19,6 +19,9 @@
 # CLI tools
 drone.json
 
+#block-gutenberg
+/block-gutenberg/**/build
+
 # Common
 .DS_Store
 .DS_Store?

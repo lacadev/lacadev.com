@@ -1,0 +1,240 @@
+// ==========================================================================
+// Micro-Interactions & Scroll Animations
+//
+// Utility classes dựa trên Intersection Observer API.
+// Thêm class `laca-reveal` vào element để kích hoạt hiệu ứng xuất hiện.
+// Biến thể: laca-reveal--up, --down, --left, --right, --zoom, --fade
+// Delay:    laca-reveal--delay-1 … --delay-5
+//
+// Hover effects: laca-hover-lift, laca-hover-glow, laca-hover-scale
+// ==========================================================================
+
+// --------------------------------------------------------------------------
+// 1. Keyframes
+// --------------------------------------------------------------------------
+@keyframes laca-fade-in-up {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes laca-fade-in-down {
+    from { opacity: 0; transform: translateY(-30px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes laca-fade-in-left {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes laca-fade-in-right {
+    from { opacity: 0; transform: translateX(-40px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes laca-zoom-in {
+    from { opacity: 0; transform: scale(0.88); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes laca-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes laca-shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes laca-pulse-ring {
+    0%   { transform: scale(1); opacity: .6; }
+    100% { transform: scale(1.4); opacity: 0; }
+}
+
+@keyframes laca-bounce-in {
+    0%   { transform: scale(0.3); opacity: 0; }
+    60%  { transform: scale(1.08); opacity: 1; }
+    80%  { transform: scale(0.95); }
+    100% { transform: scale(1); }
+}
+
+// --------------------------------------------------------------------------
+// 2. Scroll-Reveal Base (state: hidden → visible via JS)
+// --------------------------------------------------------------------------
+.laca-reveal {
+    // Trạng thái ẩn ban đầu — chỉ áp dụng khi JS chưa trigger
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+        opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+
+    // Khi đã enter viewport
+    &.is-visible {
+        opacity: 1;
+        transform: none;
+    }
+
+    // Biến thể hướng
+    &--down {
+        transform: translateY(-28px);
+    }
+
+    &--left {
+        transform: translateX(40px);
+    }
+
+    &--right {
+        transform: translateX(-40px);
+    }
+
+    &--zoom {
+        transform: scale(0.88);
+    }
+
+    &--fade {
+        transform: none;
+    }
+
+    // Delay classes (stagger effect)
+    &--delay-1 { transition-delay: 0.1s; }
+    &--delay-2 { transition-delay: 0.2s; }
+    &--delay-3 { transition-delay: 0.3s; }
+    &--delay-4 { transition-delay: 0.45s; }
+    &--delay-5 { transition-delay: 0.6s; }
+}
+
+// Nếu user prefer-reduced-motion, tắt tất cả animations
+@media (prefers-reduced-motion: reduce) {
+    .laca-reveal,
+    .laca-reveal.is-visible {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+}
+
+// --------------------------------------------------------------------------
+// 3. Hover Effects
+// --------------------------------------------------------------------------
+
+// Card lift on hover
+.laca-hover-lift {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+    }
+
+    &:active {
+        transform: translateY(-1px);
+    }
+}
+
+// Subtle scale
+.laca-hover-scale {
+    transition: transform 0.2s ease;
+
+    &:hover {
+        transform: scale(1.035);
+    }
+}
+
+// Glow effect (xanh dương)
+.laca-hover-glow {
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+
+    &:hover {
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25),
+                    0 8px 24px rgba(37, 99, 235, 0.15);
+        transform: translateY(-2px);
+    }
+}
+
+// --------------------------------------------------------------------------
+// 4. Button Micro-Interactions
+// --------------------------------------------------------------------------
+.btn,
+.wp-block-button__link,
+button[type="submit"],
+a.button {
+    position: relative;
+    overflow: hidden;
+
+    // Ripple layer
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle, rgba(255,255,255,.25) 0%, transparent 70%);
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        transform: scale(0);
+        pointer-events: none;
+    }
+
+    &:active::after {
+        opacity: 1;
+        transform: scale(2.5);
+        transition: transform 0s, opacity 0s;
+    }
+}
+
+// --------------------------------------------------------------------------
+// 5. Link underline animation
+// --------------------------------------------------------------------------
+.laca-link-anim {
+    position: relative;
+    text-decoration: none;
+
+    &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: -2px;
+        width: 0;
+        height: 2px;
+        background: currentColor;
+        transition: width 0.25s ease;
+        border-radius: 1px;
+    }
+
+    &:hover::after {
+        width: 100%;
+    }
+}
+
+// --------------------------------------------------------------------------
+// 6. Skeleton Loading Shimmer
+// --------------------------------------------------------------------------
+.laca-skeleton {
+    background: linear-gradient(
+        90deg,
+        #f0f0f0 25%,
+        #e8e8e8 50%,
+        #f0f0f0 75%
+    );
+    background-size: 200% 100%;
+    animation: laca-shimmer 1.4s infinite;
+    border-radius: 4px;
+}
+
+// --------------------------------------------------------------------------
+// 7. Counter số (dùng với JS)
+// --------------------------------------------------------------------------
+.laca-counter {
+    display: inline-block;
+    font-variant-numeric: tabular-nums;
+}
+
+// --------------------------------------------------------------------------
+// 8. Focus visible enhancement (a11y)
+// --------------------------------------------------------------------------
+:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.6);
+    outline-offset: 3px;
+    border-radius: 3px;
+}

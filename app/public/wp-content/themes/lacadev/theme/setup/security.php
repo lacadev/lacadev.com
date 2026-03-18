@@ -33,8 +33,9 @@ add_action('send_headers', function() {
     
     // if ( ! is_admin() ) {
     //     // Content Security Policy
-    //     // Updated to support reCAPTCHA v3, Google APIs, and modern web features
-    //     $csp = "default-src 'self'; ";
+    //     // Đang ở chế độ Report-Only: violations sẽ hiển thị trong Console nhưng không block resource
+    //     // Sau khi xác nhận không có violation hợp lệ, đổi thành 'Content-Security-Policy'
+    //     $csp  = "default-src 'self'; ";
     //     $csp .= "script-src 'self' 'nonce-{$nonce}' https://www.google.com https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com https://images.dmca.com https://apis.google.com blob:; ";
     //     $csp .= "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; ";
     //     $csp .= "font-src 'self' https://fonts.gstatic.com data:; ";
@@ -44,11 +45,12 @@ add_action('send_headers', function() {
     //     $csp .= "img-src 'self' data: https: http:; ";
     //     $csp .= "worker-src 'self' blob:; ";
     //     $csp .= "frame-ancestors 'self';";
-        
-    //     header("Content-Security-Policy: " . $csp);
-        
-    //     // Permissions Policy (Feature Policy)
-    //     header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
+
+    //     // TODO: Khi đã kiểm tra kỹ violation, đổi header bên dưới thành 'Content-Security-Policy'
+    //     header( "Content-Security-Policy-Report-Only: {$csp}" );
+
+    //     // Permissions Policy
+    //     header( 'Permissions-Policy: geolocation=(), microphone=(), camera=()' );
     // }
 });
 
