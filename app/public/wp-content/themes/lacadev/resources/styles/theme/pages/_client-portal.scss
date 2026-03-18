@@ -1,0 +1,879 @@
+@use "../abstracts/variables.scss" as *;
+@use "../abstracts/mixin.scss" as *;
+
+// =============================================================================
+// CLIENT PORTAL — LacaDev Design System v2
+// Template: theme/page_templates/template-client-portal.php
+//
+// Design DNA từ LacaDev Homepage:
+//   • Background: lavender #e9eaf2 (giống homepage)
+//   • Cards: white với border 1px lavender-100, không dùng shadow nặng
+//   • Typography: uppercase + letter-spacing mạnh, extraBold titles
+//   • Accent: #1a1a1a (đen chủ đạo) + #2563eb (xanh LacaDev)
+//   • Transitions: cubic-bezier(0.4, 0, 0.2, 1), nhẹ nhàng
+//   • WCAG 2.1 AA: focus rings, semantic HTML
+// =============================================================================
+
+
+// -----------------------------------------------------------------------------
+// 1. DESIGN TOKENS — prefix --cp- tránh conflict
+// -----------------------------------------------------------------------------
+:root {
+  // === LacaDev Brand Palette ===
+  --cp-lavender-bg:  #e9eaf2;   // homepage bg
+  --cp-lavender-100: #d8daf0;   // card border
+  --cp-lavender-200: #c4c8e8;   // divider
+  --cp-lavender-300: #a8aedd;
+
+  // === Blue (accent) ===
+  --cp-blue-50:   #eff6ff;
+  --cp-blue-100:  #dbeafe;
+  --cp-blue-500:  #3b82f6;
+  --cp-blue-600:  #2563eb;
+  --cp-blue-700:  #1d4ed8;
+  --cp-blue-900:  #1e3a5f;
+
+  // === Green ===
+  --cp-green-50:   #f0fdf4;
+  --cp-green-100:  #dcfce7;
+  --cp-green-400:  #34d399;
+  --cp-green-500:  #10b981;
+  --cp-green-700:  #047857;
+
+  // === Amber ===
+  --cp-amber-50:   #fffbeb;
+  --cp-amber-100:  #fef3c7;
+  --cp-amber-200:  #fde68a;
+  --cp-amber-800:  #92400e;
+
+  // === Red ===
+  --cp-red-50:  #fef2f2;
+  --cp-red-200: #fecaca;
+  --cp-red-800: #991b1b;
+
+  // === Neutral (off-white to dark) ===
+  --cp-gray-50:  #f9fafb;
+  --cp-gray-100: #f0f1f5;   // legible trên lavender bg
+  --cp-gray-200: #e1e3ec;
+  --cp-gray-300: #cacdd8;
+  --cp-gray-400: #9ba0b4;
+  --cp-gray-500: #6b7280;
+  --cp-gray-600: #4b5563;
+  --cp-gray-700: #374151;
+  --cp-gray-800: #1f2937;
+  --cp-gray-900: #111827;
+
+  // === Semantic ===
+  --cp-primary:    #2563eb;
+  --cp-primary-h:  #1d4ed8;
+  --cp-primary-d:  #1e40af;
+  --cp-success:    #10b981;
+  --cp-warning:    #f59e0b;
+  --cp-danger:     #ef4444;
+
+  --cp-text:       #111827;
+  --cp-text-muted: #6b7280;
+  --cp-bg:         #e9eaf2;   // LacaDev lavender
+  --cp-card:       #ffffff;
+  --cp-card-border: #d8daf0;  // lavender-100
+
+  // === Shape ===
+  --cp-radius-sm:   0.4rem;
+  --cp-radius:      1rem;
+  --cp-radius-lg:   1.4rem;
+  --cp-radius-xl:   2rem;
+  --cp-radius-pill: 99.9rem;
+
+  // === Shadow — subtle, match theme ===
+  --cp-shadow-xs: 0 0.1rem 0.3rem rgba(37, 99, 235, 0.06);
+  --cp-shadow-sm: 0 0.2rem 0.8rem rgba(37, 99, 235, 0.08);
+  --cp-shadow-md: 0 0.6rem 1.6rem rgba(37, 99, 235, 0.10);
+  --cp-shadow-lg: 0 1.2rem 3.2rem rgba(37, 99, 235, 0.12);
+}
+
+// Reduced motion
+@media (prefers-reduced-motion: reduce) {
+  .cp-main *,
+  .cp-main *::before,
+  .cp-main *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+// -----------------------------------------------------------------------------
+// 2. BODY BACKGROUND — lavender như homepage
+// -----------------------------------------------------------------------------
+body.has-client-portal {
+  background-color: var(--cp-bg);
+}
+
+
+// -----------------------------------------------------------------------------
+// 3. MAIN LAYOUT
+// -----------------------------------------------------------------------------
+.cp-main {
+  max-width: 72rem;   // narrower = focused, không quá rộng
+  margin: 0 auto;
+  padding: 4rem 2rem 8rem;
+  animation: cp-fade-in 0.5s cubic-bezier(0, 0, 0.2, 1) both;
+}
+
+@keyframes cp-fade-in {
+  from { opacity: 0; transform: translateY(1.6rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+// -----------------------------------------------------------------------------
+// 4. CARDS — white trên lavender bg, border lavender
+// -----------------------------------------------------------------------------
+.cp-card {
+  background: var(--cp-card);
+  border-radius: var(--cp-radius-lg);
+  border: 0.1rem solid var(--cp-card-border);
+  padding: 2.8rem 2.4rem;
+  margin-bottom: 1.6rem;
+  transition: border-color 0.2s ease,
+              box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: var(--cp-lavender-200);
+    box-shadow: var(--cp-shadow-sm);
+  }
+
+  &__title {
+    font-size: 1rem;
+    font-weight: $bold;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--cp-gray-400);
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-family: $primaryFont;
+  }
+
+  &__title-count {
+    font-weight: $regular;
+    font-size: 1rem;
+    color: var(--cp-gray-300);
+    margin-left: 0.3rem;
+  }
+
+  // Stagger fade-in
+  @for $i from 1 through 6 {
+    &:nth-child(#{$i}) {
+      animation: cp-fade-in 0.5s cubic-bezier(0, 0, 0.2, 1) #{($i - 1) * 70ms} both;
+    }
+  }
+}
+
+// Divider dùng lavender thay gray
+.cp-divider {
+  border: none;
+  border-top: 0.1rem solid var(--cp-lavender-200);
+  margin: 2rem 0;
+}
+
+
+// -----------------------------------------------------------------------------
+// 5. HERO — trạng thái chưa có key
+// -----------------------------------------------------------------------------
+.cp-hero {
+  text-align: center;
+  padding: 8rem 1.6rem 6rem;
+
+  &__label {
+    font-size: 1.1rem;
+    font-weight: $bold;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--cp-primary);
+    margin-bottom: 2rem;
+    display: block;
+  }
+
+  &__title {
+    font-size: 4.2rem;
+    font-weight: $extraBold;
+    color: var(--cp-text);
+    margin-bottom: 1.6rem;
+    letter-spacing: -0.08rem;
+    line-height: 1.15;
+    font-family: $primaryFont;
+  }
+
+  &__desc {
+    color: var(--cp-text-muted);
+    font-size: 1.7rem;
+    line-height: 1.7;
+    max-width: 46rem;
+    margin: 0 auto 4rem;
+    font-weight: $regular;
+  }
+}
+
+@keyframes cp-bounce-in {
+  0%   { opacity: 0; transform: scale(0.7); }
+  70%  { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+
+// -----------------------------------------------------------------------------
+// 6. KEY FORM — input + button
+// -----------------------------------------------------------------------------
+.cp-key-form {
+  display: flex;
+  gap: 1rem;
+  max-width: 48rem;
+  margin: 0 auto;
+
+  input {
+    flex: 1;
+    padding: 1.4rem 2rem;
+    border: 0.15rem solid var(--cp-lavender-200);
+    border-radius: var(--cp-radius);
+    font-size: 1.5rem;
+    font-family: $primaryFont;
+    outline: none;
+    color: var(--cp-text);
+    background: var(--cp-card);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &::placeholder { color: var(--cp-gray-300); }
+
+    &:focus {
+      border-color: var(--cp-primary);
+      box-shadow: 0 0 0 0.35rem rgba(37, 99, 235, 0.12);
+    }
+  }
+
+  button {
+    padding: 1.4rem 2.4rem;
+    background: var(--cp-text);  // đen, như homepage CTA
+    color: #fff;
+    border: none;
+    border-radius: var(--cp-radius);
+    font-size: 1.5rem;
+    font-weight: $bold;
+    font-family: $primaryFont;
+    cursor: pointer;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+    transition: background 0.2s ease,
+                transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    &:hover {
+      background: #2d2d2d;
+      transform: translateY(-0.15rem);
+    }
+
+    &:active { transform: translateY(0); }
+
+    &:focus-visible {
+      outline: 0.3rem solid var(--cp-primary);
+      outline-offset: 0.3rem;
+    }
+  }
+
+  &--retry { margin-top: 2rem; }
+}
+
+
+// -----------------------------------------------------------------------------
+// 7. ERROR STATE
+// -----------------------------------------------------------------------------
+.cp-error {
+  background: var(--cp-card);
+  border: 0.15rem solid var(--cp-red-200);
+  border-radius: var(--cp-radius);
+  padding: 2rem 2.4rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1.4rem;
+  color: var(--cp-red-800);
+  font-size: 1.5rem;
+  line-height: 1.55;
+
+  &__icon {
+    font-size: 2.2rem;
+    flex-shrink: 0;
+  }
+}
+
+
+// -----------------------------------------------------------------------------
+// 8. STATUS HEADER — Project name + badge
+// -----------------------------------------------------------------------------
+.cp-status-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.6rem;
+  flex-wrap: wrap;
+}
+
+.cp-project-name {
+  font-size: 2.8rem;
+  font-weight: $extraBold;
+  color: var(--cp-text);
+  letter-spacing: -0.08rem;
+  line-height: 1.2;
+  font-family: $primaryFont;
+}
+
+.cp-project-domain {
+  font-size: 1.4rem;
+  color: var(--cp-text-muted);
+  margin-top: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  a {
+    color: var(--cp-primary);
+    text-decoration: none;
+    font-weight: $semiBold;
+
+    &:hover { text-decoration: underline; }
+    &:focus-visible {
+      outline: 0.2rem solid var(--cp-primary);
+      outline-offset: 0.2rem;
+      border-radius: 0.2rem;
+    }
+  }
+}
+
+// Status badge — pill với đen nền
+.cp-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.4rem;
+  border-radius: var(--cp-radius-pill);
+  font-size: 1.2rem;
+  font-weight: $bold;
+  color: #fff;
+  flex-shrink: 0;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-family: $primaryFont;
+
+  &[data-status="planning"]    { background: #7c3aed; }
+  &[data-status="in-progress"] { background: var(--cp-primary); }
+  &[data-status="review"]      { background: var(--cp-warning); color: #1c1917; }
+  &[data-status="done"]        { background: var(--cp-success); }
+  &[data-status="paused"]      { background: var(--cp-gray-400); }
+  &[data-status="cancelled"]   { background: var(--cp-danger); }
+}
+
+
+// -----------------------------------------------------------------------------
+// 9. PROGRESS BAR — thin & elegant
+// -----------------------------------------------------------------------------
+.cp-progress-wrap {
+  margin-top: 2.4rem;
+  padding-top: 2rem;
+  border-top: 0.1rem solid var(--cp-lavender-200);
+}
+
+.cp-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1.2rem;
+}
+
+.cp-progress-label {
+  font-size: 1.1rem;
+  font-weight: $bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--cp-text-muted);
+}
+
+.cp-progress-pct {
+  font-size: 2.8rem;
+  font-weight: $extraBold;
+  color: var(--cp-text);
+  letter-spacing: -0.12rem;
+  line-height: 1;
+  font-family: $primaryFont;
+
+  .cp-pct-symbol {
+    font-size: 1.6rem;
+    font-weight: $semiBold;
+    letter-spacing: 0;
+    margin-left: 0.1rem;
+    color: var(--cp-text-muted);
+  }
+}
+
+.cp-progress-bar {
+  height: 0.8rem;
+  background: var(--cp-lavender-100);
+  border-radius: var(--cp-radius-pill);
+  overflow: hidden;
+  position: relative;
+}
+
+.cp-progress-fill {
+  height: 100%;
+  border-radius: var(--cp-radius-pill);
+  background: var(--cp-text);  // đen — giống homepage element
+  transition: width 0.9s cubic-bezier(0, 0, 0.2, 1);
+  width: var(--cp-progress, 0%);
+  position: relative;
+
+  // Xanh khi gần hoàn thành (> 80%) dùng CSS thay JS
+  // Default: đen → override nếu muốn colorful
+}
+
+@keyframes cp-shimmer {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(200%); }
+}
+
+
+// -----------------------------------------------------------------------------
+// 10. DATES GRID
+// -----------------------------------------------------------------------------
+.cp-dates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1.2rem;
+}
+
+.cp-date-item {
+  padding: 1.6rem;
+  background: var(--cp-bg);    // lavender bg bên trong card trắng = depth
+  border-radius: var(--cp-radius);
+  border: 0.1rem solid var(--cp-lavender-200);
+  transition: border-color 0.2s ease;
+
+  &:hover { border-color: var(--cp-lavender-300); }
+
+  &__label {
+    font-size: 0.9rem;
+    font-weight: $bold;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--cp-text-muted);
+    margin-bottom: 0.8rem;
+  }
+
+  &__value {
+    font-size: 1.7rem;
+    font-weight: $bold;
+    color: var(--cp-text);
+    line-height: 1.2;
+    font-family: $primaryFont;
+    letter-spacing: -0.02rem;
+
+    &--empty {
+      color: var(--cp-gray-400);
+      font-weight: $regular;
+      font-size: 1.4rem;
+    }
+
+    &--success { color: var(--cp-green-700); }
+  }
+}
+
+
+// -----------------------------------------------------------------------------
+// 11. ALERTS
+// -----------------------------------------------------------------------------
+.cp-alert {
+  display: flex;
+  gap: 1.4rem;
+  align-items: flex-start;
+  padding: 1.4rem 1.6rem;
+  border-radius: var(--cp-radius);
+  margin-bottom: 0.8rem;
+  font-size: 1.4rem;
+  border: 0.1rem solid transparent;
+
+  &:last-child { margin-bottom: 0; }
+
+  &--info {
+    background: var(--cp-blue-50);
+    border-color: var(--cp-blue-100);
+    color: #1e3a8a;
+  }
+
+  &--warning {
+    background: var(--cp-amber-50);
+    border-color: var(--cp-amber-200);
+    color: var(--cp-amber-800);
+  }
+
+  &--critical {
+    background: var(--cp-red-50);
+    border-color: var(--cp-red-200);
+    color: var(--cp-red-800);
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    font-size: 1.8rem;
+    margin-top: 0.1rem;
+  }
+
+  &__body { flex: 1; min-width: 0; }
+
+  &__type {
+    font-weight: $bold;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.65;
+    margin-bottom: 0.3rem;
+  }
+
+  &__msg { line-height: 1.6; word-break: break-word; }
+
+  &__date {
+    font-size: 1.1rem;
+    opacity: 0.5;
+    margin-top: 0.5rem;
+    font-style: italic;
+  }
+}
+
+
+// -----------------------------------------------------------------------------
+// 12. TASK CHECKLIST
+// -----------------------------------------------------------------------------
+.cp-task-progress {
+  margin-bottom: 2rem;
+  padding: 1.6rem;
+  background: var(--cp-bg);
+  border-radius: var(--cp-radius);
+  border: 0.1rem solid var(--cp-lavender-200);
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.2rem;
+    font-weight: $semiBold;
+    color: var(--cp-text-muted);
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  &__remaining {
+    color: var(--cp-text);
+    font-weight: $bold;
+  }
+}
+
+.cp-task-bar {
+  height: 0.5rem;
+  background: var(--cp-lavender-200);
+  border-radius: var(--cp-radius-pill);
+  overflow: hidden;
+}
+
+.cp-task-bar-fill {
+  height: 100%;
+  border-radius: var(--cp-radius-pill);
+  background: var(--cp-success);
+  width: var(--cp-task-progress, 0%);
+  transition: width 0.9s cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cp-task-row {
+  display: flex;
+  flex-direction: column;
+  padding: 1.4rem 0;
+  border-bottom: 0.1rem solid var(--cp-lavender-100);
+
+  &:last-child { border-bottom: none; }
+}
+
+.cp-task-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.2rem;
+}
+
+.cp-task-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.cp-task-dot {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: $bold;
+  flex-shrink: 0;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  margin-top: 0.15rem;
+
+  &--pending {
+    background: transparent;
+    border: 0.15rem solid var(--cp-lavender-300);
+    color: transparent;
+
+    .cp-task-row:hover & { border-color: var(--cp-primary); }
+  }
+
+  &--done {
+    background: var(--cp-text);  // đen
+    color: #fff;
+    border: 0.15rem solid var(--cp-text);
+  }
+}
+
+.cp-task-name {
+  font-size: 1.45rem;
+  line-height: 1.45;
+  color: var(--cp-gray-700);
+  font-weight: $semiBold;
+
+  &--done {
+    text-decoration: line-through;
+    color: var(--cp-gray-300);
+    text-decoration-thickness: 0.15rem;
+    font-weight: $regular;
+  }
+}
+
+.cp-task-desc {
+  font-size: 1.3rem;
+  color: var(--cp-gray-500);
+  line-height: 1.55;
+  background: var(--cp-bg);
+  border-left: 0.25rem solid var(--cp-lavender-300);
+  padding: 0.6rem 1rem;
+  border-radius: 0.4rem;
+}
+
+.cp-task-image {
+  img {
+    max-width: 100%;
+    max-height: 28rem;
+    border-radius: 0.8rem;
+    border: 0.1rem solid var(--cp-lavender-200);
+    object-fit: cover;
+    cursor: zoom-in;
+    transition: opacity 0.2s;
+
+    &:hover { opacity: 0.9; }
+  }
+}
+
+
+// -----------------------------------------------------------------------------
+// 13. ACTIVITY LOG
+// -----------------------------------------------------------------------------
+.cp-log-truncation {
+  font-size: 1.1rem;
+  color: var(--cp-gray-400);
+  margin-left: 0.5rem;
+}
+
+.cp-log-item {
+  display: flex;
+  gap: 1.4rem;
+  align-items: flex-start;
+  padding: 1.4rem 0;
+  border-bottom: 0.1rem solid var(--cp-lavender-100);
+
+  &:last-child { border-bottom: none; }
+}
+
+.cp-log-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  padding-top: 0.4rem;
+}
+
+.cp-log-dot {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background: var(--cp-text);
+  box-shadow: 0 0 0 0.25rem rgba(17, 24, 39, 0.1);
+
+  &--auto {
+    background: var(--cp-gray-300);
+    box-shadow: none;
+  }
+}
+
+.cp-log-body  { flex: 1; min-width: 0; }
+
+.cp-log-meta {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.cp-log-type {
+  font-size: 1.1rem;
+  font-weight: $bold;
+  color: var(--cp-text);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cp-log-date {
+  font-size: 1.1rem;
+  color: var(--cp-gray-400);
+
+  &::before {
+    content: '·';
+    margin-right: 0.6rem;
+    opacity: 0.5;
+  }
+}
+
+.cp-log-by {
+  font-size: 1.1rem;
+  color: var(--cp-gray-400);
+  font-style: italic;
+}
+
+.cp-log-content {
+  font-size: 1.4rem;
+  color: var(--cp-gray-600);
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+
+// -----------------------------------------------------------------------------
+// 14. EMPTY STATES
+// -----------------------------------------------------------------------------
+.cp-empty {
+  text-align: center;
+  padding: 4rem 1.6rem;
+  color: var(--cp-text-muted);
+  font-size: 1.4rem;
+
+  &__icon {
+    font-size: 3.6rem;
+    margin-bottom: 1.2rem;
+    display: block;
+    opacity: 0.6;
+  }
+}
+
+
+// -----------------------------------------------------------------------------
+// 15. FOOTER
+// -----------------------------------------------------------------------------
+.cp-footer {
+  text-align: center;
+  padding: 3.2rem 1.6rem 4rem;
+  font-size: 1.2rem;
+  color: var(--cp-text-muted);
+  line-height: 1.8;
+
+  a {
+    color: var(--cp-text);
+    text-decoration: none;
+    font-weight: $semiBold;
+
+    &:hover { text-decoration: underline; }
+  }
+
+  &__timestamp {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 1.1rem;
+    opacity: 0.6;
+  }
+}
+
+
+// -----------------------------------------------------------------------------
+// 16. FOCUS RING — WCAG AA
+// -----------------------------------------------------------------------------
+.cp-main *:focus-visible {
+  outline: 0.3rem solid var(--cp-primary);
+  outline-offset: 0.3rem;
+  border-radius: 0.4rem;
+}
+
+
+// -----------------------------------------------------------------------------
+// 20. BADGE
+// -----------------------------------------------------------------------------
+// 20. BADGE
+// -----------------------------------------------------------------------------
+.laca-badge {
+  display: inline-block;
+  background: var(--cp-text);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: $bold;
+  padding: 0.15em 0.6em;
+  border-radius: 2rem;
+  margin-left: 0.4em;
+  vertical-align: middle;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+}
+
+
+// =============================================================================
+// RESPONSIVE
+// =============================================================================
+@include maxWidth($xs) {
+  .cp-main { padding: 2.4rem 1.4rem 6rem; }
+
+  .cp-hero {
+    padding: 5rem 1.4rem 4rem;
+
+    &__title { font-size: 3rem; }
+    &__desc  { font-size: 1.6rem; }
+  }
+
+  .cp-key-form {
+    flex-direction: column;
+
+    button { width: 100%; }
+  }
+
+  .cp-card {
+    padding: 2rem 1.6rem;
+    margin-bottom: 1.2rem;
+    border-radius: var(--cp-radius);
+  }
+
+  .cp-status-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .cp-project-name { font-size: 2.2rem; }
+  .cp-dates-grid   { grid-template-columns: repeat(2, 1fr); }
+  .cp-progress-pct { font-size: 2.4rem; }
+}
+
+@include maxWidth(400px) {
+  .cp-dates-grid { grid-template-columns: 1fr; }
+}

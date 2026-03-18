@@ -47,6 +47,12 @@ class Project extends \App\Abstracts\AbstractPostType
         // AJAX: thêm alert
         add_action('wp_ajax_laca_add_alert', [$this, 'ajaxAddAlert']);
 
+        // AJAX: task checklist
+        add_action('wp_ajax_laca_add_task',    [$this, 'ajaxAddTask']);
+        add_action('wp_ajax_laca_toggle_task', [$this, 'ajaxToggleTask']);
+        add_action('wp_ajax_laca_delete_task', [$this, 'ajaxDeleteTask']);
+        add_action('wp_ajax_laca_sync_pages',  [$this, 'ajaxSyncPages']);
+
         // Thêm custom meta box cho Logs & Alerts
         add_action('add_meta_boxes', [$this, 'registerLogsMetaBox']);
 
@@ -68,6 +74,9 @@ class Project extends \App\Abstracts\AbstractPostType
         // Tự động tính toán Payment Status
         // Priority 9999: đảm bảo chạy SAU KHI Carbon Fields đã lưu xong tất cả meta
         add_action('save_post_project', [$this, 'autoCalculatePaymentStatus'], 9999, 2);
+
+        // Lưu portal alias khi admin save project
+        add_action('save_post_project', [$this, 'savePortalAlias'], 10, 1);
     }
 
     private function normalizeHexColor(string $hex): string
@@ -516,6 +525,10 @@ class Project extends \App\Abstracts\AbstractPostType
             Field::make('text', 'demo_design_url', __('URL web mẫu / Link Figma', 'laca'))
                 ->set_attribute('placeholder', 'https://'),
 
+            Field::make('text', 'live_url', __('🌐 URL website đang chạy', 'laca'))
+                ->set_attribute('placeholder', 'https://example.com')
+                ->set_help_text('URL thực tế của website (dùng trong Client Portal và danh sách project).'),
+
             Field::make('separator', 'sep_brand_colors', __('Màu sắc chủ đạo', 'laca')),
 
             Field::make('complex', 'brand_colors', __('Tối đa 3 màu', 'laca'))
@@ -867,6 +880,228 @@ class Project extends \App\Abstracts\AbstractPostType
     }
 
     // =========================================================================
+    // TASK CHECKLIST — AJAX HANDLERS
+    // =========================================================================
+
+    /**
+     * Helper: Lấy task list từ postmeta, tự sync design_pages nếu chưa có.
+     */
+    private function getTaskList(int $projectId): array
+    {
+        $raw = get_post_meta($projectId, '_laca_task_list', true);
+        if (is_string($raw) && $raw !== '') {
+            return json_decode($raw, true) ?: [];
+        }
+        return [];
+    }
+
+    private function saveTaskList(int $projectId, array $tasks): void
+    {
+        update_post_meta($projectId, '_laca_task_list', wp_json_encode($tasks, JSON_UNESCAPED_UNICODE));
+    }
+
+    /** AJAX: Sync các trang từ design_pages CF vào task list (chỉ thêm, không xóa) */
+    public function ajaxSyncPages(): void
+    {
+        check_ajax_referer('laca_project_manager', 'nonce');
+        $projectId = absint($_POST['project_id'] ?? 0);
+
+        if (!$projectId || get_post_type($projectId) !== 'project' || !current_user_can('edit_post', $projectId)) {
+            wp_send_json_error(['message' => 'Không hợp lệ'], 403);
+        }
+
+        $pages = (array) carbon_get_post_meta($projectId, 'design_pages');
+        $tasks = $this->getTaskList($projectId);
+
+        // Index existing page tasks by source_id để tránh trùng lặp
+        $existingPageIds = [];
+        foreach ($tasks as $t) {
+            if (($t['source'] ?? '') === 'page') {
+                $existingPageIds[] = $t['source_id'] ?? '';
+            }
+        }
+
+        $added = 0;
+        foreach ($pages as $idx => $page) {
+            $pageName = trim($page['page_name'] ?? '');
+            if (!$pageName) {
+                continue;
+            }
+            $sourceId = 'page_' . $idx;
+            if (in_array($sourceId, $existingPageIds, true)) {
+                continue; // Already synced
+            }
+            $tasks[] = [
+                'id'        => uniqid('t_', true),
+                'name'      => $pageName,
+                'demo_url'  => esc_url_raw($page['page_demo_url'] ?? ''),
+                'source'    => 'page',
+                'source_id' => $sourceId,
+                'done'      => false,
+                'added_at'  => date('Y-m-d'),
+            ];
+            $added++;
+        }
+
+        $this->saveTaskList($projectId, $tasks);
+        wp_send_json_success(['message' => "Đã sync $added trang mới", 'tasks' => $tasks]);
+    }
+
+    /** AJAX: Thêm task thủ công từ logs section */
+    public function ajaxAddTask(): void
+    {
+        check_ajax_referer('laca_project_manager', 'nonce');
+        $projectId   = absint($_POST['project_id'] ?? 0);
+        $name        = sanitize_text_field($_POST['task_name'] ?? '');
+        $category    = sanitize_key($_POST['task_category'] ?? 'other');
+        $description = sanitize_textarea_field($_POST['task_description'] ?? '');
+        $imageId     = absint($_POST['task_image_id'] ?? 0);
+
+        $validCategories = ['page', 'bug', 'content', 'seo', 'feature', 'other'];
+        if (!in_array($category, $validCategories, true)) {
+            $category = 'other';
+        }
+
+        if (!$projectId || get_post_type($projectId) !== 'project' || !current_user_can('edit_post', $projectId)) {
+            wp_send_json_error(['message' => 'Không hợp lệ'], 403);
+        }
+        if (!$name) {
+            wp_send_json_error(['message' => 'Vui lòng nhập tên task']);
+        }
+
+        $tasks   = $this->getTaskList($projectId);
+        $imageUrl = $imageId ? wp_get_attachment_image_url($imageId, 'medium') : '';
+
+        $newTask = [
+            'id'          => uniqid('t_', true),
+            'name'        => $name,
+            'description' => $description,
+            'image_id'    => $imageId ?: 0,
+            'image_url'   => $imageUrl ?: '',
+            'category'    => $category,
+            'demo_url'    => '',
+            'source'      => 'manual',
+            'done'        => false,
+            'added_at'    => date('Y-m-d H:i:s'),
+        ];
+        $tasks[] = $newTask;
+        $this->saveTaskList($projectId, $tasks);
+
+        wp_send_json_success(['message' => 'Đã thêm task', 'task' => $newTask]);
+    }
+
+
+    /** AJAX: Toggle done/undone một task */
+    public function ajaxToggleTask(): void
+    {
+        check_ajax_referer('laca_project_manager', 'nonce');
+        $projectId = absint($_POST['project_id'] ?? 0);
+        $taskId    = sanitize_text_field($_POST['task_id'] ?? '');
+
+        if (!$projectId || get_post_type($projectId) !== 'project' || !current_user_can('edit_post', $projectId)) {
+            wp_send_json_error(['message' => 'Không hợp lệ'], 403);
+        }
+
+        $tasks      = $this->getTaskList($projectId);
+        $found      = false;
+        $taskName   = '';
+        $justDone   = false;
+        foreach ($tasks as &$task) {
+            if ($task['id'] === $taskId) {
+                $taskName         = $task['name'] ?? '';
+                $task['done']     = !($task['done'] ?? false);
+                $task['done_at']  = $task['done'] ? date('Y-m-d H:i:s') : null;
+                $justDone         = (bool) $task['done'];
+                $found = true;
+                break;
+            }
+        }
+        unset($task);
+
+        if (!$found) {
+            wp_send_json_error(['message' => 'Task không tìm thấy']);
+        }
+
+        $this->saveTaskList($projectId, $tasks);
+
+        // Auto-log khi hoàn thành task
+        if ($justDone && $taskName && class_exists('\App\Models\ProjectLog')) {
+            $doneTime = date('H:i d/m/Y');
+            \App\Models\ProjectLog::add([
+                'project_id'  => $projectId,
+                'log_type'    => 'task_done',
+                'log_content' => "✅ Hoàn thành task: {$taskName} — {$doneTime}",
+                'log_by'      => wp_get_current_user()->display_name ?: 'Admin',
+                'is_auto'     => 1,
+            ]);
+        }
+
+        // Tính lại progress
+        $total    = count($tasks);
+        $done     = count(array_filter($tasks, fn($t) => $t['done'] ?? false));
+        $progress = $total > 0 ? (int) round($done / $total * 100) : 0;
+
+        // Gửi kèm log mới nhất để JS render
+        $latestLogs = class_exists('\App\Models\ProjectLog')
+            ? \App\Models\ProjectLog::getByProject($projectId, 20)
+            : [];
+
+        wp_send_json_success([
+            'message'  => 'OK',
+            'tasks'    => $tasks,
+            'progress' => $progress,
+            'logs'     => $latestLogs,
+            'just_done' => $justDone,
+        ]);
+    }
+
+    /** AJAX: Xoá task */
+    public function ajaxDeleteTask(): void
+    {
+        check_ajax_referer('laca_project_manager', 'nonce');
+        $projectId = absint($_POST['project_id'] ?? 0);
+        $taskId    = sanitize_text_field($_POST['task_id'] ?? '');
+
+        if (!$projectId || get_post_type($projectId) !== 'project' || !current_user_can('edit_post', $projectId)) {
+            wp_send_json_error(['message' => 'Không hợp lệ'], 403);
+        }
+
+        $tasks  = $this->getTaskList($projectId);
+        $before = count($tasks);
+        $tasks  = array_values(array_filter($tasks, fn($t) => $t['id'] !== $taskId));
+
+        if (count($tasks) === $before) {
+            wp_send_json_error(['message' => 'Không tìm thấy task']);
+        }
+
+        $this->saveTaskList($projectId, $tasks);
+        wp_send_json_success(['message' => 'Đã xoá task', 'tasks' => $tasks]);
+    }
+
+    /**
+     * Helper: Resolve project ID từ portal key (alias hoặc secret key)
+     */
+    private function resolveProjectIdFromKey(string $key): int
+    {
+        if (empty($key)) return 0;
+        global $wpdb;
+
+        $byAlias = $wpdb->get_var($wpdb->prepare(
+            "SELECT post_id FROM {$wpdb->postmeta}
+             WHERE meta_key = '_portal_alias' AND meta_value = %s LIMIT 1",
+            $key
+        ));
+        if ($byAlias) return (int) $byAlias;
+
+        $byKey = $wpdb->get_var($wpdb->prepare(
+            "SELECT post_id FROM {$wpdb->postmeta}
+             WHERE meta_key = '_tracker_secret_key' AND meta_value = %s LIMIT 1",
+            $key
+        ));
+        return $byKey ? (int) $byKey : 0;
+    }
+
+    // =========================================================================
     // NATIVE META BOX (CHO LOGS & ALERTS)
     // =========================================================================
 
@@ -893,12 +1128,13 @@ class Project extends \App\Abstracts\AbstractPostType
         $logs      = ProjectLog::getByProject($projectId);
         $alerts    = ProjectAlert::getActive($projectId);
         
-        $secretKey = get_post_meta($projectId, '_tracker_secret_key', true);
+        $secretKey  = get_post_meta($projectId, '_tracker_secret_key', true);
         if (empty($secretKey)) {
             $secretKey = wp_generate_password(24, false);
             update_post_meta($projectId, '_tracker_secret_key', $secretKey);
         }
-        $endpoint = rest_url('laca/v1/tracker/log');
+        $portalAlias = get_post_meta($projectId, '_portal_alias', true);
+        $endpoint    = rest_url('laca/v1/tracker/log');
 
         wp_nonce_field('laca_project_manager', 'laca_pm_nonce');
         ?>
@@ -966,10 +1202,171 @@ class Project extends \App\Abstracts\AbstractPostType
                         <button type="button" class="button" id="btn_view_tracker_code">👁 Xem code PHP</button>
                     </div>
                 </div>
+
+                <?php
+                // Lấy trang portal (page với template template-client-portal.php)
+                $portalPages = get_posts([
+                    'post_type'      => 'page',
+                    'posts_per_page' => 1,
+                    'meta_key'       => '_wp_page_template',
+                    'meta_value'     => 'page_templates/template-client-portal.php',
+                    'post_status'    => 'publish',
+                ]);
+                $portalUrl = !empty($portalPages) ? get_permalink($portalPages[0]->ID) : '';
+                if ($portalUrl) {
+                    $clientPortalUrl   = add_query_arg('key', $secretKey, $portalUrl);
+                    $clientAliasUrl    = $portalAlias ? add_query_arg('key', $portalAlias, $portalUrl) : '';
+                    ?>
+                <div style="padding-top:15px; border-top:1px solid #eee; margin-top:5px;">
+                    <h3 style="margin-top:0">🖥️ Client Portal</h3>
+                    <p style="margin:0 0 10px 0; color:#666; font-size:12px;">Link theo dõi tiến độ dành riêng cho khách hàng này. Copy và gửi cho khách.</p>
+
+                    <?php /* --- Link gốc (secret key) --- */ ?>
+                    <div class="laca-form-group">
+                        <label style="font-weight:600;font-size:12px;">🔑 Link Portal (key gốc)</label>
+                        <input type="text" readonly value="<?php echo esc_url($clientPortalUrl); ?>" class="laca-copyable-input" id="client_portal_url">
+                    </div>
+
+                    <?php /* --- Alias key dễ nhớ --- */ ?>
+                    <div class="laca-form-group" style="margin-top:10px; background:#f6f7f7; border:1px solid #ddd; border-radius:6px; padding:10px 12px;">
+                        <label style="font-weight:600;font-size:12px; display:block; margin-bottom:6px;">✨ Mã alias dễ nhớ (tùy chọn)</label>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input
+                                type="text"
+                                name="_portal_alias"
+                                id="portal_alias_input"
+                                value="<?php echo esc_attr($portalAlias); ?>"
+                                placeholder="vd: phucdainam (chỉ chữ/số/gạch ngang)"
+                                style="flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:4px;font-size:13px;font-family:monospace;"
+                                autocomplete="off"
+                                spellcheck="false"
+                            >
+                            <button type="submit" class="button" style="white-space:nowrap;">💾 Lưu alias</button>
+                        </div>
+                        <p style="margin:6px 0 0 0; font-size:11px; color:#888;">
+                            Nhập slug ngắn, dễ nhớ → khách dùng mã này thay vì key dài. Để trống để không dùng alias.
+                        </p>
+                        <?php if ($portalAlias && $clientAliasUrl) : ?>
+                        <div style="margin-top:8px; border-top:1px solid #e0e0e0; padding-top:8px;">
+                            <label style="font-weight:600;font-size:12px; display:block; margin-bottom:4px;">🔗 Link alias (copy gửi khách)</label>
+                            <input type="text" readonly value="<?php echo esc_url($clientAliasUrl); ?>" class="laca-copyable-input" id="client_alias_url" style="font-family:monospace;">
+                            <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
+                                <a href="<?php echo esc_url($clientAliasUrl); ?>" target="_blank" class="button" style="font-size:12px;">
+                                    👁 Xem Portal
+                                </a>
+                                <button type="button" class="button button-primary" style="font-size:12px;" onclick="
+                                    var el = document.getElementById('client_alias_url');
+                                    el.select();
+                                    document.execCommand('copy');
+                                    this.textContent = '✅ Đã copy!';
+                                    setTimeout(() => this.textContent = '📋 Copy Alias Link', 2000);
+                                ">📋 Copy Alias Link</button>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php /* --- Nút view bằng link gốc --- */ ?>
+                    <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                        <a href="<?php echo esc_url($clientPortalUrl); ?>" target="_blank" class="button">
+                            👁 Xem Portal (key gốc)
+                        </a>
+                        <button type="button" class="button button-primary" onclick="
+                            var el = document.getElementById('client_portal_url');
+                            el.select();
+                            document.execCommand('copy');
+                            this.textContent = '✅ Đã copy!';
+                            setTimeout(() => this.textContent = '📋 Copy Link', 2000);
+                        ">📋 Copy Link</button>
+                    </div>
+                </div>
+                    <?php
+                } else {
+                    ?>
+                <div style="padding-top:15px; border-top:1px solid #eee; margin-top:5px; background:#fff8e1; padding:12px; border-radius:4px;">
+                    <p style="margin:0; color:#795548; font-size:12px;">
+                        ⚠️ <strong>Client Portal chưa cấu hình:</strong> Tạo một trang (Page) với template
+                        <strong>"template-client-portal.php"</strong> và publish nó để bật tính năng này.
+                    </p>
+                </div>
+                    <?php
+                }
+                ?>
+
             </div>
 
-            <!-- LOGS SECTION -->
+            <!-- TASK CHECKLIST SECTION -->
             <div class="laca-pm-col">
+                <?php
+                $tasks     = $this->getTaskList($projectId);
+                $totalTask = count($tasks);
+                $doneTask  = count(array_filter($tasks, fn($t) => $t['done'] ?? false));
+                $progress  = $totalTask > 0 ? (int) round($doneTask / $totalTask * 100) : 0;
+                ?>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                    <h3 style="margin:0">✅ Task & Tiến độ</h3>
+                    <button type="button" class="button" id="btn_sync_pages" title="Import trang từ tab Design Scope">
+                        🔄 Sync trang
+                    </button>
+                </div>
+
+                <!-- Progress bar -->
+                <div style="margin-bottom:14px;">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:#555;margin-bottom:4px;">
+                        <span id="task_progress_label"><?php echo $doneTask; ?>/<?php echo $totalTask; ?> task hoàn thành</span>
+                        <strong id="task_progress_pct"><?php echo $progress; ?>%</strong>
+                    </div>
+                    <div style="background:#e0e0e0;border-radius:4px;height:8px;overflow:hidden;">
+                        <div id="task_progress_bar" style="height:100%;background:#2271b1;border-radius:4px;width:<?php echo $progress; ?>%;transition:width .3s;"></div>
+                    </div>
+                </div>
+
+                <!-- Task list -->
+                <div class="laca-pm-list" id="task_list_container">
+                    <?php if (empty($tasks)): ?>
+                        <p style="color:#888;font-size:13px;">Chưa có task nào. Nhấn "🔄 Sync trang" để import từ danh sách trang, hoặc thêm task thủ công bên dưới.</p>
+                    <?php else: ?>
+                        <?php foreach ($tasks as $t): ?>
+                        <div class="laca-task-item <?php echo $t['done'] ? 'task-done' : ''; ?>" data-id="<?php echo esc_attr($t['id']); ?>">
+                            <input type="checkbox" class="task-checkbox" data-id="<?php echo esc_attr($t['id']); ?>" <?php checked($t['done']); ?>>
+                            <div style="flex:1;min-width:0;">
+                                <span class="task-name">
+                                    <?php
+                                    $catIcons = ['bug'=>'🐛','page'=>'🖼️','content'=>'📝','seo'=>'🔍','feature'=>'⭐','other'=>'📌'];
+                                    $cat = $t['category'] ?? (($t['source'] ?? '') === 'page' ? 'page' : 'other');
+                                    echo $catIcons[$cat] ?? '📌';
+                                    ?>
+                                    <?php echo esc_html($t['name']); ?>
+                                </span>
+                                <?php if (!empty($t['demo_url'])): ?>
+                                    <a href="<?php echo esc_url($t['demo_url']); ?>" target="_blank" style="font-size:11px;color:#0073aa;margin-left:6px;" title="Mẫu giao diện">↗ mẫu</a>
+                                <?php endif; ?>
+                            </div>
+                            <a class="task-delete-btn" data-id="<?php echo esc_attr($t['id']); ?>" title="Xoá task">✕</a>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Add task form -->
+                <div style="margin-top:12px;">
+                    <!-- Row 1: category + input -->
+                    <div style="display:flex;gap:6px;margin-bottom:6px;">
+                        <select id="new_task_category" style="padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px;min-width:140px;">
+                            <option value="bug">🐛 Bug / Lỗi</option>
+                            <option value="page">🖼️ Trang giao diện</option>
+                            <option value="content">📝 Nội dung</option>
+                            <option value="seo">🔍 SEO</option>
+                            <option value="feature">⭐ Tính năng</option>
+                            <option value="other" selected>📌 Khác</option>
+                        </select>
+                        <input type="text" id="new_task_name" placeholder="Tên task (vd: Fix menu mobile...)" style="flex:1;padding:6px 10px;border:1px solid #ddd;border-radius:4px;font-size:13px;">
+                        <button type="button" class="button" id="btn_add_task">+ Thêm</button>
+                    </div>
+                </div>
+
+                <!-- LOGS SECTION below tasks -->
+                <hr style="border:0; border-top:1px dashed #ddd; margin:18px 0 14px;">
                 <h3 style="margin-top:0">📋 Lịch sử & Nhật ký</h3>
                 <div class="laca-pm-list">
                     <?php if (empty($logs)): ?>
@@ -988,29 +1385,12 @@ class Project extends \App\Abstracts\AbstractPostType
                                     </span>
                                 </div>
                                 <div style="margin: 6px 0;"><?php echo nl2br(esc_html($l['log_content'])); ?></div>
-                                <div style="text-align: right;">
-                                    <a class="laca-action-btn delete-log" data-id="<?php echo $l['id']; ?>">Xoá</a>
-                                </div>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
 
                 <hr style="border:0; border-top:1px dashed #ddd; margin:15px 0;">
-                <h4 style="margin:0 0 10px 0;">Thêm nhật ký</h4>
-                <div class="laca-form-group">
-                    <select id="new_log_type">
-                        <option value="note">📝 Ghi chú</option>
-                        <option value="client_request">👤 Yêu cầu khách hàng</option>
-                        <option value="bug_fix">🐛 Sửa lỗi</option>
-                        <option value="theme_switch">🎨 Đổi thiết kế/theme</option>
-                        <option value="deployment">🚀 Deploy / Update lớn</option>
-                    </select>
-                </div>
-                <div class="laca-form-group">
-                    <textarea id="new_log_msg" placeholder="Nội dung..."></textarea>
-                </div>
-                <button type="button" class="button button-secondary" id="btn_add_log">Lưu nhật ký</button>
             </div>
         </div>
         <?php
@@ -1049,6 +1429,63 @@ class Project extends \App\Abstracts\AbstractPostType
         }
 
         return $value;
+    }
+
+    /**
+     * Lưu alias dễ nhớ cho Client Portal.
+     * Validate: chỉ chứa chữ thường/số/gạch ngang, tối thiểu 3 ký tự.
+     * Unique: không được trùng với project khác.
+     */
+    public function savePortalAlias(int $postId): void
+    {
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+        if (!isset($_POST['laca_pm_nonce'])) return;
+        if (!wp_verify_nonce($_POST['laca_pm_nonce'], 'laca_project_manager')) return;
+        if (!current_user_can('edit_post', $postId)) return;
+
+        // Xóa cache cũ trước khi update
+        $oldAlias = get_post_meta($postId, '_portal_alias', true);
+        if ($oldAlias) {
+            wp_cache_delete('laca_portal_key_' . md5($oldAlias), 'laca_portal');
+        }
+
+        if (!isset($_POST['_portal_alias'])) {
+            return;
+        }
+
+        $alias = sanitize_text_field(trim($_POST['_portal_alias']));
+        $alias = strtolower($alias);
+
+        // Để trống → xóa alias
+        if ($alias === '') {
+            delete_post_meta($postId, '_portal_alias');
+            return;
+        }
+
+        // Validate: chỉ chữ/số/gạch ngang, min 3 ký tự
+        if (!preg_match('/^[a-z0-9\-]{3,60}$/', $alias)) {
+            // Không hợp lệ → bỏ qua, giữ nguyên giá trị cũ
+            return;
+        }
+
+        // Kiểm tra unique (loại trừ chính project này)
+        global $wpdb;
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT post_id FROM {$wpdb->postmeta}
+             WHERE meta_key = '_portal_alias' AND meta_value = %s AND post_id != %d
+             LIMIT 1",
+            $alias,
+            $postId
+        ));
+
+        if ($existing) {
+            // Trùng với project khác → không lưu
+            return;
+        }
+
+        update_post_meta($postId, '_portal_alias', $alias);
+        // Xóa cache mới để endpoint nhận ngay
+        wp_cache_delete('laca_portal_key_' . md5($alias), 'laca_portal');
     }
 
     public function autoCalculatePaymentStatus(int $postId, \WP_Post $post): void
