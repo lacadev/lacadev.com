@@ -1,0 +1,2 @@
+<?php
+return ['project-id-version'=>'La Cà Dev','report-msgid-bugs-to'=>'','pot-creation-date'=>'2025-12-30 08:23+0000','po-revision-date'=>'2026-02-26 18:19+0000','last-translator'=>'La Cà Dev','language-team'=>'English (United States)','language'=>'en_US','plural-forms'=>'nplurals=2; plural=n != 1;','mime-version'=>'1.0','content-type'=>'text/plain; charset=UTF-8','content-transfer-encoding'=>'8bit','x-generator'=>'Loco https://localise.biz/','x-loco-version'=>'2.8.0; wp-6.9; php-8.3.23','x-domain'=>'laca','messages'=>[]];

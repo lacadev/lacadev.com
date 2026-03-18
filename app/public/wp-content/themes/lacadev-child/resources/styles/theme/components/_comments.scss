@@ -1,0 +1,202 @@
+.section-comments {
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-color, #eee);
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 500;
+    margin-bottom: 2rem;
+    text-transform: uppercase;
+    color: var(--text-color, #333);
+  }
+
+  .comments {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 3rem;
+
+    .avatar {
+      position: relative;
+      top: unset;
+      left: unset;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+    }
+
+    .custom-comment {
+      margin-bottom: 2rem;
+      border: 1px solid var(--border-color, #eee);
+      border-radius: 8px;
+      padding: 1.5rem;
+      background: var(--bg-color-alt, #fafafa);
+
+      .comment-body {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .comment-meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 0.9rem;
+        color: var(--text-muted, #777);
+
+        .comment-author {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+
+          img {
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+          }
+
+          .author-name {
+            font-weight: 600;
+            color: var(--text-color, #333);
+            text-transform: uppercase;
+          }
+        }
+      }
+
+      .comment-content {
+        line-height: 1.6;
+        color: var(--text-color, #444);
+        
+        p {
+          margin-bottom: 0;
+        }
+      }
+
+      .comment-actions {
+        font-size: 0.9rem;
+        
+        .reply a {
+          color: var(--primary-color, #007bff);
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+
+          &:hover {
+            text-decoration: underline;
+          }
+        }
+      }
+    }
+
+    .children {
+      list-style: none;
+      padding-left: 2rem;
+      margin-top: 2rem;
+      border-left: 2px solid var(--border-color, #eee);
+    }
+  }
+
+  // Comment Form
+  .comment-respond {
+    margin-top: 3rem;
+
+    .comment-reply-title {
+      font-size: 1.25rem;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+      text-transform: uppercase;
+    }
+
+    .comment-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+
+      .comment-form-comment {
+        textarea {
+          width: 100%;
+          border: 1px solid var(--border-color, #e0e0e0);
+          border-radius: 4px;
+          padding: 1rem;
+          background: #fff;
+          font-family: inherit;
+          min-height: 120px;
+          outline: none;
+
+          &:focus {
+            border-color: var(--primary-color, #007bff);
+          }
+        }
+      }
+
+      .comment-form-author,
+      .comment-form-email,
+      .comment-form-url,
+      .comment-form-cookies-consent,
+      .comment-form-recaptcha,
+      .form-submit {
+        display: none; // Hidden by default
+      }
+
+      &.is-expanded {
+        .comment-form-author,
+        .comment-form-email,
+        .comment-form-url {
+          display: block;
+          input {
+            width: 100%;
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 4px;
+            padding: 0.75rem 1rem;
+            background: #fff;
+            font-family: inherit;
+            outline: none;
+
+            &:focus {
+              border-color: var(--primary-color, #000);
+            }
+          }
+          label {
+            display: none;
+          }
+        }
+        
+        .comment-form-cookies-consent {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.9rem;
+          color: var(--text-muted, #777);
+        }
+
+        .comment-form-recaptcha {
+          display: block;
+          margin-top: 1rem;
+        }
+
+        .form-submit {
+          display: block;
+          margin-top: 0.5rem;
+
+          .submit {
+            background: var(--primary-color, #000);
+            color: #fff;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            text-transform: uppercase;
+            transition: opacity 0.2s;
+
+            &:hover {
+              opacity: 0.8;
+            }
+          }
+        }
+      }
+    }
+  }
+}

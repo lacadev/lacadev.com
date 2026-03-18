@@ -1,0 +1,64 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "lacadev/project-block",
+  "title": "Layout: Tabbed Grid",
+  "description": "Hiển thị nội dung dạng lưới + tab theo taxonomy (chọn được Post Type + taxonomy)",
+  "category": "lacadev-blocks",
+  "icon": "portfolio",
+  "editorScript": "lacadev-block-project-block-editor",
+  "editorStyle": "lacadev-block-project-block-editor",
+  "style": "lacadev-block-project-block",
+  "keywords": ["project", "portfolio", "laca"],
+  "textdomain": "laca",
+  "attributes": {
+    "postType": {
+      "type": "string",
+      "default": "template"
+    },
+    "taxonomy": {
+      "type": "string",
+      "default": "template_cat"
+    },
+    "termIds": {
+      "type": "array",
+      "default": []
+    },
+    "title": {
+      "type": "string",
+      "default": "Selected Works"
+    },
+    "description": {
+      "type": "string",
+      "default": "A curated showcase by La Cà Dev. Rugged, minimalist, and bold, blending dark charcoal backgrounds with earthy sand accents."
+    },
+    "categoryIds": {
+      "type": "array",
+      "default": []
+    },
+    "orderBy": {
+      "type": "string",
+      "default": "date"
+    },
+    "countDesktop": {
+      "type": "number",
+      "default": 6
+    },
+    "countMobile": {
+      "type": "number",
+      "default": 4
+    },
+    "buttonText": {
+      "type": "string",
+      "default": ""
+    },
+    "buttonUrl": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"]
+  }
+}

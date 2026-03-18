@@ -1,0 +1,28 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "lacadev/statement-block",
+  "title": "LaCa Big Statement",
+  "description": "Hiển thị tuyên ngôn thương hiệu với kích thước lớn",
+  "category": "lacadev-blocks",
+  "icon": "megaphone",
+  "editorScript": "lacadev-block-statement-block-editor",
+  "editorStyle": "lacadev-block-statement-block-editor",
+  "style": "lacadev-block-statement-block",
+  "keywords": ["statement", "text", "heading"],
+  "textdomain": "laca",
+  "attributes": {
+    "title": {
+      "type": "string",
+      "default": "TỐI GIẢN TRONG THIẾT KẾ"
+    },
+    "subtitle": {
+      "type": "string",
+      "default": "Triết lý của chúng tôi"
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"]
+  }
+}

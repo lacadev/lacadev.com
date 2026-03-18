@@ -1,0 +1,29 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "lacadev/tech-list-block",
+  "title": "Laca Tech List",
+  "description": "Hiển thị danh sách công nghệ sử dụng",
+  "category": "lacadev-blocks",
+  "icon": "desktop",
+  "editorScript": "lacadev-block-tech-list-block-editor",
+  "editorStyle": "lacadev-block-tech-list-block-editor",
+  "style": "lacadev-block-tech-list-block",
+  "keywords": ["tech", "list", "công nghệ"],
+  "textdomain": "laca",
+  "attributes": {
+    "technologies": {
+      "type": "array",
+      "default": [
+        { "name": "Next.js", "iconUrl": "", "iconId": 0 },
+        { "name": "Vercel", "iconUrl": "", "iconId": 0 },
+        { "name": "TypeScript", "iconUrl": "", "iconId": 0 },
+        { "name": "Tailwind", "iconUrl": "", "iconId": 0 }
+      ]
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"]
+  }
+}

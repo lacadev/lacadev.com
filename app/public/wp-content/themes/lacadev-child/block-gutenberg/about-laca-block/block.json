@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "lacadev/about-laca-block",
+  "title": "La Cà Dev",
+  "description": "Block giới thiệu bản thân với hiệu ứng hình ảnh mở rộng khi scroll",
+  "category": "lacadev-blocks",
+  "icon": "welcome-widgets-menus",
+  "editorScript": "lacadev-block-about-laca-block-editor",
+  "editorStyle": "lacadev-block-about-laca-block-editor",
+  "style": "lacadev-block-about-laca-block",
+  "keywords": ["about", "laca", "hero"],
+  "textdomain": "laca",
+  "attributes": {
+    "content": {
+      "type": "string",
+      "default": "Xin chào!\nMình là một dev WordPress với niềm đam mê mãnh liệt dành cho du lịch bụi, diy và thiên nhiên. Hiện tại, mình đang theo đuổi con đường fullstack developer, không ngừng học hỏi và khám phá những điều mới.\nWebsite này là nơi mình chia sẻ những dòng code, những chuyến đi, và những trải nghiệm cá nhân trên hành trình phát triển bản thân."
+    },
+    "bgImageId": {
+      "type": "number"
+    },
+    "bgImageUrl": {
+      "type": "string"
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"]
+  }
+}

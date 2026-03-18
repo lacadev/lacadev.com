@@ -1,0 +1,68 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "lacadev/blog-block",
+  "title": "Layout: Card Grid",
+  "description": "Hiển thị danh sách bài viết theo dạng card-grid (chọn được Post Type + taxonomy)",
+  "category": "lacadev-blocks",
+  "icon": "admin-post",
+  "editorScript": "lacadev-block-blog-block-editor",
+  "editorStyle": "lacadev-block-blog-block-editor",
+  "style": "lacadev-block-blog-block",
+  "keywords": ["blog", "post", "laca"],
+  "textdomain": "laca",
+  "attributes": {
+    "postType": {
+      "type": "string",
+      "default": "post"
+    },
+    "taxonomy": {
+      "type": "string",
+      "default": "category"
+    },
+    "termIds": {
+      "type": "array",
+      "default": []
+    },
+    "title": {
+      "type": "string",
+      "default": "Popular Blogs"
+    },
+    "description": {
+      "type": "string",
+      "default": ""
+    },
+    "mode": {
+      "type": "string",
+      "default": "auto"
+    },
+    "orderBy": {
+      "type": "string",
+      "default": "date"
+    },
+    "categoryIds": {
+      "type": "array",
+      "default": []
+    },
+    "postIds": {
+      "type": "array",
+      "default": []
+    },
+    "count": {
+      "type": "number",
+      "default": 3
+    },
+    "buttonText": {
+      "type": "string",
+      "default": "Xem tất cả bài viết"
+    },
+    "buttonUrl": {
+      "type": "string",
+      "default": "/blog/"
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"]
+  }
+}

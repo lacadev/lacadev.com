@@ -1,0 +1,62 @@
+@use "../../resources/styles/theme/abstracts/variables" as *;
+@use "../../resources/styles/theme/abstracts/mixin" as *;
+
+.block-process {
+  .process-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3rem;
+
+    @include maxWidth($md) {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 5rem;
+    }
+
+    @include maxWidth($sm) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .process-item {
+    position: relative;
+    padding: 4rem;
+    background-color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 2rem;
+    transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+
+    &:hover {
+      transform: translateY(-1rem);
+      background: #fff;
+      box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.08);
+      border-color: transparent;
+
+      .process-num {
+        color: $primaryColor;
+        transform: scale(1.1);
+      }
+    }
+  }
+
+  .process-num {
+    font-size: 6rem;
+    font-weight: $bold;
+    color: rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+    line-height: 1;
+    transition: all 0.4s ease;
+  }
+
+  .process-step-title {
+    font-size: 2.4rem;
+    font-weight: $bold;
+    margin-bottom: 1.5rem;
+    color: $primaryColor;
+  }
+
+  .process-step-desc {
+    font-size: 1.6rem;
+    line-height: 1.6;
+  }
+}
+

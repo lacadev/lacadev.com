@@ -1,0 +1,323 @@
+@use "../abstracts/variables.scss" as *;
+@use "../abstracts/mixin.scss" as *;
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 62.5%;
+  color-scheme: light;
+  border: none !important;
+
+  &[data-theme="dark"] {
+    color-scheme: dark;
+    
+    .cursor-outer {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .cursor-inner {
+      background-color: #fff;
+  
+      &.is-hover {
+        background-color: #fff;
+        .cursor-arrow path {
+          stroke: $primaryColor;
+        }
+      }
+    }
+  }
+}
+
+body {
+  font-family: $secondaryFont !important;
+  font-weight: $regular !important;
+  line-height: 1.5em !important;
+  color: $primaryColor !important;
+  background-color: $backgroundColor;
+  transition: background-color 0.3s ease, color 0.3s ease;
+
+  &.overflow-hidden {
+    overflow: hidden;
+  }
+  @include resFont(1.6, 2, true);
+}
+
+::-webkit-scrollbar {
+  width: 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 0 rgba(0, 0, 0, 0.5);
+  border-radius: 2rem;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 2rem;
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+// h1::selection,
+// h2::selection,
+// h3::selection,
+// h4::selection,
+// h5::selection,
+// h6::selection,
+// a::selection,
+// p::selection,
+// span::selection,
+// img::selection,
+// label::selection,
+// li::selection,
+// button::selection,
+// input::selection,
+// bdi::selection {
+//   color: $backgroundColor;
+//   background-color: $primaryColor;
+// }
+
+h1,
+h2,
+h3,
+h4,
+h5,
+ul,
+ol,
+li,
+figure,
+blockquote {
+  margin: 0;
+  padding: 0;
+}
+
+p {
+  margin-bottom: 2rem;
+}
+
+table {
+  width: 100%;
+  border: 0;
+  border-collapse: collapse;
+}
+
+img {
+  max-width: 100%;
+  cursor: pointer;
+}
+
+a {
+  text-decoration: none !important;
+
+  &:hover {
+    color: $primaryColor;
+  }
+}
+
+a,
+button,
+input,
+textarea {
+  outline: 0;
+  transition: {
+    duration: 0.25s;
+    property: background-color, border-color, color, box-shadow;
+  }
+}
+
+button {
+  border: 0;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+p:empty {
+  display: none;
+}
+
+.container {
+  width: 100%;
+  max-width: $container-mw;
+  padding-right: 1.5rem;
+  padding-left: 1.5rem;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.container-fluid {
+  padding-right: 10rem;
+  padding-left: 10rem;
+
+  @include maxWidth($lg) {
+    padding-right: 5rem;
+    padding-left: 5rem;
+  }
+
+  @include maxWidth($md) {
+    padding-right: 2rem;
+    padding-left: 2rem;
+  }
+
+  @include maxWidth($sm) {
+    padding-right: 1.5rem;
+    padding-left: 1.5rem;
+  }
+}
+
+.full-width {
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  width: calc(100vw - 3px);
+}
+
+.no-gap-row {
+  margin-right: 0;
+  margin-left: 0;
+
+  > [class*='col-'] {
+    padding-right: 0;
+    padding-left: 0;
+  }
+}
+
+
+// =============================================================================
+// CUSTOM MOUSE CURSOR
+// =============================================================================
+.mouse-cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  z-index: 10000;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease, background-color 0.3s ease, opacity 0.3s ease;
+  opacity: 0; // Hidden by default
+
+  &.is-visible {
+    opacity: 1;
+  }
+}
+
+// .cursor-outer {
+//   width: 2rem;
+//   height: 2rem;
+//   border: 1px solid rgba(0, 0, 0, 0.2);
+//   transition: all 0.2s ease-out;
+
+//   &.is-hover {
+//     opacity: 0;
+//   }
+// }
+
+.cursor-inner {
+  width: 6px;
+  height: 6px;
+  background-color: $primaryColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 0.3s ease, height 0.3s ease, background-color 0.3s ease;
+
+  .cursor-arrow {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    transition: all 0.3s ease;
+  }
+
+  &.is-hover {
+    width: 4rem;
+    height: 4rem;
+    background-color: $primaryColor;
+    
+    .cursor-arrow {
+      opacity: 1;
+      width: 2rem;
+      height: 2rem;
+    }
+  }
+
+  &.is-active {
+    width: 20px;
+    height: 20px;
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+
+  html[data-theme="dark"] & {
+    background-color: $secondaryColor;
+    &.is-hover {
+      background-color: $secondaryColor;
+    }
+    &.is-active {
+      background-color: $secondaryColor;
+    }
+  }
+}
+
+
+[data-cursor-arrow] {
+  @media (min-width: 993px) {
+    cursor: none !important;
+  }
+}
+
+@media (max-width: 992px) {
+  .mouse-cursor {
+    display: none !important;
+  }
+}
+
+// =============================================================================
+// ACCESSIBILITY: Focus Styles for Keyboard Navigation
+// =============================================================================
+
+// Global focus-visible styles
+*:focus-visible {
+  outline: 3px solid #2196f3;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+// Button focus styles
+button:focus-visible,
+.btn:focus-visible,
+a:focus-visible {
+  outline: 3px solid #2196f3;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
+}
+
+// Skip link (already styled but ensure visibility)
+.skip-link {
+  &:focus {
+    clip: auto !important;
+    clip-path: none;
+    background-color: #2196f3;
+    color: white;
+    display: block;
+    font-size: 14px;
+    font-weight: bold;
+    height: auto;
+    left: 5px;
+    line-height: normal;
+    padding: 15px 23px 14px;
+    text-decoration: none;
+    top: 5px;
+    width: auto;
+    z-index: 100000;
+  }
+}
+
+// =============================================================================
+// END ACCESSIBILITY STYLES
+// =============================================================================

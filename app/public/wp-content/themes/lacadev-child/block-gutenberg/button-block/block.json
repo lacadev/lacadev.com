@@ -1,0 +1,56 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "lacadev/button-block",
+  "title": "Laca Button",
+  "description": "Thêm nút bấm tùy chỉnh với nhiều kiểu dáng.",
+  "category": "lacadev-blocks",
+  "icon": "button",
+  "editorScript": "lacadev-block-button-block-editor",
+  "editorStyle": "lacadev-block-button-block-editor",
+  "style": "lacadev-block-button-block",
+  "keywords": ["button", "link", "laca", "nút"],
+  "textdomain": "laca",
+  "attributes": {
+    "text": {
+      "type": "string",
+      "default": "Tìm hiểu ngay"
+    },
+    "url": {
+      "type": "string",
+      "default": "#"
+    },
+    "style": {
+      "type": "string",
+      "default": "primary"
+    },
+    "alignment": {
+      "type": "string",
+      "default": "center"
+    },
+    "marginTop": {
+      "type": "number",
+      "default": 30
+    },
+    "marginBottom": {
+      "type": "number",
+      "default": 30
+    },
+    "target": {
+      "type": "string",
+      "default": "_self"
+    },
+    "fullWidth": {
+      "type": "boolean",
+      "default": false
+    },
+    "className": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"]
+  }
+}

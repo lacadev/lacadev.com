@@ -1,0 +1,29 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "lacadev/marquee-block",
+  "title": "LaCa Marquee",
+  "description": "Chữ chạy ngang màn hình tạo điểm nhấn",
+  "category": "lacadev-blocks",
+  "icon": "randomize",
+  "editorScript": "lacadev-block-marquee-block-editor",
+  "editorStyle": "lacadev-block-marquee-block-editor",
+  "style": "lacadev-block-marquee-block",
+  "keywords": ["marquee", "ticker", "scrolling"],
+  "textdomain": "laca",
+  "attributes": {
+    "brands": {
+      "type": "array",
+      "default": [
+        { "name": "LA CA DEV", "url": "" },
+        { "name": "CREATIVE AGENCY", "url": "" },
+        { "name": "UI/UX DESIGN", "url": "" },
+        { "name": "WEB DEVELOPMENT", "url": "" }
+      ]
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"]
+  }
+}

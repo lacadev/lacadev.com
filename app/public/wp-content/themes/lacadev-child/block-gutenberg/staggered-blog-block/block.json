@@ -1,0 +1,68 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "lacadev/staggered-blog-block",
+  "title": "Layout: Staggered List",
+  "description": "Hiển thị nội dung theo dạng so le (staggered/alternating). Chọn được Post Type + taxonomy.",
+  "category": "lacadev-blocks",
+  "icon": "layout",
+  "editorScript": "lacadev-block-staggered-blog-block-editor",
+  "editorStyle": "lacadev-block-staggered-blog-block-editor",
+  "style": "lacadev-block-staggered-blog-block",
+  "keywords": ["blog", "post", "staggered", "laca"],
+  "textdomain": "laca",
+  "attributes": {
+    "postType": {
+      "type": "string",
+      "default": "post"
+    },
+    "taxonomy": {
+      "type": "string",
+      "default": "category"
+    },
+    "termIds": {
+      "type": "array",
+      "default": []
+    },
+    "title": {
+      "type": "string",
+      "default": ""
+    },
+    "description": {
+      "type": "string",
+      "default": ""
+    },
+    "mode": {
+      "type": "string",
+      "default": "auto"
+    },
+    "orderBy": {
+      "type": "string",
+      "default": "date"
+    },
+    "categoryIds": {
+      "type": "array",
+      "default": []
+    },
+    "postIds": {
+      "type": "array",
+      "default": []
+    },
+    "count": {
+      "type": "number",
+      "default": 3
+    },
+    "buttonText": {
+      "type": "string",
+      "default": "Khám phá tất cả bài viết"
+    },
+    "buttonUrl": {
+      "type": "string",
+      "default": "/blog/"
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"]
+  }
+}

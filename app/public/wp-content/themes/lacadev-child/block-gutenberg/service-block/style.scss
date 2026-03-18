@@ -1,0 +1,85 @@
+@use "../../resources/styles/theme/abstracts/variables" as *;
+@use "../../resources/styles/theme/abstracts/mixin" as *;
+
+.block-service {
+  &__list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3rem;
+
+    @include maxWidth($md) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include maxWidth($sm) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__item {
+    .item__link {
+      height: 100%;
+      padding: 4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #fff;
+      text-align: center;
+      border-radius: 2rem;
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+
+      &:hover {
+        box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.08);
+      }
+    }
+
+    .item__icon {
+      margin-bottom: 3rem;
+      display: block;
+      line-height: 1;
+      font-weight: $bold;
+      color: $primaryColor;
+
+      @include resFont(6, 12);
+    }
+
+    .item__title {
+      margin-bottom: 2rem;
+      font-weight: $semiBold;
+      color: $primaryColor;
+
+      @include resFont(2, 3);
+    }
+
+    .item__desc {
+      font-size: 1.6rem;
+      font-weight: $regular;
+      line-height: 1.5;
+      color: $primaryColor;
+      text-align: center;
+    }
+  }
+
+  html[data-theme="dark"] & {
+    &__item {
+      .item__icon,
+      .item__title,
+      .item__desc {
+        color: $primaryColorDark;
+      }
+
+      .item__link:hover {
+        box-shadow: 0 1.5rem 3rem rgba(255, 255, 255, 0.25);
+      }
+    }
+  }
+
+  &.editor-view {
+    .block-service__item {
+      .item__link {
+        border: 1px solid $primaryColor;
+      }
+    }
+  }
+}
+

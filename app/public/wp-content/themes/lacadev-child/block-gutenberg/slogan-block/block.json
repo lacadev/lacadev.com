@@ -1,0 +1,29 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "lacadev/slogan-block",
+  "title": "LaCa Slogan",
+  "description": "Block hiển thị slogan của trang web",
+  "category": "lacadev-blocks",
+  "icon": "format-quote",
+  "editorScript": "lacadev-block-slogan-block-editor",
+  "editorStyle": "lacadev-block-slogan-block-editor",
+  "style": "lacadev-block-slogan-block",
+  "example": {
+    "attributes": {
+      "slogan": "La Cà <span>Dev</span>"
+    }
+  },
+  "keywords": ["slogan", "text", "quote"],
+  "textdomain": "laca",
+  "attributes": {
+    "slogan": {
+      "type": "string",
+      "default": "La Cà <span>Dev</span>"
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"]
+  }
+}

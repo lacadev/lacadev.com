@@ -1,0 +1,198 @@
+// Fonts (dùng chung với frontend)
+@use "../theme/base/fonts";
+
+@use "admin-custom";
+@use "project";
+
+html :where(.wp-block) {
+  max-width: 144rem !important;
+  position: relative;
+  overflow: hidden;
+}
+
+body.wp-admin {
+  font-size: 13px !important;
+}
+
+//img theme preview
+.theme-overlay .screenshot {
+  box-shadow: none;
+
+  &::after {
+    content: none;
+  }
+
+  img {
+    position: relative;
+  }
+}
+
+.subsubsub {
+  position: relative;
+  z-index: 9999;
+}
+
+.featured_image.column-featured_image {
+  a:not(.remove-thumbnail) {
+    display: block !important;
+    background-color: #fff;
+  }
+
+  a.remove-thumbnail {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    width: 13px;
+    height: 13px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f15d4f;
+    color: #fff;
+    border-radius: 50%;
+    border: 1px solid #f15d4f;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: #fff;
+      color: #f15d4f;
+    }
+
+    svg {
+      width: 50%;
+      height: 50%;
+    }
+  }
+
+  img {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+
+  .no-image-text {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    border: 1px dashed;
+    aspect-ratio: 16 / 10;
+  }
+}
+
+input[name="carbon_fields_compact_input[_smtp_password]"] {
+  max-width: 85%;
+  display: inline-block;
+}
+
+button[data-toggle="password-toggle"] {
+  padding: 2px 2rem;
+  min-width: 12%;
+  display: inline-block;
+  font-weight: 600;
+  line-height: 2;
+  text-transform: uppercase;
+  color: #fff;
+  background: #1d2327;
+  border: 1px solid;
+  border-radius: 4px;
+}
+
+#wp-auth-check-wrap #wp-auth-check {
+  padding: 0 !important;
+  width: 80% !important;
+}
+
+#wp-auth-check-wrap .wp-auth-check-close {
+  color: #fff !important;
+  z-index: 99;
+}
+
+.metabox-holder-disabled .accordion-section-content,
+.metabox-holder-disabled .accordion-section-title,
+.metabox-holder-disabled .postbox {
+  opacity: 1 !important;
+}
+
+.alp-welcome-swal {
+  background: rgba(13, 13, 33, 0.7) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 2.4rem !important;
+  box-shadow: 0 2rem 5rem rgba(0, 0, 0, 0.4) !important;
+  padding: 3rem !important;
+  width: auto !important;
+  max-width: 40rem !important;
+  overflow: hidden;
+
+  .swal2-html-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .alp-swal-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+
+    .alp-swal-icon {
+      font-size: 5rem;
+      margin-bottom: 2rem;
+      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+      animation: alpEmojiBounce 2s ease-in-out infinite;
+    }
+
+    .alp-swal-title {
+      font-family: "Quicksand", sans-serif !important;
+      font-size: 2.4rem !important;
+      font-weight: 800 !important;
+      color: #fff !important;
+      margin-bottom: 1rem !important;
+      letter-spacing: -0.02em;
+    }
+
+    .alp-swal-msg {
+      font-family: "Quicksand", sans-serif !important;
+      font-size: 1.6rem !important;
+      color: rgba(255, 255, 255, 0.7) !important;
+      margin: 0 !important;
+      line-height: 1.6;
+    }
+  }
+
+  .swal2-timer-progress-bar {
+    background: rgba(255, 255, 255, 0.2) !important;
+    height: 0.4rem !important;
+  }
+}
+
+// Custom Animations
+@keyframes alpEmojiBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.alp-zoom-in {
+  animation: alpZoomIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.alp-zoom-out {
+  animation: alpZoomOut 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes alpZoomIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes alpZoomOut {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(0.9); opacity: 0; }
+}
+
+.dashicons,
+.dashicons-before:before {
+  font-family: "dashicons", sans-serif !important;
+}

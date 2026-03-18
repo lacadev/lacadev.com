@@ -1,0 +1,23 @@
+@use "../abstracts/variables.scss" as *;
+@use "../abstracts/mixin.scss" as *;
+
+.swiper-block {
+  padding-top: 0;
+  padding-bottom: 0;
+
+  .sliders {
+    img {
+      width: 100%;
+      height: 100%;
+    }
+
+    .swiper-wrapper {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .swiper-slide {
+      height: 100%;
+    }
+  }
+}
