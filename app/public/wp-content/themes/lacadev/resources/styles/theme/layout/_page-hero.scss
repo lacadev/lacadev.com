@@ -65,3 +65,19 @@
         }
     }
 }
+
+// ─── View Count Meta Item (extracted from page-hero.php, post-hero.php) ─────
+
+.meta-item--viewcount {
+    margin-top: 1rem;
+    font-size: 1.4rem;
+    color: var(--laca-text-muted, var(--text-muted));
+
+    .dashicons {
+        font-size: 1.4rem;
+        width: 1.4rem;
+        height: 1.4rem;
+        margin-right: 0.4rem;
+        vertical-align: middle;
+    }
+}

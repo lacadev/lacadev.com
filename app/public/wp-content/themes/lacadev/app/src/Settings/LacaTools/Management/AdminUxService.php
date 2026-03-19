@@ -60,23 +60,9 @@ class AdminUxService
         $phone   = carbon_get_theme_option('help_support_phone')   ?: (defined('AUTHOR') ? AUTHOR['phone_number'] : '');
         $email   = carbon_get_theme_option('help_support_email')   ?: (defined('AUTHOR') ? AUTHOR['email'] : '');
         $website = carbon_get_theme_option('help_support_website') ?: (defined('AUTHOR') ? AUTHOR['website'] : '');
+        // Styles extracted to resources/styles/admin/_admin-help.scss
         ?>
-        <style>
-            .laca-help-wrap { padding: 20px; }
-            .laca-help-header { display: flex; align-items: center; gap: 12px; font-weight: 800; margin-bottom: 20px; }
-            .laca-help-header span { font-size: 36px; }
-            .laca-help-intro { font-size: 16px; color: var(--laca-text-muted); max-width: 800px; line-height: 1.6; margin-bottom: 30px; }
-            .laca-help-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
-            .laca-help-card { background: #fff; padding: 25px; border-radius: var(--laca-radius); box-shadow: var(--laca-shadow-sm); border-top: 4px solid var(--laca-primary); transition: transform 0.2s; }
-            .laca-help-card:hover { transform: translateY(-3px); }
-            .laca-help-card h3 { margin-top: 0; font-size: 18px; color: var(--laca-text-main); }
-            .laca-help-card-content { line-height: 1.7; color: #3c434a; }
-            .laca-help-footer { margin-top: 40px; background: #1d2327; padding: 30px; border-radius: var(--laca-radius); color: #fff; }
-            .laca-help-footer h3 { margin-top: 0; color: #72aee6; }
-            .laca-help-footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px; }
-            .laca-help-footer a { color: #72aee6; text-decoration: none; }
-            .laca-help-footer a:hover { text-decoration: underline; }
-        </style>
+
         <div class="wrap laca-help-wrap">
             <h1 class="laca-help-header">
                 <span>📖</span>

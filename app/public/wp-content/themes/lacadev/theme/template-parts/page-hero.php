@@ -73,9 +73,10 @@ if (is_post_type_archive('project')) {
                 <div class="page-excerpt">
                     <?php echo wp_kses_post($excerpt); ?>
                     <?php if (!is_archive() && !is_home()) : ?>
-                        <div class="meta-item" style="margin-top: 10px; font-size: 14px; color: var(--laca-text-muted);">
-                            <span class="dashicons dashicons-visibility" style="font-size: 14px; width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;"></span>
+                        <div class="meta-item meta-item--viewcount">
+                            <span class="dashicons dashicons-visibility"></span>
                             <?php theViewCount(); ?> lượt xem
+
                         </div>
                     <?php endif; ?>
                 </div>

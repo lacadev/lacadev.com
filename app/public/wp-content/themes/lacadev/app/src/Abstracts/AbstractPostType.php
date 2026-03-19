@@ -296,44 +296,11 @@ abstract class AbstractPostType
 
 
 	/**
-	 * Custom style
+	 * Custom style – Extracted to resources/styles/admin/_admin-custom.scss
 	 */
-	public function adminCustomColumnStyle()
+	public function adminCustomColumnStyle(): void
 	{
-?>
-		<style>
-			.dashicons {
-				width: unset !important;
-				height: unset !important;
-				font-size: 30px;
-			}
-
-			form#posts-filter {
-				position: relative;
-			}
-
-			.column-featured_image,
-			.column-is_feature {
-				width: 80px !important;
-			}
-
-			.column-is_feature a {
-				padding: 2px;
-			}
-
-			.column-is_feature a.dashicons-yes {
-				color: #3A878F;
-			}
-
-			.column-is_feature a.dashicons-no {
-				color: #DC665C;
-			}
-
-			.wp-list-table td {
-				vertical-align: middle;
-			}
-		</style>
-	<?php
+		// Styles enqueued via wp_enqueue_style('lacadev-admin') in the theme.
 	}
 
 	/**
@@ -371,9 +338,9 @@ abstract class AbstractPostType
 				
 				if ($thumbnailUrl) {
 					// Has thumbnail - show image with remove button
-					echo "<div style='position:relative;display:inline-block;'>";
+					echo "<div class='thumbnail-wrap'>";
 					echo "<a href='javascript:void(0)' data-trigger-change-thumbnail-id data-post-id='{$post_id_attr}' data-nonce='{$nonce_attr}'>";
-					echo "<img src='" . esc_url($thumbnailUrl) . "' style='max-width:80px;max-height:80px;display:block;' alt='Thumbnail'/>";
+					echo "<img src='" . esc_url($thumbnailUrl) . "' class='thumbnail-preview' alt='Thumbnail'/>";
 					echo "</a>";
 					// Remove button (X)
 					echo "<a class='remove-thumbnail' href='javascript:void(0)' data-trigger-remove-thumbnail data-post-id='{$post_id_attr}' data-nonce='{$nonce_attr}' title='Remove thumbnail'>

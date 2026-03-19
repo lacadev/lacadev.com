@@ -24,6 +24,7 @@ class DashboardWidgets
         }
 
         add_action('admin_head', [$this, 'renderWidgetStyles']);
+        add_action('admin_enqueue_scripts', [$this, 'enqueueDashboardScripts']);
 
         add_action('wp_dashboard_setup', function () {
             wp_add_dashboard_widget('lacadev_management_hub',    '🚀 LacaDev Business Hub',   [$this, 'renderDashboardWidget']);
@@ -40,35 +41,44 @@ class DashboardWidgets
         add_action('wp_ajax_lacadev_quick_search', [$this, 'ajaxQuickSearch']);
     }
 
+    public function enqueueDashboardScripts(string $hook): void
+    {
+        if ('index.php' !== $hook) {
+            return;
+        }
+
+        $base = get_template_directory_uri();
+        $ver  = wp_get_theme()->get('Version') ?: '1.0.0';
+
+        wp_enqueue_script(
+            'lacadev-dashboard-search',
+            $base . '/resources/scripts/admin/dashboard-search.js',
+            [],
+            $ver,
+            true
+        );
+        wp_localize_script('lacadev-dashboard-search', 'lacadevSearch', [
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce'   => wp_create_nonce('lacadev_quick_search'),
+        ]);
+
+        wp_enqueue_script(
+            'lacadev-dashboard-tracker',
+            $base . '/resources/scripts/admin/dashboard-tracker.js',
+            [],
+            $ver,
+            true
+        );
+    }
+
     // ──────────────────────────────────────────────────────────────
     // Widget 7: Project Charts
     // ──────────────────────────────────────────────────────────────
 
     public function renderProjectChartsWidget(): void
     {
+        // Styles extracted to resources/styles/admin/_admin-dashboard.scss
         ?>
-        <style>
-            .laca-charts-grid {
-                display: grid;
-                grid-template-columns: 1fr;
-                gap: 20px;
-                align-items: start;
-            }
-            .laca-chart-block h4 {
-                margin: 0 0 10px;
-                font-size: 12px;
-                text-transform: uppercase;
-                letter-spacing: .5px;
-                color: #646970;
-                font-weight: 700;
-            }
-            .laca-chart-block canvas {
-                max-height: 200px;
-            }
-            @media (max-width: 900px) {
-                .laca-charts-grid { grid-template-columns: 1fr; }
-            }
-        </style>
         <div class="laca-charts-grid">
             <div class="laca-chart-block">
                 <h4>Trạng thái dự án</h4>
@@ -85,89 +95,18 @@ class DashboardWidgets
         <?php
     }
 
+
     // ──────────────────────────────────────────────────────────────
     // Shared CSS
     // ──────────────────────────────────────────────────────────────
 
     public function renderWidgetStyles(): void
     {
-        ?>
-        <style id="lacadev-dashboard-styles">
-            :root {
-                --laca-primary: #2271b1;
-                --laca-bg-soft: #f6f7f7;
-                --laca-border: #e2e8f0;
-                --laca-text-main: #1d2327;
-                --laca-text-muted: #646970;
-                --laca-radius: 10px;
-                --laca-shadow-sm: 0 2px 8px rgba(0,0,0,0.05);
-            }
-            .lacadev-dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 20px; }
-            .lacadev-dashboard-grid .stat-item { background: #f8f9fa; padding: 12px 8px; border-radius: var(--laca-radius); border: 1px solid var(--laca-border); text-align: center; transition: all 0.2s; }
-            .stat-item:hover { transform: translateY(-2px); border-color: var(--laca-primary); background: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-            .lacadev-dashboard-grid .stat-value { display: block; font-size: 22px; font-weight: 800; color: var(--laca-text-main); line-height: 1.2; }
-            .lacadev-dashboard-grid .stat-label { font-size: 9px; text-transform: uppercase; color: var(--laca-text-muted); letter-spacing: 0.5px; font-weight: 700; display: block; margin-top: 4px; }
-            .lacadev-actions-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-            .lacadev-btn-quick { display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #dcdcde; padding: 10px; border-radius: var(--laca-radius); text-decoration: none; color: #2c3338; font-weight: 600; transition: all 0.2s; font-size: 13px; }
-            .lacadev-btn-quick:hover { background: #f0f6fb; border-color: var(--laca-primary); color: var(--laca-primary); }
-            .lacadev-btn-quick span { margin-right: 8px; font-size: 16px; }
-            .hub-section-title { font-size: 13px; font-weight: 700; margin: 15px 0 10px; color: var(--laca-text-main); border-bottom: 2px solid #f1f1f1; padding-bottom: 5px; }
-            .stat-maintenance--on { color: #d63638; }
-            .stat-maintenance--off { color: #00a32a; }
-            .laca-health-list { margin: 0; padding: 0; list-style: none; }
-            .laca-health-list li { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f1; font-size: 13px; }
-            .laca-health-list li:last-child { border-bottom: none; }
-            .laca-health-list .health-label { color: var(--laca-text-muted); }
-            .laca-health-list .health-value { font-weight: 600; color: var(--laca-text-main); }
-            .laca-health-list .health-ok { color: #00a32a; }
-            .laca-health-list .health-warn { color: #dba617; }
-            .laca-health-list .health-link { margin-left: 8px; font-size: 11px; }
-            .laca-todo-list { margin: 0; padding: 0; list-style: none; }
-            .laca-todo-list li { margin-bottom: 8px; }
-            .laca-todo-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: var(--laca-bg-soft); border-radius: var(--laca-radius); text-decoration: none; color: var(--laca-text-main); font-size: 13px; font-weight: 600; border: 1px solid var(--laca-border); transition: all 0.2s; }
-            .laca-todo-item:hover { background: #fff; border-color: var(--laca-primary); color: var(--laca-primary); }
-            .laca-todo-item span:first-child { display: flex; align-items: center; gap: 8px; }
-            .laca-todo-badge { background: var(--laca-primary); color: #fff; font-size: 11px; padding: 2px 8px; border-radius: var(--laca-radius); }
-            .laca-todo-empty { padding: 20px 0; text-align: center; color: var(--laca-text-muted); font-size: 13px; }
-            .laca-quick-search-wrap { position: relative; }
-            .laca-quick-search-input { width: 100%; padding: 12px 14px; font-size: 14px; border: 1px solid #dcdcde; border-radius: 8px; box-sizing: border-box; }
-            .laca-quick-search-input:focus { border-color: var(--laca-primary); outline: none; }
-            .laca-quick-search-results { margin-top: 12px; max-height: 320px; overflow-y: auto; }
-            .laca-quick-search-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid #f0f0f1; text-decoration: none; color: var(--laca-text-main); font-size: 13px; transition: background 0.15s; }
-            .laca-quick-search-item:hover { background: var(--laca-bg-soft); }
-            .laca-quick-search-item:last-child { border-bottom: none; }
-            .laca-quick-search-item .item-title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
-            .laca-quick-search-item .item-meta { font-size: 11px; color: var(--laca-text-muted); margin-left: 10px; flex-shrink: 0; }
-            .laca-quick-search-loading, .laca-quick-search-empty { padding: 20px; text-align: center; color: var(--laca-text-muted); font-size: 13px; }
-            .laca-widget-header-row { padding: 10px 12px; border-bottom: 1px solid #dcdcde; background: #fff; display: flex; align-items: center; }
-            .laca-report-select { border: 1px solid #dcdcde; background: #fff; color: #2c3338; padding: 4px 24px 4px 8px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; min-width: 180px; width: 100%; box-shadow: none !important; }
-            .laca-report-select:focus { border-color: var(--laca-primary); color: var(--laca-primary); }
-            .laca-tab-content { display: none; padding: 0; }
-            .laca-tab-content.active { display: block; }
-            .laca-post-list { margin: 0; padding: 0; list-style: none; }
-            .laca-post-list li { padding: 10px 0; border-bottom: 1px solid #f0f0f1; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-            .laca-post-list li:last-child { border-bottom: none; }
-            .laca-post-info { flex: 1; min-width: 0; }
-            .laca-post-link { text-decoration: none; color: var(--laca-primary); font-weight: 600; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; margin-bottom: 3px; }
-            .laca-post-link:hover { color: #135e96; }
-            .laca-post-meta { font-size: 11px; color: var(--laca-text-muted); display: block; }
-            .laca-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700; color: #fff; }
-            .badge-views { background: var(--laca-primary); }
-            .badge-seo { background: #d63638; }
-            .badge-date { background: #f0f0f1; color: var(--laca-text-muted); }
-            .laca-issue-tag { display: inline-block; background: #fff2f2; color: #d63638; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; border: 1px solid #ffccca; margin-right: 5px; vertical-align: middle; }
-            .laca-pagination-row { display: flex !important; justify-content: center; align-items: center; gap: 15px; padding: 15px 0 !important; border-bottom: none !important; }
-            .laca-page-btn { background: #fff; border: 1px solid #dcdcde; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; color: #2c3338; }
-            .laca-page-btn:hover:not(:disabled) { background: #f0f6fb; border-color: var(--laca-primary); color: var(--laca-primary); }
-            .laca-page-btn:disabled { opacity: 0.5; cursor: default; }
-            .laca-page-info { font-size: 11px; color: var(--laca-text-muted); font-weight: 600; }
-            .column-laca_views { width: 90px !important; }
-            .laca-views-col { display: flex; align-items: center; gap: 5px; color: #50575e; }
-            .laca-views-col .dashicons { font-size: 17px; width: 17px; height: 17px; color: #999; }
-            .laca-views-col strong { font-family: monospace; font-size: 13px; }
-        </style>
-        <?php
+        // All styles extracted to resources/styles/admin/_admin-dashboard.scss
+        // Enqueued via wp_enqueue_style('lacadev-admin') in the theme.
     }
+
+
 
     // ──────────────────────────────────────────────────────────────
     // Widget 1: Business Hub
@@ -418,63 +357,15 @@ class DashboardWidgets
 
     public function renderQuickSearchWidget(): void
     {
-        $ajax_url = admin_url('admin-ajax.php');
-        $nonce    = wp_create_nonce('lacadev_quick_search');
+        // nonce & ajax_url injected via wp_localize_script('lacadev-dashboard-search') in enqueueDashboardScripts()
         ?>
         <div class="laca-quick-search-wrap">
             <input type="text" class="laca-quick-search-input" placeholder="Tìm theo tiêu đề (bài viết, trang, CPT)..." autocomplete="off">
             <div class="laca-quick-search-results"></div>
         </div>
-        <script>
-        (function() {
-            var input = document.querySelector('.laca-quick-search-input');
-            var results = document.querySelector('.laca-quick-search-results');
-            var timer = null, lastTerm = '';
-
-            function renderItems(items) {
-                results.innerHTML = '';
-                if (!items || !items.length) {
-                    results.innerHTML = '<div class="laca-quick-search-empty">Không tìm thấy kết quả.</div>'; return;
-                }
-                items.forEach(function(item) {
-                    var a = document.createElement('a');
-                    a.href = item.edit_url; a.className = 'laca-quick-search-item'; a.target = '_blank';
-                    var t = document.createElement('span'); t.className = 'item-title'; t.textContent = item.title || '';
-                    var m = document.createElement('span'); m.className = 'item-meta'; m.textContent = (item.post_type||'') + (item.status||'') + ' · ' + (item.date||'');
-                    a.appendChild(t); a.appendChild(m); results.appendChild(a);
-                });
-            }
-
-            function doSearch() {
-                var term = input.value.trim();
-                if (term === lastTerm) return;
-                lastTerm = term;
-                if (term.length < 2) { results.innerHTML = '<div class="laca-quick-search-empty">Nhập ít nhất 2 ký tự để tìm kiếm.</div>'; return; }
-                results.innerHTML = '<div class="laca-quick-search-loading">Đang tìm...</div>';
-                var fd = new FormData();
-                fd.append('action', 'lacadev_quick_search');
-                fd.append('nonce', '<?php echo esc_js($nonce); ?>');
-                fd.append('search_keyword', term);
-                fetch('<?php echo esc_url($ajax_url); ?>', { method: 'POST', body: fd, credentials: 'same-origin' })
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
-                        if (data.success && data.data.items) { renderItems(data.data.items); }
-                        else { results.innerHTML = '<div class="laca-quick-search-empty">' + (data.data && data.data.message ? data.data.message : 'Không tìm thấy kết quả.') + '</div>'; }
-                    })
-                    .catch(function() { results.innerHTML = '<div class="laca-quick-search-empty">Lỗi tìm kiếm. Vui lòng thử lại.</div>'; });
-            }
-
-            input.addEventListener('input', function() {
-                clearTimeout(timer);
-                if (!input.value.trim()) { lastTerm = ''; results.innerHTML = '<div class="laca-quick-search-empty">Nhập từ khóa theo tiêu đề để tìm...</div>'; return; }
-                timer = setTimeout(doSearch, 300);
-            });
-            input.addEventListener('keydown', function(e) { if (e.key === 'Enter') { clearTimeout(timer); doSearch(); } });
-            results.innerHTML = '<div class="laca-quick-search-empty">Nhập từ khóa theo tiêu đề để tìm...</div>';
-        })();
-        </script>
         <?php
     }
+
 
     // ──────────────────────────────────────────────────────────────
     // Widget 6: Content Tracker
@@ -651,34 +542,9 @@ class DashboardWidgets
         </div>
         <?php endif; ?>
 
-        <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var select = document.querySelector('.laca-report-select');
-            var contents = document.querySelectorAll('.laca-tab-content');
-            if (select) {
-                select.addEventListener('change', function() {
-                    contents.forEach(c => c.classList.remove('active'));
-                    document.getElementById(this.value).classList.add('active');
-                });
-            }
-            document.querySelectorAll('.laca-tab-content').forEach(function(wrap) {
-                var perPage = parseInt(wrap.getAttribute('data-per-page') || 5);
-                var curPage = 1;
-                var nextBtn = wrap.querySelector('.next'), prevBtn = wrap.querySelector('.prev'), pageInfo = wrap.querySelector('.laca-page-info'), items = wrap.querySelectorAll('.laca-list-item');
-                function update() {
-                    var maxPage = Math.ceil(items.length / perPage), start = (curPage - 1) * perPage, end = start + perPage;
-                    items.forEach(function(item, idx) { item.style.setProperty('display', (idx >= start && idx < end) ? 'flex' : 'none', 'important'); });
-                    if (prevBtn) prevBtn.disabled = (curPage <= 1);
-                    if (nextBtn) nextBtn.disabled = (curPage >= maxPage);
-                    if (pageInfo) pageInfo.innerText = 'Trang ' + curPage + ' / ' + (maxPage || 1);
-                }
-                if (nextBtn) nextBtn.addEventListener('click', function(e) { e.preventDefault(); if (curPage < Math.ceil(items.length / perPage)) { curPage++; update(); } });
-                if (prevBtn) prevBtn.addEventListener('click', function(e) { e.preventDefault(); if (curPage > 1) { curPage--; update(); } });
-                update();
-            });
-        });
-        </script>
         <?php
+        // Tab switching + pagination JS extracted to resources/scripts/admin/dashboard-tracker.js
+        // Enqueued in enqueueDashboardScripts() via wp_enqueue_script('lacadev-dashboard-tracker').
     }
 
     // ──────────────────────────────────────────────────────────────

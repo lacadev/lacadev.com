@@ -636,3 +636,51 @@ div.error {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.4; }
 }
+
+// ─── Thumbnail Column (extracted from hooks.php) ─────────────
+
+.thumbnail-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.thumbnail-preview {
+  max-width: 8rem;
+  max-height: 8rem;
+  display: block;
+}
+
+// ─── Admin Column Styles (extracted from AbstractPostType.php) ─
+
+.dashicons.column-dashicon {
+  width: unset !important;
+  height: unset !important;
+  font-size: 3rem;
+}
+
+form#posts-filter {
+  position: relative;
+}
+
+.column-featured_image.featured_image,
+.column-is_feature {
+  width: 8rem !important;
+}
+
+.column-is_feature {
+  a {
+    padding: 0.2rem;
+
+    &.dashicons-yes {
+      color: #3a878f;
+    }
+
+    &.dashicons-no {
+      color: #dc665c;
+    }
+  }
+}
+
+.wp-list-table td {
+  vertical-align: middle;
+}

@@ -1,0 +1,440 @@
+// ============================================================
+// LacaDev Admin Dashboard Widget Styles
+// Extracted from DashboardWidgets.php – do NOT add inline
+// ============================================================
+
+// ─── CSS Custom Properties ───────────────────────────────────
+
+:root {
+    --laca-primary:    #2271b1;
+    --laca-primary-lt: #e8f0fb;
+    --laca-text-main:  #1d2327;
+    --laca-text-muted: #646970;
+    --laca-bg-soft:    #f6f7f7;
+    --laca-border:     #dcdcde;
+    --laca-radius:     8px;
+    --laca-shadow-sm:  0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+// ─── Shared Widget Layout ────────────────────────────────────
+
+.lacadev-dashboard-widget {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.lacadev-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.lacadev-stat-box {
+    background: #fff;
+    border-radius: var(--laca-radius);
+    padding: 1.6rem;
+    border: 1px solid var(--laca-border);
+    display: flex;
+    align-items: center;
+    gap: 1.4rem;
+
+    .stat-icon {
+        font-size: 2.8rem;
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 1.1rem;
+        color: var(--laca-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--laca-text-main);
+    }
+}
+
+// ─── Charts ──────────────────────────────────────────────────
+
+.laca-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    align-items: start;
+
+    .laca-chart-block {
+        h4 {
+            margin: 0 0 1rem;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05rem;
+            color: var(--laca-text-muted);
+            font-weight: 700;
+        }
+
+        canvas {
+            max-height: 20rem;
+        }
+    }
+}
+
+.laca-charts-footer {
+    text-align: center;
+    padding: 1.2rem 0 0;
+    color: var(--laca-text-muted);
+    font-size: 1.2rem;
+}
+
+// ─── Quick Actions ────────────────────────────────────────────
+
+.lacadev-btn-quick {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1px solid var(--laca-border);
+    padding: 1rem;
+    border-radius: var(--laca-radius);
+    text-decoration: none;
+    color: #2c3338;
+    font-weight: 600;
+    transition: all 0.2s;
+    font-size: 1.3rem;
+
+    &:hover {
+        background: #f0f6fb;
+        border-color: var(--laca-primary);
+        color: var(--laca-primary);
+    }
+
+    span {
+        margin-right: 0.8rem;
+        font-size: 1.6rem;
+    }
+}
+
+.hub-section-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 1.5rem 0 1rem;
+    color: var(--laca-text-main);
+    border-bottom: 2px solid #f1f1f1;
+    padding-bottom: 0.5rem;
+}
+
+// ─── Maintenance / Health ────────────────────────────────────
+
+.stat-maintenance--on  { color: #d63638; }
+.stat-maintenance--off { color: #00a32a; }
+
+.laca-health-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f0f0f1;
+        font-size: 1.3rem;
+
+        &:last-child { border-bottom: none; }
+    }
+
+    .health-label { color: var(--laca-text-muted); }
+    .health-value { font-weight: 600; color: var(--laca-text-main); }
+    .health-ok    { color: #00a32a; }
+    .health-warn  { color: #dba617; }
+    .health-link  { margin-left: 0.8rem; font-size: 1.1rem; }
+}
+
+// ─── To-do List ──────────────────────────────────────────────
+
+.laca-todo-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li { margin-bottom: 0.8rem; }
+}
+
+.laca-todo-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 1.4rem;
+    background: var(--laca-bg-soft);
+    border-radius: var(--laca-radius);
+    text-decoration: none;
+    color: var(--laca-text-main);
+    font-size: 1.3rem;
+    font-weight: 600;
+    border: 1px solid var(--laca-border);
+    transition: all 0.2s;
+
+    &:hover {
+        background: #fff;
+        border-color: var(--laca-primary);
+        color: var(--laca-primary);
+    }
+
+    span:first-child {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+}
+
+.laca-todo-badge {
+    background: var(--laca-primary);
+    color: #fff;
+    font-size: 1.1rem;
+    padding: 0.2rem 0.8rem;
+    border-radius: var(--laca-radius);
+}
+
+.laca-todo-empty {
+    padding: 2rem 0;
+    text-align: center;
+    color: var(--laca-text-muted);
+    font-size: 1.3rem;
+}
+
+// ─── Quick Search ────────────────────────────────────────────
+
+.laca-quick-search-wrap { position: relative; }
+
+.laca-quick-search-input {
+    width: 100%;
+    padding: 1.2rem 1.4rem;
+    font-size: 1.4rem;
+    border: 1px solid var(--laca-border);
+    border-radius: 0.8rem;
+    box-sizing: border-box;
+
+    &:focus {
+        border-color: var(--laca-primary);
+        outline: none;
+    }
+}
+
+.laca-quick-search-results {
+    margin-top: 1.2rem;
+    max-height: 32rem;
+    overflow-y: auto;
+}
+
+.laca-quick-search-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid #f0f0f1;
+    text-decoration: none;
+    color: var(--laca-text-main);
+    font-size: 1.3rem;
+    transition: background 0.15s;
+
+    &:hover { background: var(--laca-bg-soft); }
+    &:last-child { border-bottom: none; }
+
+    .item-title {
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 600;
+    }
+
+    .item-meta {
+        font-size: 1.1rem;
+        color: var(--laca-text-muted);
+        margin-left: 1rem;
+        flex-shrink: 0;
+    }
+}
+
+.laca-quick-search-loading,
+.laca-quick-search-empty {
+    padding: 2rem;
+    text-align: center;
+    color: var(--laca-text-muted);
+    font-size: 1.3rem;
+}
+
+// ─── Widget Header ───────────────────────────────────────────
+
+.laca-widget-header-row {
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid var(--laca-border);
+    background: #fff;
+    display: flex;
+    align-items: center;
+}
+
+.laca-report-select {
+    border: 1px solid var(--laca-border);
+    background: #fff;
+    color: #2c3338;
+    padding: 0.4rem 2.4rem 0.4rem 0.8rem;
+    border-radius: 0.4rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+    cursor: pointer;
+    min-width: 18rem;
+    width: 100%;
+    box-shadow: none !important;
+
+    &:focus {
+        border-color: var(--laca-primary);
+        color: var(--laca-primary);
+    }
+}
+
+// ─── Tab Content ─────────────────────────────────────────────
+
+.laca-tab-content {
+    display: none;
+    padding: 0;
+
+    &.active { display: block; }
+}
+
+// ─── Post List ───────────────────────────────────────────────
+
+.laca-post-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+        padding: 1rem 0;
+        border-bottom: 1px solid #f0f0f1;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+
+        &:last-child { border-bottom: none; }
+    }
+}
+
+.laca-post-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.laca-post-link {
+    text-decoration: none;
+    color: var(--laca-primary);
+    font-weight: 600;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 1.3rem;
+    margin-bottom: 0.3rem;
+
+    &:hover { color: #135e96; }
+}
+
+.laca-post-meta {
+    font-size: 1.1rem;
+    color: var(--laca-text-muted);
+    display: block;
+}
+
+// ─── Badges ──────────────────────────────────────────────────
+
+.laca-badge {
+    font-size: 1rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.4rem;
+    font-weight: 700;
+    color: #fff;
+
+    &.badge-views { background: var(--laca-primary); }
+    &.badge-seo   { background: #d63638; }
+    &.badge-date  { background: #f0f0f1; color: var(--laca-text-muted); }
+}
+
+.laca-issue-tag {
+    display: inline-block;
+    background: #fff2f2;
+    color: #d63638;
+    padding: 0.1rem 0.6rem;
+    border-radius: 0.4rem;
+    font-size: 1rem;
+    font-weight: 700;
+    border: 1px solid #ffccca;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+
+// ─── Pagination ──────────────────────────────────────────────
+
+.laca-pagination-row {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem 0 !important;
+    border-bottom: none !important;
+}
+
+.laca-page-btn {
+    background: #fff;
+    border: 1px solid var(--laca-border);
+    padding: 0.4rem 1rem;
+    border-radius: 0.4rem;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3338;
+
+    &:hover:not(:disabled) {
+        background: #f0f6fb;
+        border-color: var(--laca-primary);
+        color: var(--laca-primary);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+}
+
+.laca-page-info {
+    font-size: 1.1rem;
+    color: var(--laca-text-muted);
+    font-weight: 600;
+}
+
+// ─── Views Column ────────────────────────────────────────────
+
+.column-laca_views { width: 9rem !important; }
+
+.laca-views-col {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #50575e;
+
+    .dashicons {
+        font-size: 1.7rem;
+        width: 1.7rem;
+        height: 1.7rem;
+        color: #999;
+    }
+
+    strong {
+        font-family: monospace;
+        font-size: 1.3rem;
+    }
+}

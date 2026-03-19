@@ -15,7 +15,7 @@
             <span class="meta-separator">•</span>
             <span class="meta-item"><?php echo get_the_date('d/m/Y'); ?></span>
             <span class="meta-separator">•</span>
-            <span class="meta-item"><span class="dashicons dashicons-visibility" style="font-size: 14px; width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;"></span><?php theViewCount(); ?> lượt xem</span>
+            <span class="meta-item meta-item--viewcount"><span class="dashicons dashicons-visibility"></span><?php theViewCount(); ?> lượt xem</span>
         </div>
     </div>
 </div>

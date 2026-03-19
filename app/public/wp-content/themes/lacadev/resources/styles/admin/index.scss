@@ -3,6 +3,8 @@
 
 @use "admin-custom";
 @use "project";
+@use "admin-dashboard";
+@use "admin-help";
 
 html :where(.wp-block) {
   max-width: 144rem !important;
