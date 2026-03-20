@@ -57,9 +57,5 @@ class ManagementExperience
         add_action('init', function () {
             new AITranslationManager();
         });
-
-
-        // 9. Project Reports — chart.js data provider
-        new ProjectReportsManager();
     }
 }

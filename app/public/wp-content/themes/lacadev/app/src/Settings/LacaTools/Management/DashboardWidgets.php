@@ -47,7 +47,9 @@ class DashboardWidgets
             return;
         }
 
-        $base = get_template_directory_uri();
+        // style.css đặt trong subfolder /theme/ nên get_template_directory_uri() trả về .../lacadev/theme/
+        // Dùng dirname() để lên 1 level về đúng theme root: .../lacadev/
+        $base = dirname(get_template_directory_uri());
         $ver  = wp_get_theme()->get('Version') ?: '1.0.0';
 
         wp_enqueue_script(

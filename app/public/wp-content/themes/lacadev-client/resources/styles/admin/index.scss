@@ -2,6 +2,7 @@
 @use "../theme/base/fonts";
 
 @use "admin-column-style";
+@use "admin-dashboard";
 
 html :where(.wp-block) {
   max-width: 144rem !important;

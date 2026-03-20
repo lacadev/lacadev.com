@@ -217,8 +217,6 @@ add_filter('query_vars', 'lacadev_register_search_query_vars');
 // =============================================================================
 
 new \App\PostTypes\service();
-new \App\PostTypes\project();
-new \App\PostTypes\template();
 
 // =============================================================================
 // COMMENTS CALLBACK

@@ -101,7 +101,9 @@ function app_action_theme_enqueue_assets()
  */
 function app_action_admin_enqueue_assets()
 {
-    $template_dir = Theme::uri();
+    // Theme::uri() trả về .../lacadev-client/theme/ (nơi đặt style.css)
+    // dist/ nằm ở .../lacadev-client/dist/ nên cần dirname() để lên 1 level
+    $template_dir = dirname(get_template_directory_uri());
 
     /**
      * Enqueue styles.
@@ -289,7 +291,7 @@ add_action('admin_head', function() {
  */
 function app_action_login_enqueue_assets()
 {
-    $template_dir = Theme::uri();
+    $template_dir = dirname(get_template_directory_uri());
 
     /**
      * Enqueue scripts.
@@ -328,7 +330,7 @@ function app_action_login_enqueue_assets()
  */
 function app_action_editor_enqueue_assets()
 {
-    $template_dir = Theme::uri();
+    $template_dir = dirname(get_template_directory_uri());
 
     /**
      * Enqueue scripts.
