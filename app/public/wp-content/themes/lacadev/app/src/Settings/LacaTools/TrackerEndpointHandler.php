@@ -46,21 +46,59 @@ class TrackerEndpointHandler
 
         $insertedCount = 0;
         foreach ($logs as $log) {
-            $type    = sanitize_key($log['type'] ?? 'other');
-            $content = sanitize_textarea_field($log['content'] ?? '');
-            
+            $type    = sanitize_key($log['type']    ?? 'other');
+            // Dùng wp_strip_all_tags thay sanitize_textarea_field để giữ Unicode emoji & tiếng Việt
+            $content = trim(wp_strip_all_tags($log['content'] ?? ''));
+            $level   = sanitize_key($log['level']   ?? 'info');
+
             if (empty($content)) {
                 continue;
             }
 
-            // Map type từ client sang type của database Server
-            $logType = 'bug_fix'; // Mặc định
-            if ($type === 'plugin_update' || $type === 'theme_update' || $type === 'core_update') {
+            // Map event type → log_type của database
+            $deploymentTypes = [
+                'plugin_update', 'theme_update', 'core_update',
+                'plugin_install', 'plugin_activate', 'plugin_deactivate', 'plugin_delete',
+            ];
+            $securityTypes   = ['file_changed', 'code_edit', 'file_suspicious'];
+            $warningTypes    = ['update_pending'];
+
+            if (in_array($type, $deploymentTypes, true)) {
                 $logType = 'deployment';
-            } elseif ($type === 'file_changed' || $type === 'code_edit') {
-                $logType = 'bug_fix'; 
-                // Đồng thời tạo cảnh báo (Alert) vì file code bị sửa
-                $this->createAlert($projectId, "Phát hiện file bị chỉnh sửa: \n" . $content);
+            } elseif (in_array($type, $securityTypes, true)) {
+                $logType = 'bug_fix';
+                // Tạo Alert security cho file bị thay đổi / file đáng ngờ
+                $alertLevel = ($type === 'file_suspicious' || $level === 'critical') ? 'critical' : 'warning';
+                $this->createAlert($projectId, $content, $alertLevel);
+            } elseif (in_array($type, $warningTypes, true)) {
+                $logType = 'note';
+                // Tạo Alert warning cho update pending
+                $this->createAlert($projectId, $content, 'warning');
+                // Lưu structured plugin list để UI remote update có thể đọc
+                $pendingPlugins = $log['plugins'] ?? [];
+                if (!empty($pendingPlugins) && is_array($pendingPlugins)) {
+                    // Validate từng item: chỉ giữ slug, name, current_version, new_version
+                    $clean = [];
+                    foreach ($pendingPlugins as $p) {
+                        if (empty($p['slug'])) continue;
+                        $clean[] = [
+                            'slug'            => sanitize_text_field($p['slug'] ?? ''),
+                            'name'            => sanitize_text_field($p['name'] ?? $p['slug']),
+                            'current_version' => sanitize_text_field($p['current_version'] ?? ''),
+                            'new_version'     => sanitize_text_field($p['new_version'] ?? ''),
+                        ];
+                    }
+                    if (!empty($clean)) {
+                        update_post_meta($projectId, '_pending_plugin_updates', $clean);
+                    }
+                }
+            } else {
+                $logType = 'note';
+            }
+
+            // Cảnh báo tự động khi xóa plugin
+            if ($type === 'plugin_delete') {
+                $this->createAlert($projectId, $content, 'warning');
             }
 
             $logId = ProjectLog::add([
@@ -68,7 +106,7 @@ class TrackerEndpointHandler
                 'log_content' => $content,
                 'log_type'    => $logType,
                 'is_auto'     => 1,
-                'log_by'      => 'Hệ thống LacaDev Bot',
+                'log_by'      => 'LacaDev Tracker Bot',
             ]);
 
             if ($logId) {
@@ -80,23 +118,22 @@ class TrackerEndpointHandler
             'success' => true,
             'message' => "Đã ghi nhận {$insertedCount} sự kiện.",
         ], 200);
+
     }
 
     /**
-     * Tạo cảnh báo lên hệ thống chính nếu phát hiện sửa code
+     * Tạo cảnh báo lên hệ thống chính nếu phát hiện sửa code / file đáng ngờ
      */
-    private function createAlert(int $projectId, string $msg): void
+    private function createAlert(int $projectId, string $msg, string $level = 'warning'): void
     {
         if (!class_exists('\App\Models\ProjectAlert')) {
             return;
         }
 
-        // Chỉ tạo alert nếu chưa có alert tương tự (hoặc có thể tạo liên tục tuỳ chiến lược)
-        // Ở đây ta cứ tạo alert Warning
         ProjectAlert::add([
             'project_id'  => $projectId,
             'alert_type'  => 'security',
-            'alert_level' => 'warning',
+            'alert_level' => $level,   // warning / critical tuỳ loại sự kiện
             'alert_msg'   => $msg,
         ]);
     }

@@ -53,7 +53,9 @@ class Project extends \App\Abstracts\AbstractPostType
         add_action('wp_ajax_laca_add_task',    [$this, 'ajaxAddTask']);
         add_action('wp_ajax_laca_toggle_task', [$this, 'ajaxToggleTask']);
         add_action('wp_ajax_laca_delete_task', [$this, 'ajaxDeleteTask']);
-        add_action('wp_ajax_laca_sync_pages',  [$this, 'ajaxSyncPages']);
+        add_action('wp_ajax_laca_sync_pages',    [$this, 'ajaxSyncPages']);
+        add_action('wp_ajax_laca_remote_update',         [$this, 'ajaxRemoteUpdate']);
+        add_action('wp_ajax_laca_get_pending_updates',   [$this, 'ajaxGetPendingUpdates']);
 
         // Thêm custom meta box cho Logs & Alerts
         add_action('add_meta_boxes', [$this, 'registerLogsMetaBox']);
@@ -967,7 +969,101 @@ class Project extends \App\Abstracts\AbstractPostType
         wp_send_json_success(['message' => "Đã sync $added trang mới", 'tasks' => $tasks]);
     }
 
+    /**
+     * AJAX: Gửi lệnh Remote Update đến site client
+     *
+     * POST fields: nonce, project_id, action (update_plugin|update_theme|update_core), slug
+     */
+    public function ajaxRemoteUpdate(): void
+    {
+        check_ajax_referer('laca_project_manager', 'nonce');
+
+        $projectId = absint($_POST['project_id'] ?? 0);
+        $action    = sanitize_key($_POST['update_action'] ?? '');
+        $slug      = sanitize_text_field($_POST['update_slug'] ?? '');
+
+        if (!$projectId || get_post_type($projectId) !== 'project' || !current_user_can('edit_post', $projectId)) {
+            wp_send_json_error(['message' => 'Không hợp lệ'], 403);
+        }
+
+        $allowedActions = ['update_plugin', 'update_theme', 'update_core'];
+        if (!in_array($action, $allowedActions, true)) {
+            wp_send_json_error(['message' => 'Action không hợp lệ.'], 400);
+        }
+
+        // Lấy thông tin site từ project meta
+        $siteUrl   = (string) carbon_get_post_meta($projectId, 'site_url');
+        $secretKey = (string) get_post_meta($projectId, '_tracker_secret_key', true);
+
+        if (empty($siteUrl) || empty($secretKey)) {
+            wp_send_json_error(['message' => 'Project chưa có site_url hoặc secret key.']);
+        }
+
+        $endpoint = trailingslashit($siteUrl) . 'wp-json/laca/v1/remote-update';
+
+        $response = wp_remote_post($endpoint, [
+            'body'    => wp_json_encode([
+                'secret_key' => $secretKey,
+                'action'     => $action,
+                'slug'       => $slug,
+            ]),
+            'headers' => ['Content-Type' => 'application/json'],
+            'timeout' => 30,
+        ]);
+
+        if (is_wp_error($response)) {
+            wp_send_json_error(['message' => 'Lỗi kết nối: ' . $response->get_error_message()]);
+        }
+
+        $code = wp_remote_retrieve_response_code($response);
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+        $msg  = $body['message'] ?? 'Không có phản hồi.';
+
+        if ($code >= 200 && $code < 300 && !empty($body['success'])) {
+            // Ghi log thành công
+            \App\Models\ProjectLog::create([
+                'project_id'  => $projectId,
+                'log_type'    => 'deployment',
+                'log_content' => $msg,
+                'log_by'      => wp_get_current_user()->display_name ?: 'Admin',
+                'is_auto'     => 1,
+            ]);
+            wp_send_json_success(['message' => $msg]);
+        } else {
+            // Ghi log thất bại
+            \App\Models\ProjectLog::create([
+                'project_id'  => $projectId,
+                'log_type'    => 'other',
+                'log_content' => 'Remote update thất bại: ' . $msg,
+                'log_by'      => wp_get_current_user()->display_name ?: 'Admin',
+                'is_auto'     => 1,
+            ]);
+            wp_send_json_error(['message' => $msg]);
+        }
+    }
+
+    /**
+     * AJAX: Lấy danh sách plugin đang chờ cập nhật từ post meta
+     */
+    public function ajaxGetPendingUpdates(): void
+    {
+        check_ajax_referer('laca_project_manager', 'nonce');
+
+        $projectId = absint($_POST['project_id'] ?? 0);
+        if (!$projectId || get_post_type($projectId) !== 'project' || !current_user_can('edit_post', $projectId)) {
+            wp_send_json_error(['message' => 'Không hợp lệ'], 403);
+        }
+
+        $pendingPlugins = get_post_meta($projectId, '_pending_plugin_updates', true);
+        if (!is_array($pendingPlugins)) {
+            $pendingPlugins = [];
+        }
+
+        wp_send_json_success(['plugins' => $pendingPlugins]);
+    }
+
     /** AJAX: Thêm task thủ công từ logs section */
+
     public function ajaxAddTask(): void
     {
         check_ajax_referer('laca_project_manager', 'nonce');
@@ -1411,6 +1507,59 @@ class Project extends \App\Abstracts\AbstractPostType
                 </div>
 
                 <hr style="border:0; border-top:1px dashed #ddd; margin:15px 0;">
+
+                <!-- REMOTE UPDATE SECTION -->
+                <hr style="border:0; border-top:1px dashed #ddd; margin:18px 0 14px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                    <h3 style="margin:0">🚀 Cập nhật từ xa</h3>
+                    <button type="button" class="button button-secondary" id="btn_load_pending" style="font-size:12px; padding:4px 10px;">
+                        🔄 Tải danh sách plugin chờ update
+                    </button>
+                </div>
+
+                <!-- Danh sách plugin pending -->
+                <div id="pending_plugins_list" style="margin-bottom:14px; display:none;">
+                    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                        <thead>
+                            <tr style="background:#f9f9f9; border-bottom:2px solid #e1e1e1;">
+                                <th style="padding:7px 10px; text-align:left; font-weight:600;">Plugin</th>
+                                <th style="padding:7px 10px; text-align:center; width:80px;">Hiện tại</th>
+                                <th style="padding:7px 10px; text-align:center; width:80px;">Bản mới</th>
+                                <th style="padding:7px 10px; text-align:center; width:110px;">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pending_plugins_tbody">
+                            <tr><td colspan="4" style="padding:10px; text-align:center; color:#999;">Chưa có dữ liệu</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="pending_plugins_empty" style="display:none; color:#888; font-size:13px; margin-bottom:10px; padding:8px 12px; background:#f9f9f9; border-radius:4px;">
+                    ✅ Không có plugin nào cần cập nhật.
+                </div>
+
+                <!-- Form nhanh: update_core hoặc nhập tay -->
+                <details style="margin-top:6px;">
+                    <summary style="cursor:pointer; font-size:12px; color:#555; user-select:none;">⚙️ Gửi lệnh thủ công (update_core, theme, hoặc nhập slug)</summary>
+                    <div style="margin-top:10px;">
+                        <p style="color:#666; font-size:12px; margin:0 0 10px 0;">Gửi lệnh cập nhật plugin, theme hoặc WordPress core đến site client.</p>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                            <select id="remote_update_action" style="padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
+                                <option value="update_plugin">🔌 Cập nhật Plugin</option>
+                                <option value="update_theme">🎨 Cập nhật Theme</option>
+                                <option value="update_core">⚡ Cập nhật WordPress Core</option>
+                            </select>
+                            <input type="text" id="remote_update_slug"
+                                placeholder="slug (vd: woocommerce/woocommerce.php)"
+                                style="flex:1; min-width:180px; padding:6px 10px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
+                            <button type="button" class="button button-primary" id="btn_remote_update" style="white-space:nowrap;">
+                                🚀 Gửi lệnh
+                            </button>
+                        </div>
+                        <p style="font-size:11px; color:#888; margin:6px 0 0 0;">⟶ Với <em>update_core</em>, bỏ trống slug. Plugin slug dạng <code>folder/file.php</code>, theme slug dạng <code>folder-name</code>.</p>
+                    </div>
+                </details>
+                <div id="remote_update_msg" style="margin-top:10px; display:none;"></div>
+
             </div>
         </div>
         <?php

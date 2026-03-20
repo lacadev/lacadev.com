@@ -213,6 +213,19 @@ function lacadev_register_search_query_vars($vars)
 add_filter('query_vars', 'lacadev_register_search_query_vars');
 
 // =============================================================================
+// DATABASE TABLES: Logs & Alerts
+// =============================================================================
+// Tạo bảng khi switch theme lần đầu
+add_action('after_switch_theme', function () {
+    \App\Databases\ProjectLogTable::install();
+    \App\Databases\ProjectAlertTable::install();
+});
+
+// Đảm bảo bảng luôn tồn tại (có version check bên trong, safe khi gọi mỗi request)
+\App\Databases\ProjectLogTable::install();
+\App\Databases\ProjectAlertTable::install();
+
+// =============================================================================
 // CUSTOM POST TYPES
 // =============================================================================
 

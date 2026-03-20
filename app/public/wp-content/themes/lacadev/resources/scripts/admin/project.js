@@ -428,5 +428,128 @@ document.addEventListener('DOMContentLoaded', () => {
         clearTimeout(copyObserverTimer);
         copyObserverTimer = setTimeout(setupCopyableFields, 120);
     });
+    // ---- REMOTE UPDATE ----
+    jQuery('#btn_remote_update').on('click', function (e) {
+        e.preventDefault();
+        const $btn    = jQuery(this);
+        const action  = jQuery('#remote_update_action').val();
+        const slug    = jQuery('#remote_update_slug').val().trim();
+        const $msg    = jQuery('#remote_update_msg');
+
+        if ((action === 'update_plugin' || action === 'update_theme') && !slug) {
+            $msg.show().html('<div class="notice notice-error inline" style="margin:0;padding:8px 12px;"><p>⚠️ Vui lòng nhập slug trước khi gửi lệnh.</p></div>');
+            return;
+        }
+
+        $btn.prop('disabled', true).text('Đang gửi...');
+        $msg.hide();
+
+        jQuery.post(ajaxurl, {
+            action:        'laca_remote_update',
+            nonce:         nonce,
+            project_id:    postId,
+            update_action: action,
+            update_slug:   slug,
+        }, function (res) {
+            $btn.prop('disabled', false).text('🚀 Gửi lệnh');
+            if (res.success) {
+                $msg.show().html('<div class="notice notice-success inline" style="margin:0;padding:8px 12px;"><p>✅ ' + (res.data.message || 'Thành công') + '</p></div>');
+                toastSuccess(res.data.message || 'Cập nhật thành công');
+            } else {
+                $msg.show().html('<div class="notice notice-error inline" style="margin:0;padding:8px 12px;"><p>❌ ' + (res.data.message || 'Lỗi không xác định') + '</p></div>');
+            }
+        }).fail(function (xhr) {
+            $btn.prop('disabled', false).text('🚀 Gửi lệnh');
+            $msg.show().html('<div class="notice notice-error inline" style="margin:0;padding:8px 12px;"><p>❌ Lỗi kết nối AJAX (HTTP ' + xhr.status + ')</p></div>');
+        });
+    });
+
+    // Hide slug input when update_core selected
+    jQuery('#remote_update_action').on('change', function () {
+        const $slug = jQuery('#remote_update_slug');
+        if (jQuery(this).val() === 'update_core') {
+            $slug.val('').prop('disabled', true).attr('placeholder', '(không cần slug với update_core)');
+        } else {
+            $slug.prop('disabled', false).attr('placeholder', 'slug (vd: woocommerce/woocommerce.php)');
+        }
+    });
+
+    // ---- LOAD PENDING PLUGIN UPDATES ----
+    jQuery('#btn_load_pending').on('click', function () {
+        const $btn   = jQuery(this);
+        const $list  = jQuery('#pending_plugins_list');
+        const $empty = jQuery('#pending_plugins_empty');
+        const $tbody = jQuery('#pending_plugins_tbody');
+
+        $btn.prop('disabled', true).text('⏳ Đang tải...');
+
+        jQuery.post(ajaxurl, {
+            action:     'laca_get_pending_updates',
+            nonce:      nonce,
+            project_id: postId,
+        }, function (res) {
+            $btn.prop('disabled', false).text('🔄 Tải danh sách plugin chờ update');
+            if (!res.success) return;
+
+            const plugins = res.data.plugins || [];
+            if (plugins.length === 0) {
+                $list.hide();
+                $empty.show();
+                return;
+            }
+
+            $empty.hide();
+            $tbody.empty();
+            plugins.forEach(function (p) {
+                const slug = p.slug || '';
+                const row  = `<tr data-slug="${slug}" style="border-bottom:1px solid #eee;">
+                    <td style="padding:7px 10px;">${p.name || slug}</td>
+                    <td style="padding:7px 10px; text-align:center; color:#888; font-size:12px;">${p.current_version || '?'}</td>
+                    <td style="padding:7px 10px; text-align:center; color:#0073aa; font-weight:600; font-size:12px;">${p.new_version || '?'}</td>
+                    <td style="padding:7px 10px; text-align:center;">
+                        <button type="button" class="button js-update-plugin" data-slug="${slug}" style="font-size:12px; padding:3px 8px;">
+                            ⬆️ Cập nhật
+                        </button>
+                    </td>
+                </tr>`;
+                $tbody.append(row);
+            });
+            $list.show();
+        }).fail(function () {
+            $btn.prop('disabled', false).text('🔄 Tải danh sách plugin chờ update');
+        });
+    });
+
+    // ---- UPDATE SINGLE PLUGIN từ danh sách pending ----
+    jQuery(document).on('click', '.js-update-plugin', function () {
+        const $btn  = jQuery(this);
+        const slug  = $btn.data('slug');
+        const $msg  = jQuery('#remote_update_msg');
+
+        $btn.prop('disabled', true).text('⏳ Đang update...');
+        $msg.hide();
+
+        jQuery.post(ajaxurl, {
+            action:        'laca_remote_update',
+            nonce:         nonce,
+            project_id:    postId,
+            update_action: 'update_plugin',
+            update_slug:   slug,
+        }, function (res) {
+            if (res.success) {
+                $btn.closest('tr').css('opacity', '0.5');
+                $btn.prop('disabled', true).text('✅ Đã cập nhật');
+                $msg.show().html('<div class="notice notice-success inline" style="margin:0;padding:8px 12px;"><p>✅ ' + (res.data.message || 'Thành công') + '</p></div>');
+                toastSuccess(res.data.message || 'Cập nhật plugin thành công');
+            } else {
+                $btn.prop('disabled', false).text('⬆️ Cập nhật');
+                $msg.show().html('<div class="notice notice-error inline" style="margin:0;padding:8px 12px;"><p>❌ ' + (res.data.message || 'Lỗi không xác định') + '</p></div>');
+            }
+        }).fail(function (xhr) {
+            $btn.prop('disabled', false).text('⬆️ Cập nhật');
+            $msg.show().html('<div class="notice notice-error inline" style="margin:0;padding:8px 12px;"><p>❌ Lỗi kết nối AJAX (HTTP ' + xhr.status + ')</p></div>');
+        });
+    });
+
     copyObserver.observe(copyObserverTarget, { childList: true, subtree: true });
 });

@@ -74,6 +74,7 @@ if (is_admin()) {
     add_action('init', static function () {
         new \App\Settings\ThemeUpdater();
         new \App\Widgets\BlockSyncWidget();
+        new \App\Settings\LacaDevTrackerClient(); // Gửi logs & alerts về lacadev CMS
     });
 }
 

@@ -904,6 +904,50 @@ class AdminSettings
 						}),
 				]);
 
+			// Tracker Settings — kết nối gửi log về lacadev CMS
+			Container::make('theme_options', __('📡 Tracker', 'laca'))
+				->set_page_parent($options)
+				->set_page_file(__('laca-tracker', 'laca'))
+				->add_fields([
+					Field::make('html', 'tracker_info', '')
+						->set_html(
+							'<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0">'
+							. '<p style="margin:0 0 8px;font-weight:600;color:#0369a1">📡 LacaDev Tracker</p>'
+							. '<p style="margin:0;font-size:13px;color:#374151">Gửi log tự động (cập nhật plugin/theme/core, xóa plugin, phát hiện file PHP lạ) về hệ thống quản lý dự án lacadev.com. '
+							. 'Lấy <strong>Endpoint URL</strong> và <strong>Secret Key</strong> từ trang chi tiết project tương ứng trên lacadev.com.</p>'
+							. '</div>'
+						),
+
+					Field::make('html', 'tracker_status_html', '')
+						->set_html(static function () {
+							$configured = \App\Settings\LacaDevTrackerClient::isConfigured();
+							if ($configured) {
+								return '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:10px 14px;margin:8px 0;color:#166534;font-weight:600">✅ Tracker đã được cấu hình</div>';
+							}
+							return '<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:10px 14px;margin:8px 0;color:#c2410c;font-weight:600">⚠️ Chưa cấu hình — nhập Endpoint và Secret Key bên dưới để kích hoạt</div>';
+						}),
+
+					Field::make('separator', 'sep_tracker', __('Kết nối với lacadev.com', 'laca')),
+
+					Field::make('text', 'laca_tracker_endpoint', __('Tracker Endpoint URL', 'laca'))
+						->set_width(60)
+						->set_attribute('placeholder', 'https://lacadev.com/wp-json/laca/v1/tracker/log')
+						->set_help_text('REST URL của lacadev CMS. Copy từ trang Project → Tracker trên lacadev.com.'),
+
+					Field::make('text', 'laca_tracker_secret_key', __('Secret Key', 'laca'))
+						->set_width(40)
+						->set_attribute('placeholder', 'sk_xxxxxxxx')
+						->set_attribute('type', 'password')
+						->set_help_text('Secret key riêng của project. Không chia sẻ key này.'),
+
+					Field::make('html', 'tracker_save_note', '')
+						->set_html(
+							'<p style="font-size:12px;color:#6b7280;margin-top:4px">'
+							. 'Sau khi lưu, tracker sẽ tự động gửi log khi có cập nhật plugin/theme/core hoặc phát hiện file PHP lạ trong <code>wp-content/uploads</code>.'
+							. '</p>'
+						),
+				]);
+
 			// Google reCAPTCHA
 
 			Container::make('theme_options', __('Google reCAPTCHA', 'laca'))
