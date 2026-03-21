@@ -1,0 +1,53 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "version": "1.0.0",
+  "name": "lacadev/workflow-block",
+  "title": "LaCa Workflow Steps",
+  "description": "Hiển thị các bước quy trình làm việc theo dạng ngang với đường kết nối",
+  "category": "lacadev-blocks",
+  "icon": "list-view",
+  "editorScript": "lacadev-block-workflow-block-editor",
+  "style": "lacadev-block-workflow-block",
+  "keywords": ["workflow", "process", "steps", "quy trình"],
+  "textdomain": "laca",
+  "attributes": {
+    "subTitle": {
+      "type": "string",
+      "default": "The Process"
+    },
+    "title": {
+      "type": "string",
+      "default": "Cách tôi làm việc"
+    },
+    "backgroundColor": {
+      "type": "string",
+      "default": ""
+    },
+    "steps": {
+      "type": "array",
+      "default": [
+        {
+          "title": "Gathering",
+          "desc": "Understanding your vision and setting the base camp for the project journey."
+        },
+        {
+          "title": "Curating",
+          "desc": "Design and architecture. Selecting the right tools and visual language for the task."
+        },
+        {
+          "title": "Crafting",
+          "desc": "Building with precision. Agile development cycles from a focused digital atelier."
+        },
+        {
+          "title": "Exploring",
+          "desc": "Final launch and continuous support as your digital presence begins its ascent."
+        }
+      ]
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"]
+  }
+}
