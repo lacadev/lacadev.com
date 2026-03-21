@@ -1,19 +1,15 @@
 /**
  * The internal dependencies.
  */
-/* @preset-begin(Tailwind CSS)
-const utils = require('./lib/utils');
-@preset-end(Tailwind CSS) */
 
 /**
  * Setup PostCSS plugins.
+ * Tailwind CSS v4: dùng @tailwindcss/postcss thay vì tailwindcss(config)
  */
 const plugins = [
+  require('@tailwindcss/postcss'),
   require('autoprefixer'),
   require('cssnano')({ preset: 'default' })
-  /* @preset-begin(Tailwind CSS)
-  require('tailwindcss')(utils.srcPath('build/tailwindcss.js')),
-  @preset-end(Tailwind CSS) */
 ];
 
 /**
