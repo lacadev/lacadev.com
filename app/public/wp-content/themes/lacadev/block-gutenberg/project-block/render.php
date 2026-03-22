@@ -130,7 +130,7 @@ if ( ! empty( $taxonomy ) && ! empty( $effective_term_ids ) ) {
                         }
                         ?>
                         <div class="<?php echo esc_attr( $item_class ); ?>">
-                            <a href="<?php the_permalink(); ?>" class="laca-project-block__card-link" data-cursor-arrow>
+                            <a href="<?php the_permalink(); ?>" class="laca-project-block__card-link">
                                 <div class="laca-project-block__image-wrap">
                                     <?php theResponsivePostThumbnail( 'large', [ 'alt' => esc_attr( get_the_title() ), 'class' => 'laca-project-block__img' ] ); ?>
                                     

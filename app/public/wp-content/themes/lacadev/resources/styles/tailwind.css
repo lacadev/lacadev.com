@@ -1,0 +1,9 @@
+/**
+ * Tailwind CSS v3 — Entry Point
+ *
+ * File CSS thuần (không qua sass-loader) để PostCSS/Tailwind xử lý trực tiếp.
+ * Import file này từ JS entry points để generate Tailwind utilities.
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

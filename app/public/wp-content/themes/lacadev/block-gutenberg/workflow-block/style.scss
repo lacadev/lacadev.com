@@ -1,106 +1,23 @@
-@use "../../resources/styles/theme/abstracts/variables" as *;
-@use "../../resources/styles/theme/abstracts/mixin" as *;
-
 /**
  * Workflow Block — Frontend CSS.
- * html { font-size: 100% } → 1rem = 16px (Tailwind v4 default).
- * Viết thủ công vì SCSS pipeline không tương thích với Tailwind PostCSS injection.
+ * Chỉ khai báo các custom token class dùng CSS variables của theme.
+ * Tất cả Tailwind utilities (flex, gap, padding…) được generate qua @import "tailwindcss" trong JS entry.
  */
 
-/* == SECTION WRAPPER == */
 .wp-block-lacadev-workflow-block {
-	padding: 8rem 2rem;   /* py-32 px-8 */
-	overflow: hidden;
+	.text-secondary          { color: var(--color-secondary, #6b7280); }
+	.font-label              { font-family: var(--font-label, inherit); font-weight: 600; }
+	.font-headline           { font-family: var(--font-headline, inherit); }
+	.text-primary-dim        { color: var(--color-primary, currentColor); }
+	.text-on-surface-variant { color: var(--color-on-surface-variant, #6b7280); }
 
-	/* == CONTAINER == */
-	> .max-w-screen-2xl {
-		max-width: 1536px;
-		margin-left: auto;
-		margin-right: auto;
-	}
-
-	/* == HEADER == */
-	.text-center { text-align: center; }
-	.mb-24       { margin-bottom: 6rem; }
-	.mt-4        { margin-top: 1rem; }
-
-	.text-secondary    { color: var(--color-secondary, #6b7280); }
-	.font-label        { font-family: var(--font-label, inherit); font-weight: 600; }
-	.tracking-widest   { letter-spacing: 0.1em; }
-	.uppercase         { text-transform: uppercase; }
-	.text-xs           { font-size: 0.75rem; line-height: 1rem; }
-
-	.font-headline { font-family: var(--font-headline, inherit); }
-	.text-5xl      { font-size: 3rem; line-height: 1; }
-	.font-bold     { font-weight: 700; }
-
-	/* == STEPS ROW == */
-	.relative  { position: relative; }
-	.flex      { display: flex; }
-	.flex-col  { flex-direction: column; }
-	.gap-12    { gap: 3rem; }
-	.z-0       { z-index: 0; }
-	.z-10      { z-index: 10; }
-	.flex-1    { flex: 1 1 0%; }
-	.px-4      { padding-left: 1rem; padding-right: 1rem; }
-
-	@media (min-width: 768px) {
-		.md\:flex-row { flex-direction: row; }
-		.md\:gap-0    { gap: 0; }
-	}
-
-	/* == PROGRESS LINE == */
-	.hidden   { display: none; }
-	.absolute { position: absolute; }
-	.top-10   { top: 2.5rem; }
-	.left-0   { left: 0; }
-	.w-full   { width: 100%; }
-	.h-px     { height: 1px; }
 	.bg-surface-container-highest {
-		background-color: var(--color-surface-container-highest, rgba(0,0,0,.08));
-	}
-
-	@media (min-width: 768px) {
-		.md\:block { display: block; }
-	}
-
-	/* == STEP CIRCLE == */
-	.w-20           { width: 5rem; }
-	.h-20           { height: 5rem; }
-	.items-center   { align-items: center; }
-	.justify-center { justify-content: center; }
-	.rounded-full   { border-radius: 9999px; }
-	.mb-8           { margin-bottom: 2rem; }
-	.shadow-sm      { box-shadow: 0 1px 2px rgba(0,0,0,.05); }
-	.border         { border-width: 1px; border-style: solid; }
-	.border-surface-container {
-		border-color: var(--color-surface-container, rgba(0,0,0,.08));
+		background-color: var(--color-surface-container-highest, rgba(0, 0, 0, 0.08));
 	}
 	.bg-surface-container-lowest {
 		background-color: var(--color-surface-container-lowest, #fff);
 	}
-	.mx-auto { margin-left: auto; margin-right: auto; }
-
-	@media (min-width: 768px) {
-		.md\:mx-0 { margin-left: 0; margin-right: 0; }
-	}
-
-	/* == CIRCLE NUMBER == */
-	.text-4xl       { font-size: 2.25rem; line-height: 2.5rem; }
-	.font-extrabold { font-weight: 800; }
-	.text-primary-dim { color: var(--color-primary, currentColor); }
-	.opacity-20     { opacity: 0.2; }
-
-	/* == STEP TITLE & DESC == */
-	.text-xl { font-size: 1.25rem; line-height: 1.75rem; }
-	.mb-3    { margin-bottom: 0.75rem; }
-
-	.text-on-surface-variant { color: var(--color-on-surface-variant, #6b7280); }
-	.text-sm { font-size: 0.875rem; line-height: 1.25rem; }
-
-	.text-center { text-align: center; }
-
-	@media (min-width: 768px) {
-		.md\:text-left { text-align: left; }
+	.border-surface-container {
+		border-color: var(--color-surface-container, rgba(0, 0, 0, 0.08));
 	}
 }

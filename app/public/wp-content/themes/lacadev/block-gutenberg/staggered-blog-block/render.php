@@ -99,7 +99,7 @@ if (!empty($attributes['className'])) {
                             </div>
                         </div>
                         <div class="staggered-item__image">
-                            <a href="<?php the_permalink(); ?>" data-cursor-arrow>
+                            <a href="<?php the_permalink(); ?>">
                                 <?php theResponsivePostThumbnail('tablet', ['alt' => esc_attr(get_the_title())]); ?>
                             </a>
                         </div>

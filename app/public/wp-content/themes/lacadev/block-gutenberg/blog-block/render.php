@@ -96,7 +96,7 @@ if (!empty($attributes['className'])) {
                 ?>
                     <div class="blog-item">
                         <div class="blog-card">
-                            <a href="<?php the_permalink(); ?>" class="card-link" data-cursor-arrow>
+                            <a href="<?php the_permalink(); ?>" class="card-link">
                                 <div class="card-image-wrap">
                                     <?php theResponsivePostThumbnail('mobile', ['alt' => esc_attr(get_the_title())]); ?>
                                 </div>

@@ -4,10 +4,10 @@
 
 /**
  * Setup PostCSS plugins.
- * Tailwind CSS v4: dùng @tailwindcss/postcss thay vì tailwindcss(config)
+ * Tailwind CSS v3: dùng require('tailwindcss') — đọc tailwind.config.js ở root.
  */
 const plugins = [
-  require('@tailwindcss/postcss'),
+  require('tailwindcss'),
   require('autoprefixer'),
   require('cssnano')({ preset: 'default' })
 ];

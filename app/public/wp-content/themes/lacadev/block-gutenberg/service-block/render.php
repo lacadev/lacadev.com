@@ -54,7 +54,7 @@ if (!empty($effective_post_ids)) {
                     $link = get_permalink($service->ID);
                 ?>
                     <div class="block-service__item">
-                        <a href="<?php echo esc_url($link); ?>" class="item__link" data-cursor-arrow>
+                        <a href="<?php echo esc_url($link); ?>" class="item__link">
                             <span class="item__icon"><?php echo esc_html($first_letter); ?></span>
                             <h3 class="item__title"><?php echo esc_html($service_title); ?></h3>
                             <div class="item__desc">

@@ -8,7 +8,7 @@ $first_letter = mb_substr($title, 0, 1);
 ?>
 
 <article class="block-service__item loop-service">
-	<a href="<?php echo esc_url($url); ?>" class="item__link" data-cursor-arrow>
+	<a href="<?php echo esc_url($url); ?>" class="item__link">
 		<span class="item__icon"><?php echo esc_html($first_letter); ?></span>
 		
 		<div class="content">

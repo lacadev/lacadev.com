@@ -53,7 +53,7 @@ $wrapper_class = ($layout === 'staggered') ? 'block-staggered-blog' : 'block-blo
                                     </div>
                                 </div>
                                 <div class="staggered-item__image">
-                                    <a href="<?php the_permalink(); ?>" data-cursor-arrow>
+                                    <a href="<?php the_permalink(); ?>">
                                         <?php theResponsivePostThumbnail('tablet', ['alt' => esc_attr(get_the_title())]); ?>
                                     </a>
                                 </div>
@@ -66,7 +66,7 @@ $wrapper_class = ($layout === 'staggered') ? 'block-staggered-blog' : 'block-blo
                             ?>
                             <div class="blog-item">
                                 <div class="blog-card">
-                                    <a href="<?php the_permalink(); ?>" class="card-link" data-cursor-arrow>
+                                    <a href="<?php the_permalink(); ?>" class="card-link">
                                         <div class="card-image-wrap">
                                             <?php theResponsivePostThumbnail('mobile', ['alt' => esc_attr(get_the_title())]); ?>
                                         </div>
