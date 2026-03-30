@@ -243,3 +243,58 @@ function lacadev_child_register_synced_blocks(): void
 }
 add_action('init', 'lacadev_child_register_synced_blocks', 15);
 
+/**
+ * Expose `image_url` on all public taxonomy terms via the REST API.
+ *
+ * Supports:
+ *  - WooCommerce product_cat (thumbnail_id term meta)
+ *  - ACF `term_image` field
+ *  - Custom `term_image_url` term meta
+ *
+ * Usage in edit.js: `term.image_url`
+ */
+function lacadev_register_term_image_rest_field() {
+    $taxonomies = get_taxonomies( [ 'public' => true ], 'names' );
+
+    foreach ( $taxonomies as $taxonomy ) {
+        register_rest_field(
+            $taxonomy,
+            'image_url',
+            [
+                'get_callback' => static function ( $term_data ) {
+                    $tid = absint( $term_data['id'] );
+                    $tax = $term_data['taxonomy'] ?? '';
+
+                    // ACF
+                    if ( function_exists( 'get_field' ) ) {
+                        $acf = get_field( 'term_image', $tax . '_' . $tid );
+                        if ( $acf ) {
+                            return is_array( $acf ) ? $acf['url'] : $acf;
+                        }
+                    }
+
+                    // Custom meta
+                    $url = get_term_meta( $tid, 'term_image_url', true );
+                    if ( $url ) {
+                        return $url;
+                    }
+
+                    // WooCommerce / taxonomy image plugins (thumbnail_id)
+                    $thumb_id = get_term_meta( $tid, 'thumbnail_id', true );
+                    if ( $thumb_id ) {
+                        return wp_get_attachment_image_url( absint( $thumb_id ), 'large' ) ?: '';
+                    }
+
+                    return '';
+                },
+                'schema' => [
+                    'description' => 'Term image URL (WooCommerce, ACF, or custom meta)',
+                    'type'        => 'string',
+                    'readonly'    => true,
+                ],
+            ]
+        );
+    }
+}
+add_action( 'rest_api_init', 'lacadev_register_term_image_rest_field' );
+

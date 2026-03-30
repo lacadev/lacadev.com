@@ -103,24 +103,3 @@
     }
   }
 }
-
-@mixin iconify($icon, $w, $h: auto) {
-  height: $h;
-  width: $w;
-  background-image: url("https://api.iconify.design/#{$icon}.svg");
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  cursor: pointer;
-}
-
-@mixin iconify-mask($icon, $w, $h: auto, $color: currentColor) {
-  height: $h;
-  width: $w;
-  background-color: $color;
-  -webkit-mask: url("https://api.iconify.design/#{$icon}.svg") no-repeat center;
-  mask: url("https://api.iconify.design/#{$icon}.svg") no-repeat center;
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  cursor: pointer;
-}

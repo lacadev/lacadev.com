@@ -134,3 +134,25 @@ function app_render_featured_image_column($column, $postId) {
 add_action('manage_page_posts_custom_column', 'app_render_featured_image_column', 10, 2);
 add_action('manage_post_posts_custom_column', 'app_render_featured_image_column', 10, 2);
 
+/**
+ * Expose WooCommerce category thumbnail via WP core REST API.
+ * Allows Gutenberg editor to load category images through @wordpress/data.
+ */
+add_action('rest_api_init', function () {
+    register_rest_field('product_cat', 'cat_image_url', [
+        'get_callback' => function (array $term) {
+            $thumb_id = get_term_meta($term['id'], 'thumbnail_id', true);
+            if (!$thumb_id) {
+                return '';
+            }
+            $src = wp_get_attachment_image_src((int) $thumb_id, 'woocommerce_single');
+            return $src ? esc_url($src[0]) : '';
+        },
+        'update_callback' => null,
+        'schema' => [
+            'type'        => 'string',
+            'description' => 'WooCommerce category thumbnail URL',
+            'context'     => ['view', 'embed'],
+        ],
+    ]);
+});
