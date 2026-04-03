@@ -61,5 +61,8 @@ class ManagementExperience
 
         // 9. Project Reports — chart.js data provider
         new ProjectReportsManager();
+
+        // 10. Dynamic CPT admin page (Appearance > Custom Post Types)
+        new \App\Features\DynamicCPT\DynamicCptAdminPage();
     }
 }
