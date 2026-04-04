@@ -112,8 +112,8 @@ if (!defined('ABSPATH')) {
 	endif;
 	?>
 
-	<div class="wrapper" id="swup">
-        <?php if (!is_404()) : ?>
+	<div class="wrapper" data-barba="wrapper">
+		<?php if (!is_404()) : ?>
 		<header class="header" id="header">
 			<div class="container">
                 <div class="header__inner">
@@ -229,3 +229,4 @@ if (!defined('ABSPATH')) {
             </div>
 		</header>
         <?php endif; ?>
+        <div data-barba="container" data-barba-namespace="default">

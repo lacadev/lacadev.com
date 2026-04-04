@@ -169,8 +169,8 @@ window.registerFunction = {
 						'success'
 					).then( () => {
 						// Use Swup to load new page if available, or fallback to window.location
-						if ( window.swup ) {
-							window.swup.navigate( response.data.redirect_to );
+						if ( window.barba ) {
+							window.barba.go( response.data.redirect_to );
 						} else {
 							window.location.href = response.data.redirect_to;
 						}

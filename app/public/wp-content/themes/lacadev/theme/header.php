@@ -112,7 +112,7 @@ if (!defined('ABSPATH')) {
 	endif;
 	?>
 
-	<div class="wrapper" id="swup">
+	<div class="wrapper">
         <?php if (!is_404()) : ?>
 		<header class="header" id="header">
 			<div class="container">
@@ -229,3 +229,6 @@ if (!defined('ABSPATH')) {
             </div>
 		</header>
         <?php endif; ?>
+
+        <div data-barba="wrapper">
+        <main data-barba="container" data-barba-namespace="default" class="transition-fade">

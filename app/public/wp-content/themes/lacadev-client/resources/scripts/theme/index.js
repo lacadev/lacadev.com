@@ -7,12 +7,12 @@ import './ajax-search.js';
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Swup from 'swup';
+import barba from '@barba/core';
 
 import { initAnimations, animateText, setupGsap404 } from './components/animations.js';
 import { initToggleDarkMode }                          from './components/dark-mode.js';
-import { initHeaderScroll }                            from './components/header.js';
-import { initMobileMenu }                              from './components/mobile-menu.js';
+import { initHeaderScroll, resetHeaderState }           from './components/header.js';
+import { initMobileMenu, closeMobileMenu }             from './components/mobile-menu.js';
 import { initPageLoader, shouldShowLoader }            from './components/loader.js';
 import { initAboutLacaHero }                           from './pages/about-laca.js';
 import { initContactPage }                             from './pages/contact.js';
@@ -32,8 +32,8 @@ if ( ! isMobile && shouldShowLoader() ) {
 // ─── GSAP context — reverted on each navigation ───────────────────────────────
 let gsapCtx;
 
-// ─── Per-page features: re-run on every Swup navigation ─────────────────────
-// Binds to content inside the Swup container. Previous GSAP context is reverted
+// ─── Per-page features: re-run on every Barba navigation ─────────────────────
+// Binds to content inside the Barba container. Previous GSAP context is reverted
 // before each re-init to prevent stale ScrollTriggers and infinite tweens
 // (e.g. 404 spaceman) from leaking across page navigations.
 function initPageFeatures() {
@@ -63,20 +63,46 @@ function initPageFeatures() {
 
 // ─── Bootstrap ───────────────────────────────────────────────────────────────
 document.addEventListener( 'DOMContentLoaded', () => {
-	// Persistent features: bind to header/nav elements that survive Swup navigations.
-	// Called ONCE — each returns an AbortController-based cleanup (unused here since
-	// these elements are never torn down, but safe to call again if needed).
+	// Persistent features: bind to header/nav elements that survive Barba navigations.
+	// Called ONCE — safe to call again if needed.
 	initHeaderScroll();
 	initMobileMenu();
 	initToggleDarkMode();
 	initRippleEffect(); // document-level delegation — must only run once
 
-	const swup = new Swup();
-	window.swup = swup; // Expose for register.js → swup.navigate()
+	// Init Barba.js page transitions
+	barba.init( {
+		transitions: [ {
+			name: 'default-transition',
+			leave( { current } ) {
+				return gsap.to( current.container, {
+					opacity: 0,
+					duration: 0.3,
+					ease: 'power2.inOut',
+				} );
+			},
+			enter( { next } ) {
+				return gsap.from( next.container, {
+					opacity: 0,
+					duration: 0.3,
+					ease: 'power2.inOut',
+				} );
+			},
+		} ],
+	} );
+
+	window.barba = barba; // Expose for register.js → barba.go()
 
 	initPageFeatures();
 	initPageLoader( isMobile );
 
-	// Re-init page-specific features after each Swup navigation
-	swup.hooks.on( 'content:replace', initPageFeatures );
+	// Re-init page-specific features after each Barba navigation
+	barba.hooks.after( () => {
+		// 1. Reset header state — tránh header--hidden/scrolled kẹt từ trang cũ
+		resetHeaderState();
+		// 2. Đóng mobile menu nếu đang mở
+		closeMobileMenu();
+		// 3. Re-init page features
+		initPageFeatures();
+	} );
 } );

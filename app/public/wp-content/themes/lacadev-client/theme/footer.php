@@ -102,6 +102,7 @@
 </footer>
 <!-- footer end -->
 
+</div><!-- barba container end -->
 </div>
 <!-- container-wrapper end -->
 

@@ -8,6 +8,10 @@
  * @package WPEmergeTheme
  */
 ?>
+
+        </main><!-- barba container end -->
+        </div><!-- barba wrapper end -->
+
 <!-- footer -->
 <footer class="site-footer">
     <div class="container">

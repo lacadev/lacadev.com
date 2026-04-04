@@ -499,8 +499,4 @@ add_filter('wp_resource_hints', function ($hints, $relation_type) {
     return $hints;
 }, 10, 2);
 
-// Hook vào action để enqueue assets thông qua function có sẵn thay vì thêm action mới
-add_action('wp_enqueue_scripts', 'app_action_theme_enqueue_assets');
-add_action('admin_enqueue_scripts', 'app_action_admin_enqueue_assets');
-add_action('login_enqueue_scripts', 'app_action_login_enqueue_assets');
-add_action('enqueue_block_editor_assets', 'app_action_editor_enqueue_assets'); // For Gutenberg editor
+// NOTE: Các hooks được đăng ký trong app/hooks.php — không thêm lại ở đây để tránh duplicate.

@@ -9,16 +9,13 @@ if (!defined('ABSPATH')) {
  * @package LacaDev
  */
 
+
+
+
 /**
  * Add HTTP Security Headers
  */
 add_action('send_headers', function() {
-    // Generate Nonce
-    $nonce = base64_encode(random_bytes(16));
-    if (!defined('LACA_CSP_NONCE')) {
-        define('LACA_CSP_NONCE', $nonce);
-    }
-
     // Prevent clickjacking
     header('X-Frame-Options: SAMEORIGIN');
     
@@ -32,10 +29,11 @@ add_action('send_headers', function() {
     header('X-XSS-Protection: 1; mode=block');
     
     if ( ! is_admin() ) {
-        // Content Security Policy — enforced (không phải Report-Only)
-        // Nonce được inject vào tất cả <script> tag qua filter script_loader_tag bên dưới
+        // Content Security Policy
+        // Lưu ý: không dùng nonce trong script-src vì khi có nonce, trình duyệt sẽ
+        // vô hiệu hóa 'unsafe-inline', chặn các inline script của plugin bên thứ 3.
         $csp  = "default-src 'self'; ";
-        $csp .= "script-src 'self' 'nonce-{$nonce}' https://www.google.com https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com https://images.dmca.com https://apis.google.com blob:; ";
+        $csp .= "script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com https://images.dmca.com https://apis.google.com blob:; ";
         $csp .= "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; ";
         $csp .= "font-src 'self' https://fonts.gstatic.com data:; ";
         $csp .= "connect-src 'self' https://www.google.com https://www.gstatic.com https://www.youtube.com https://www.google-analytics.com https://stats.g.doubleclick.net https://apis.google.com ws: wss:; ";
@@ -51,22 +49,6 @@ add_action('send_headers', function() {
         header( 'Permissions-Policy: geolocation=(), microphone=(), camera=()' );
     }
 });
-
-/**
- * Inject Nonce into script tags
- */
-add_filter('script_loader_tag', function($tag, $handle) {
-    if ( is_admin() ) {
-        return $tag;
-    }
-    if (defined('LACA_CSP_NONCE')) {
-        $nonce = LACA_CSP_NONCE;
-        if (strpos($tag, "nonce=") === false) {
-            $tag = str_replace('<script ', '<script nonce="' . $nonce . '" ', $tag);
-        }
-    }
-    return $tag;
-}, 10, 2);
 
 /**
  * Remove WordPress version from head
