@@ -1,0 +1,25 @@
+@use "../abstracts/variables.scss" as *;
+@use "../abstracts/mixin.scss" as *;
+
+@mixin block-styles {
+  p a, .wp-block-list.has-marker a {
+    color: $primaryColor;
+    text-decoration: underline !important;
+    text-underline-position: under;
+    text-decoration-color: #0064d1 !important;
+  }
+
+  section {
+    margin-bottom: 4.375rem;
+    padding: 1.875rem 0;
+    position: relative;
+    overflow: hidden;
+
+    @include maxWidth($md) {
+      margin-bottom: 3.125rem;
+      padding: 2.5rem 0;
+    }
+  }
+}
+
+@include block-styles;
