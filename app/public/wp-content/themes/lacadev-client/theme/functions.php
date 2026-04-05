@@ -218,6 +218,9 @@ add_filter('query_vars', 'lacadev_register_search_query_vars');
 
 new \App\PostTypes\service();
 
+// Dynamic CPT — đăng ký CPT được tạo qua admin panel (Appearance > Custom Post Types)
+new \App\Features\DynamicCPT\DynamicCptManager();
+
 // =============================================================================
 // COMMENTS CALLBACK
 // =============================================================================

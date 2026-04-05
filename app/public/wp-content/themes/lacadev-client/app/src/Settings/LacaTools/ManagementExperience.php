@@ -57,5 +57,8 @@ class ManagementExperience
         add_action('init', function () {
             new AITranslationManager();
         });
+
+        // 8. Dynamic CPT admin page (Appearance > Custom Post Types)
+        new \App\Features\DynamicCPT\DynamicCptAdminPage();
     }
 }
