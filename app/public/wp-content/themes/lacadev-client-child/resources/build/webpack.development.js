@@ -51,19 +51,19 @@ const plugins = [
     new CopyWebpackPlugin({
         patterns: [
             {
-                from: utils.srcScriptsPath('sw.js'),
+                from: require('path').resolve(__dirname, '../../../lacadev-client/resources/scripts/sw.js'),
                 to: utils.distPath('sw.js'),
             },
             {
-                from: utils.srcScriptsPath('lib/instantpage.js'),
+                from: require('path').resolve(__dirname, '../../../lacadev-client/resources/scripts/lib/instantpage.js'),
                 to: utils.distPath('instantpage.js'),
             },
             {
-                from: utils.srcScriptsPath('lib/smooth-scroll.min.js'),
+                from: require('path').resolve(__dirname, '../../../lacadev-client/resources/scripts/lib/smooth-scroll.min.js'),
                 to: utils.distPath('smooth-scroll.min.js'),
             },
             {
-                from: utils.srcScriptsPath('lib/lazysizes.min.js'),
+                from: require('path').resolve(__dirname, '../../../lacadev-client/resources/scripts/lib/lazysizes.min.js'),
                 to: utils.distPath('lazysizes.min.js'),
             },
         ],
@@ -159,9 +159,20 @@ module.exports = {
                             api: 'modern-compiler',
                             sassOptions: {
                                 includePaths: [
-                                    require('path').resolve(__dirname, '../../../../lacadev-client/resources'),
-                                    require('path').resolve(__dirname, '../../../../lacadev-client/resources/styles')
-                                ]
+                                    require('path').resolve(__dirname, '../../../lacadev-client/resources'),
+                                    require('path').resolve(__dirname, '../../../lacadev-client/resources/styles'),
+                                    require('path').resolve(__dirname, '../../../node_modules')
+                                ],
+                                importers: [{
+                                    findFileUrl(url) {
+                                        if (url.startsWith('@parent/')) {
+                                            const parentRes = require('path').resolve(__dirname, '../../../lacadev-client/resources');
+                                            const resolved = require('path').join(parentRes, url.slice('@parent/'.length));
+                                            return new URL(`file://${resolved}`);
+                                        }
+                                        return null;
+                                    }
+                                }],
                             }
                         },
                     },

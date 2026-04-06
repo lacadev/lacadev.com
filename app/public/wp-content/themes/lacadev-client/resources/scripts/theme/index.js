@@ -9,11 +9,9 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import barba from '@barba/core';
 
-import { initAnimations, animateText, setupGsap404 } from './components/animations.js';
-import { initToggleDarkMode }                          from './components/dark-mode.js';
+import {setupGsap404 } from './components/animations.js';
 import { initHeaderScroll, resetHeaderState }           from './components/header.js';
 import { initMobileMenu, closeMobileMenu }             from './components/mobile-menu.js';
-import { initPageLoader, shouldShowLoader }            from './components/loader.js';
 import { initContactPage }                             from './pages/contact.js';
 import { initCommentForm }                             from './pages/comments.js';
 import { initScrollReveal, initCounters, initRippleEffect } from './micro-interactions.js';
@@ -66,7 +64,6 @@ document.addEventListener( 'DOMContentLoaded', () => {
 	// Called ONCE — safe to call again if needed.
 	initHeaderScroll();
 	initMobileMenu();
-	initToggleDarkMode();
 	initRippleEffect(); // document-level delegation — must only run once
 
 	// Init Barba.js page transitions

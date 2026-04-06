@@ -13,7 +13,6 @@
 @use "../theme/layout/general.scss" as *;
 
 // Import blocks module to access the mixin
-@use "../theme/layout/blocks" as blocks;
 
 // Editor wrapper - ensures styles apply in Gutenberg context
 .editor-styles-wrapper,
@@ -21,11 +20,8 @@
   font-family: $themeFont !important;
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: $primaryFont !important;
+    font-family: $themeFont !important;
   }
-  
-  // Include all block styles from _blocks.scss mixin
-  @include blocks.block-styles;
 }
 
 // Fix for hidden image control buttons in InspectorControls
