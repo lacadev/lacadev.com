@@ -64,5 +64,8 @@ class ManagementExperience
 
         // 10. Dynamic CPT admin page (Appearance > Custom Post Types)
         new \App\Features\DynamicCPT\DynamicCptAdminPage();
+
+        // 11. Contact Form Manager (Appearance > Form Liên Hệ)
+        new \App\Features\ContactForm\ContactFormManager();
     }
 }

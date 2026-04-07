@@ -9,6 +9,9 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import barba from '@barba/core';
 
+import Swal from 'sweetalert2';
+window.Swal = Swal; // Expose globally for shortcode inline JS
+
 import { initAnimations, animateText, setupGsap404 } from './components/animations.js';
 import { initToggleDarkMode }                          from './components/dark-mode.js';
 import { initHeaderScroll, resetHeaderState }           from './components/header.js';

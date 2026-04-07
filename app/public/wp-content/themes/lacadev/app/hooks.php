@@ -130,7 +130,19 @@ function laca_install_project_manager_tables(): void
 {
     \App\Databases\ProjectLogTable::install();
     \App\Databases\ProjectAlertTable::install();
+    \App\Databases\ContactFormTable::install();
 }
+
+/**
+ * ============================================================================
+ * CONTACT FORM — Frontend AJAX + Shortcode
+ * ============================================================================
+ */
+add_action('init', function () {
+    if (class_exists('\App\Features\ContactForm\ContactFormAjaxHandler')) {
+        (new \App\Features\ContactForm\ContactFormAjaxHandler())->init();
+    }
+}, 10);
 
 /**
  * Khởi tạo Handler xử lý Notifications & Cron (Project Manager)
