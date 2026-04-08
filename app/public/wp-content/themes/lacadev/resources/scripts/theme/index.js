@@ -21,6 +21,8 @@ import { initAboutLacaHero }                           from './pages/about-laca.
 import { initContactPage }                             from './pages/contact.js';
 import { initCommentForm }                             from './pages/comments.js';
 import { initScrollReveal, initCounters, initRippleEffect } from './micro-interactions.js';
+import { initReadingProgress }                              from './components/reading-progress.js';
+import { initBackToTop, initCopyCode, initImageLightbox }  from './components/ui-utilities.js';
 
 gsap.registerPlugin( ScrollTrigger );
 
@@ -60,6 +62,9 @@ function initPageFeatures() {
 
 	initContactPage();
 	initCommentForm();
+	initReadingProgress();
+	initCopyCode();
+	initImageLightbox();
 
 	setTimeout( () => ScrollTrigger.refresh(), 500 );
 }
@@ -72,6 +77,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 	initMobileMenu();
 	initToggleDarkMode();
 	initRippleEffect(); // document-level delegation — must only run once
+	initBackToTop();    // single fixed button — must only run once
 
 	// Init Barba.js page transitions
 	barba.init( {

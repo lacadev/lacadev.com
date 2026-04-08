@@ -15,11 +15,11 @@ class DynamicCptAdminPage
     const NONCE_FIELD  = '_laca_cpt_nonce';
     const CAP          = 'manage_options';
     const MENU_SLUG    = 'laca-dynamic-cpt';
-    const PARENT_SLUG  = 'themes.php';
+    const PARENT_SLUG  = 'laca-admin';
 
     public function __construct()
     {
-        add_action('admin_menu', [$this, 'registerMenu']);
+        add_action('admin_menu', [$this, 'registerMenu'], 20);
         add_action('admin_post_laca_cpt_save',   [$this, 'handleSave']);
         add_action('admin_post_laca_cpt_delete', [$this, 'handleDelete']);
         add_action('admin_post_laca_cpt_regen',  [$this, 'handleRegen']);

@@ -26,7 +26,7 @@ class ContactFormManager
     const NONCE_FIELD  = '_laca_cf_nonce';
     const CAP          = 'manage_options';
     const MENU_SLUG    = 'laca-contact-forms';
-    const PARENT_SLUG  = 'themes.php';
+    const PARENT_SLUG  = 'laca-admin';
 
     /** Field types được hỗ trợ */
     const FIELD_TYPES = [
@@ -50,17 +50,18 @@ class ContactFormManager
 
     public function __construct()
     {
-        add_action('admin_menu',  [$this, 'registerMenu']);
+        add_action('admin_menu',  [$this, 'registerMenu'], 20);
         add_action('admin_enqueue_scripts', [$this, 'enqueueAssets']);
         add_action('admin_post_laca_cf_save',              [$this, 'handleSave']);
         add_action('admin_post_laca_cf_delete',            [$this, 'handleDelete']);
         add_action('admin_post_laca_cf_delete_submission', [$this, 'handleDeleteSubmission']);
         add_action('admin_post_laca_cf_mark_read',         [$this, 'handleMarkRead']);
+        add_action('admin_post_laca_cf_export_csv',        [$this, 'handleExportCsv']);
     }
 
     public function enqueueAssets(string $hook): void
     {
-        if ($hook !== 'appearance_page_' . self::MENU_SLUG) {
+        if (!str_contains($hook, self::MENU_SLUG)) {
             return;
         }
 
@@ -935,7 +936,20 @@ class ContactFormManager
                     <h1>📥 Submissions — <?php echo esc_html($form['name']); ?></h1>
                     <p class="laca-cf-subtitle"><a href="<?php echo esc_url($pageUrl); ?>">← Quay lại danh sách</a></p>
                 </div>
-                <span class="laca-cf-badge laca-cf-badge--total"><?php echo esc_html($total); ?> submission</span>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <span class="laca-cf-badge laca-cf-badge--total"><?php echo esc_html($total); ?> submission</span>
+                    <?php if ($total > 0):
+                        $exportUrl = wp_nonce_url(
+                            admin_url('admin-post.php?action=laca_cf_export_csv&form_id=' . $formId),
+                            self::NONCE_ACTION,
+                            self::NONCE_FIELD
+                        );
+                    ?>
+                        <a href="<?php echo esc_url($exportUrl); ?>" class="button button-secondary">
+                            ⬇ Xuất CSV
+                        </a>
+                    <?php endif; ?>
+                </div>
             </div>
 
             <?php if ($message): ?>
@@ -1145,6 +1159,60 @@ class ContactFormManager
         }
 
         wp_redirect(admin_url('themes.php?page=' . self::MENU_SLUG . '&action=submissions&id=' . $formId . '&laca_msg=marked_read'));
+        exit;
+    }
+
+    public function handleExportCsv(): void
+    {
+        if (!current_user_can(self::CAP)) {
+            wp_die(esc_html__('Không có quyền.', 'laca'));
+        }
+        check_admin_referer(self::NONCE_ACTION, self::NONCE_FIELD);
+
+        $formId = absint($_GET['form_id'] ?? 0);
+        $form   = $formId ? ContactFormTable::getForm($formId) : null;
+        if (!$form) {
+            wp_die(esc_html__('Form không tồn tại.', 'laca'));
+        }
+
+        $fields = self::extractFlatFields($form);
+        $subs   = ContactFormTable::getSubmissions($formId, 1, 9999);
+
+        $filename = 'submissions-form-' . $formId . '-' . date('Y-m-d') . '.csv';
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $out = fopen('php://output', 'w');
+        // UTF-8 BOM for Excel compatibility
+        fwrite($out, "\xEF\xBB\xBF");
+
+        // Header row
+        $headers = ['#', 'Đọc', 'IP', 'Thời gian'];
+        foreach ($fields as $field) {
+            $headers[] = $field['label'];
+        }
+        fputcsv($out, $headers);
+
+        // Data rows
+        foreach ($subs as $idx => $sub) {
+            $data = json_decode($sub['data'] ?? '{}', true) ?: [];
+            $row  = [
+                $sub['id'],
+                $sub['is_read'] ? 'Đã đọc' : 'Chưa đọc',
+                $sub['ip_address'],
+                date_i18n('d/m/Y H:i', strtotime($sub['created_at'])),
+            ];
+            foreach ($fields as $field) {
+                $val = $data[$field['name']] ?? '';
+                $row[] = is_array($val) ? implode(', ', $val) : $val;
+            }
+            fputcsv($out, $row);
+        }
+
+        fclose($out);
         exit;
     }
 

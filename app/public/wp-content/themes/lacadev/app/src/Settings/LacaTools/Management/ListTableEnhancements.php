@@ -134,8 +134,11 @@ class ListTableEnhancements
             return $actions;
         };
 
-        add_filter('post_row_actions', $add_duplicate_link, 10, 2);
-        add_filter('page_row_actions', $add_duplicate_link, 10, 2);
+        add_filter('post_row_actions',     $add_duplicate_link, 10, 2);
+        add_filter('page_row_actions',     $add_duplicate_link, 10, 2);
+        add_filter('service_row_actions',  $add_duplicate_link, 10, 2);
+        add_filter('project_row_actions',  $add_duplicate_link, 10, 2);
+        add_filter('template_row_actions', $add_duplicate_link, 10, 2);
 
         add_action('admin_post_lacadev_duplicate_post', function () {
             if (!isset($_GET['post']) || !current_user_can('edit_posts')) {
@@ -172,7 +175,10 @@ class ListTableEnhancements
                     }
                 }
 
-                wp_redirect(admin_url('edit.php?post_type=' . $post->post_type));
+                $listUrl = $post->post_type === 'post'
+                    ? admin_url('edit.php')
+                    : admin_url('edit.php?post_type=' . $post->post_type);
+                wp_redirect($listUrl);
                 exit;
             }
         });

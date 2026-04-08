@@ -7,6 +7,8 @@ use App\Settings\LacaTools\Management\MediaService;
 use App\Settings\LacaTools\Management\DashboardWidgets;
 use App\Settings\LacaTools\Management\ListTableEnhancements;
 use App\Settings\LacaTools\Management\AdminUxService;
+use App\Settings\LacaTools\Management\DatabaseCleaner;
+use App\Settings\LacaTools\Management\QuickNotesWidget;
 
 /**
  * ManagementExperience
@@ -52,6 +54,12 @@ class ManagementExperience
 
         // 6. Media orphan filtering
         $mediaService->register();
+
+        // 7b. Quick Notes dashboard widget
+        (new QuickNotesWidget())->register();
+
+        // 8. Database Cleaner (Appearance > Dọn dẹp DB)
+        (new DatabaseCleaner())->register();
 
         // 7. AI Translation Manager
         add_action('init', function () {

@@ -131,6 +131,7 @@ function laca_install_project_manager_tables(): void
     \App\Databases\ProjectLogTable::install();
     \App\Databases\ProjectAlertTable::install();
     \App\Databases\ContactFormTable::install();
+    \App\Settings\EmailLog\EmailLogTable::install();
 }
 
 /**
@@ -254,3 +255,89 @@ function laca_project_list_admin_styles(): void
     </style>
     <?php
 }
+
+/**
+ * ============================================================================
+ * NEW FEATURES — Frontend & Admin
+ * ============================================================================
+ */
+
+/**
+ * Maintenance Mode — toggle từ Admin Bar (AJAX, không reload trang admin).
+ */
+add_action('init', function () {
+    if (class_exists('\App\Settings\MaintenanceModeManager')) {
+        (new \App\Settings\MaintenanceModeManager())->init();
+    }
+}, 1); // priority 1: chặn visitor trước khi WP render
+
+/**
+ * Email Log — intercept wp_mail() và admin viewer.
+ */
+add_action('init', function () {
+    if (class_exists('\App\Settings\EmailLog\EmailLogManager')) {
+        (new \App\Settings\EmailLog\EmailLogManager())->init();
+    }
+});
+
+/**
+ * Mobile Sticky CTA Bar.
+ */
+add_action('init', function () {
+    if (class_exists('\App\Features\MobileStickyCta')) {
+        (new \App\Features\MobileStickyCta())->init();
+    }
+});
+
+/**
+ * Related Posts — append cuối bài single post.
+ */
+add_action('init', function () {
+    if (class_exists('\App\Features\RelatedPosts')) {
+        (new \App\Features\RelatedPosts())->init();
+    }
+});
+
+/**
+ * Exit Intent Popup.
+ */
+add_action('init', function () {
+    if (class_exists('\App\Features\ExitIntentPopup')) {
+        (new \App\Features\ExitIntentPopup())->init();
+    }
+});
+
+/**
+ * ============================================================================
+ * SECURITY FEATURES
+ * ============================================================================
+ */
+
+/**
+ * Custom Login URL — phải chạy ở plugins_loaded priority 99 (gọi trong constructor).
+ * Khởi tạo ở init priority 1 để hook đăng ký kịp trước plugins_loaded callback.
+ */
+add_action('init', function () {
+    if (class_exists('\App\Settings\Security\CustomLoginManager')) {
+        new \App\Settings\Security\CustomLoginManager();
+    }
+}, 1);
+
+/**
+ * Two-Factor Authentication (TOTP).
+ */
+add_action('init', function () {
+    if (class_exists('\App\Settings\Security\TwoFactorAuth')) {
+        new \App\Settings\Security\TwoFactorAuth();
+    }
+});
+
+/**
+ * Security Manager — admin page + AJAX cho FIM, Malware Scanner,
+ * Hidden User Scanner, Security Audit, Custom Login settings, 2FA settings.
+ */
+add_action('init', function () {
+    if (class_exists('\App\Settings\Security\SecurityManager')) {
+        (new \App\Settings\Security\SecurityManager())->init();
+    }
+});

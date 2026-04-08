@@ -822,158 +822,220 @@ class AdminSettings
 			->set_page_parent($options)
 			->set_page_file(__('laca-tools', 'laca'))
 			->add_tab(__('Optimization', 'laca'), [
-				// Disable unnecessary items
-				Field::make( 'separator', 'title_disable_unnecessary_items', __( 'Disable unnecessary items' ) ),
+				// ── Disable unnecessary items ────────────────────────────────────────
+				Field::make('separator', 'title_disable_unnecessary_items', __('Disable unnecessary items', 'laca')),
+
 				Field::make('checkbox', 'disable_use_jquery_migrate', __('Disable jQuery Migrate', 'laca'))
 					->set_width(30),
-				Field::make( 'html', 'disable_use_jquery_migrate_desc' )
+				Field::make('html', 'disable_use_jquery_migrate_desc')
 					->set_width(70)
-					->set_html( '<i class="fa-regular fa-lightbulb-on"></i> jQuery Migrate là thư viện được sử dụng để duy trì hoạt động của các plugin và theme cũ. Nếu bạn không sử dụng plugin này, bạn có thể tắt nó để tăng tốc độ tải trang.' ),
-					
+					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>✅ Nên bật với theme custom</strong><br>
+						<b>Tác dụng:</b> Xóa file <code>jquery-migrate.js</code> (~8KB) khỏi frontend — thư viện chỉ cần cho jQuery API cũ (trước v1.9).<br>
+						<b>Nên bật khi:</b> Không dùng plugin/theme cũ viết bằng jQuery deprecated. Theme LacaDev không cần.<br>
+						<b>Rủi ro:</b> Một số plugin legacy sẽ bị lỗi JS. Kiểm tra console DevTools sau khi bật.
+					</div>'),
+
 				Field::make('checkbox', 'disable_gutenberg_css', __('Disable Gutenberg CSS', 'laca'))
 					->set_width(30),
-				Field::make( 'html', 'gutenberg_css_desc' )
+				Field::make('html', 'gutenberg_css_desc')
 					->set_width(70)
-					->set_html( '<i class="fa-regular fa-lightbulb-on"></i> Gutenberg CSS là thư viện được sử dụng để duy trì hoạt động của các plugin và theme cũ. Nếu bạn không sử dụng plugin này, bạn có thể tắt nó để tăng tốc độ tải trang.' ),
-					
+					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>⚠️ Cẩn thận — kiểm tra layout trước</strong><br>
+						<b>Tác dụng:</b> Xóa <code>wp-block-library.css</code> và <code>wp-block-library-theme.css</code> (~20KB) trên toàn site.<br>
+						<b>Nên bật khi:</b> Không hiển thị block Gutenberg trên frontend (dùng Blade template / custom layout thuần).<br>
+						<b>Rủi ro:</b> Nếu bài viết có block Gutenberg (gallery, columns, buttons...) sẽ mất style. Kiểm tra trang blog/single post kỹ trước khi bật production.
+					</div>'),
+
 				Field::make('checkbox', 'disable_classic_css', __('Disable Classic CSS', 'laca'))
 					->set_width(30),
-				Field::make( 'html', 'classic_css_desc' )
+				Field::make('html', 'classic_css_desc')
 					->set_width(70)
-					->set_html( '<i class="fa-regular fa-lightbulb-on"></i> Classic CSS là thư viện được sử dụng để duy trì hoạt động của các plugin và theme cũ. Nếu bạn không sử dụng plugin này, bạn có thể tắt nó để tăng tốc độ tải trang.' ),
-					
+					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>✅ Thường an toàn khi dùng theme custom</strong><br>
+						<b>Tác dụng:</b> Xóa <code>classic-theme-styles.css</code> (~8KB) — CSS WordPress tự động thêm cho theme không hỗ trợ block.<br>
+						<b>Nên bật khi:</b> Theme đã có CSS riêng hoàn chỉnh, không phụ thuộc Classic Theme styles.<br>
+						<b>Rủi ro:</b> Thấp nếu theme custom. Có thể ảnh hưởng một số style trang archive/comment mặc định.
+					</div>'),
+
 				Field::make('checkbox', 'disable_emoji', __('Disable Emoji', 'laca'))
 					->set_width(30),
-				Field::make( 'html', 'emoji_desc' )
+				Field::make('html', 'emoji_desc')
 					->set_width(70)
-					->set_html( '<i class="fa-regular fa-lightbulb-on"></i> Emoji là thư viện được sử dụng để hiển thị các biểu tượng trong trang web. Nếu bạn không sử dụng plugin này, bạn có thể tắt nó để tăng tốc độ tải trang.' ),
-				
-				// Optimization Library
-				Field::make( 'separator', 'title_optimization_library', __( 'Optimization Library' ) ),
+					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>✅ Nên bật — gần như không có rủi ro</strong><br>
+						<b>Tác dụng:</b> Xóa script + style WordPress dùng để convert text emoji (<code>:smile:</code>) thành ảnh. Tiết kiệm 1 HTTP request + ~10KB JS.<br>
+						<b>Nên bật khi:</b> Hầu hết mọi site. Emoji Unicode (😊 🎉) vẫn hiển thị bình thường trên mọi trình duyệt.<br>
+						<b>Rủi ro:</b> Chỉ mất chức năng convert shortcode kiểu <code>:emoji_name:</code> thành ảnh. Không ảnh hưởng emoji thật.
+					</div>'),
+
+				// ── Optimization Library ─────────────────────────────────────────────
+				Field::make('separator', 'title_optimization_library', __('Optimization Library', 'laca')),
+
 				Field::make('checkbox', 'enable_instant_page', __('Enable Instant-page', 'laca'))
 					->set_width(30),
-				Field::make( 'html', 'instant_page_desc' )
+				Field::make('html', 'instant_page_desc')
 					->set_width(70)
-					->set_html( '<i class="fa-regular fa-lightbulb-on"></i> Instant-Page là một thư viện cho phép bạn tải trước nội dung của trang được liên kết vào bộ nhớ trình duyệt chỉ bằng cách di chuyển qua liên kết. Khi bạn nhấp vào liên kết, nó cung cấp trải nghiệm tải nhanh đáng kể' ),
-					
+					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>✅ Nên bật — cải thiện UX rõ rệt</strong><br>
+						<b>Tác dụng:</b> Khi user hover qua link ≥65ms, trang đích được tải trước vào cache — click sẽ gần như tức thì. Giảm cảm giác chờ đợi đáng kể.<br>
+						<b>Nên bật khi:</b> Site có nhiều internal link, hosting ổn định. Không ảnh hưởng analytics (dùng prefetch, không prerender).<br>
+						<b>Rủi ro:</b> Tăng nhẹ bandwidth server do prefetch trang chưa click. Không phù hợp nếu hosting yếu hoặc giới hạn traffic.
+					</div>'),
+
 				Field::make('checkbox', 'enable_smooth_scroll', __('Enable Smooth-scroll', 'laca'))
 					->set_width(30),
-				Field::make( 'html', 'smooth_scroll_desc' )
+				Field::make('html', 'smooth_scroll_desc')
 					->set_width(70)
-					->set_html( '<i class="fa-regular fa-lightbulb-on"></i> Smooth-scroll là thư viện cho phép bạn tạo hiệu ứng cuộn mượt mà, cung cấp cho người dùng cảm giác điều hướng trang nhanh hơn.' ),
-					
-				// The function of lazy loading images
-				Field::make( 'separator', 'title_lazy_loading_images', __( 'The function of lazy loading images' ) ),
-				Field::make( 'html', 'lazy_loading_images_desc' )
-					->set_width(70)
-					->set_html( '<i class="fa-regular fa-lightbulb-on"></i> Nếu bạn muốn lazy load hình ảnh mỗi khi trang tải, hãy bật tính năng này. Chức năng này giúp trang web của bạn tải nhanh hơn' ),
+					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>⚠️ Kiểm tra conflict trước khi bật</strong><br>
+						<b>Tác dụng:</b> Thêm hiệu ứng cuộn mượt (animate) khi click anchor link (<code>#section</code>) thay vì nhảy thẳng.<br>
+						<b>Nên bật khi:</b> Trang có nhiều section, landing page, one-page website.<br>
+						<b>Rủi ro:</b> Nếu theme đã có CSS <code>scroll-behavior: smooth</code> sẽ bị trùng lặp. Một số plugin slider/tab dùng hash URL cũng có thể bị ảnh hưởng.
+					</div>'),
 
-				Field::make('checkbox', 'remove_comments', __('Remove comments from HTML, JavaScript, and CSS', 'laca')),
-				Field::make('checkbox', 'remove_xhtml_closing_tags', __('Remove XHTML closing tags from empty elements in HTML5', 'laca')),
-				Field::make('checkbox', 'remove_relative_domain', __('Remove relative domain from internal URLs', 'laca')),
-				Field::make('checkbox', 'remove_protocols', __('Remove protocols (HTTP: and HTTPS:) from all URLs', 'laca')),
-				Field::make('checkbox', 'support_multi_byte_utf_8', __('Support multi-byte UTF-8 encoding (if you see strange characters)', 'laca')),
-				// Thêm các field tối ưu hóa mới
+				// ── Lazy loading & Image optimization ────────────────────────────────
+				Field::make('separator', 'title_lazy_loading_images', __('Image & Output Optimization', 'laca')),
+
+				Field::make('checkbox', 'remove_comments', __('Remove HTML comments from output', 'laca'))
+					->set_width(30),
+				Field::make('html', 'remove_comments_desc')
+					->set_width(70)
+					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>✅ An toàn trên production</strong><br>
+						<b>Tác dụng:</b> Xóa toàn bộ HTML comment <code>&lt;!-- ... --&gt;</code> khỏi HTML output. Giảm kích thước HTML ~2–5%. Vẫn giữ IE conditional comments.<br>
+						<b>Nên bật khi:</b> Production site — không cần debug HTML source.<br>
+						<b>Rủi ro:</b> Thấp. Một số plugin dùng comment để đánh dấu vị trí (widget placeholder). Test trên staging trước.
+					</div>'),
+
 				Field::make('checkbox', 'enable_advanced_resource_hints', __('Bật Advanced Resource Hints', 'laca'))
 					->set_width(30),
 				Field::make('html', 'enable_advanced_resource_hints_desc')
 					->set_width(70)
-					->set_html('<i class="fa-regular fa-lightbulb-on"></i> Bật tính năng thêm resource hint (preload, preconnect,...) giúp tăng tốc tải tài nguyên.'),
+					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>✅ Nên bật nếu dùng Google Fonts</strong><br>
+						<b>Tác dụng:</b> Thêm <code>preconnect</code> và <code>dns-prefetch</code> cho fonts.googleapis.com và fonts.gstatic.com vào <code>&lt;head&gt;</code>. Giảm thời gian DNS lookup khi tải font.<br>
+						<b>Nên bật khi:</b> Site dùng Google Fonts. Cải thiện LCP và FCP nhẹ.<br>
+						<b>Rủi ro:</b> Không có. Browser tự quyết định có dùng hint hay không.
+					</div>'),
 
 				Field::make('checkbox', 'enable_optimize_images', __('Tối ưu hóa thuộc tính ảnh', 'laca'))
 					->set_width(30),
 				Field::make('html', 'enable_optimize_images_desc')
 					->set_width(70)
-					->set_html('<i class="fa-regular fa-lightbulb-on"></i> Tự động thêm lazy loading, alt, dimension cho ảnh.'),
+					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>✅ Nên bật — tốt cho SEO và performance</strong><br>
+						<b>Tác dụng:</b> Tự động thêm <code>loading="lazy"</code> và điền thuộc tính <code>alt</code> (nếu trống) vào ảnh qua hàm <code>wp_get_attachment_image()</code>.<br>
+						<b>Nên bật khi:</b> Site nhiều ảnh. Giúp cải thiện điểm PageSpeed (Lighthouse).<br>
+						<b>Rủi ro:</b> Ảnh hero/banner đầu trang (<em>above the fold</em>) nếu cũng đi qua hàm này sẽ bị lazy load → có thể làm chậm LCP. Dùng <code>loading="eager"</code> trực tiếp cho ảnh hero.
+					</div>'),
 
-				Field::make('checkbox', 'enable_optimize_content_images', __('Tối ưu hóa ảnh trong nội dung', 'laca'))
+				Field::make('checkbox', 'enable_optimize_content_images', __('Tối ưu hóa ảnh trong nội dung bài viết', 'laca'))
 					->set_width(30),
 				Field::make('html', 'enable_optimize_content_images_desc')
 					->set_width(70)
-					->set_html('<i class="fa-regular fa-lightbulb-on"></i> Tự động lazy load ảnh trong nội dung bài viết.'),
+					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>✅ Nên bật với blog nhiều ảnh</strong><br>
+						<b>Tác dụng:</b> Tự động thêm <code>loading="lazy"</code> vào tất cả thẻ <code>&lt;img&gt;</code> bên trong nội dung bài viết (filter <code>the_content</code>).<br>
+						<b>Nên bật khi:</b> Bài viết có nhiều ảnh. Trình duyệt hiện đại hỗ trợ 100%, giảm thời gian tải trang đáng kể.<br>
+						<b>Rủi ro:</b> Rất thấp. Ảnh đầu bài viết cũng bị lazy — có thể chấp nhận vì ảnh nội dung thường below the fold.
+					</div>'),
 
 				Field::make('checkbox', 'enable_register_service_worker', __('Bật Service Worker cache', 'laca'))
 					->set_width(30),
 				Field::make('html', 'enable_register_service_worker_desc')
 					->set_width(70)
-					->set_html('<i class="fa-regular fa-lightbulb-on"></i> Đăng ký service worker để tăng tốc tải trang và cache tài nguyên.'),
+					->set_html('<div style="padding:8px 12px;background:#fff3cd;border-left:3px solid #ffc107;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>⚠️ Chỉ bật khi file <code>dist/sw.js</code> đã tồn tại</strong><br>
+						<b>Tác dụng:</b> Đăng ký Service Worker để cache tài nguyên tĩnh (CSS, JS, ảnh) trên trình duyệt. Trang load nhanh hơn từ lần thứ 2, hoạt động offline cơ bản.<br>
+						<b>Nên bật khi:</b> Đã có file <code>/dist/sw.js</code> trong theme và muốn PWA-like experience.<br>
+						<b>Rủi ro:</b> Nếu thiếu <code>sw.js</code> → lỗi console (không crash). Cache cũ có thể gây khó update CSS/JS sau deploy nếu không có cache busting.
+					</div>'),
 			])
-			// Security
+			// ── Security Tab ──────────────────────────────────────────────────────
 			->add_tab(__('Security', 'laca'), [
-				// Enhance website security
-				Field::make( 'separator', 'title_enhance_website_security', __( 'Enhance website security' ) ),
-				Field::make('checkbox', 'disable_rest_api', __('Disable REST API', 'laca'))
-					->set_width(30),
-				Field::make( 'html', 'disable_rest_api_desc' )
-					->set_width(70)
-					->set_html( '<i class="fa-regular fa-lightbulb-on"></i> REST API mặc định trong WordPress cho phép ứng dụng bên ngoài giao tiếp với WordPress để lấy dữ liệu hoặc đăng nội dung, bạn nên vô hiệu hóa nó cho mục đích bảo mật.' ),
+				Field::make('separator', 'title_enhance_website_security', __('Tắt tính năng có nguy cơ bảo mật', 'laca')),
 
-				Field::make('checkbox', 'disable_xml_rpc', __('Disable XML RPC', 'laca'))
+				Field::make('checkbox', 'disable_rest_api', __('Disable REST API (cho khách)', 'laca'))
 					->set_width(30),
-				Field::make( 'html', 'disable_xml_rpc_desc' )
+				Field::make('html', 'disable_rest_api_desc')
 					->set_width(70)
-					->set_html( '<i class="fa-regular fa-lightbulb-on"></i> XML-RPC là giao thức cho phép quản lý website từ xa thông qua ứng dụng như WordPress App hoặc Jetpack.<br> <b>Khuyến cáo:</b> Nên tắt hoàn toàn nếu không dùng tới.' ),
+					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>⚠️ Kiểm tra plugin trước khi bật</strong><br>
+						<b>Tác dụng:</b> Chặn toàn bộ REST API (<code>/wp-json/</code>) với người dùng <em>chưa đăng nhập</em>. Trả về lỗi 401.<br>
+						<b>Nên bật khi:</b> Site không cần REST API công khai (không dùng headless, không có app mobile).<br>
+						<b>Rủi ro:</b> WooCommerce, Gutenberg, Contact Form 7 và nhiều plugin dùng REST API ngay cả khi chưa đăng nhập. Kiểm tra kỹ trên staging trước.
+					</div>'),
 
-				Field::make('checkbox', 'disable_wp_embed', __('Disable Wp-Embed', 'laca'))
-					->set_width(30),	
-				Field::make( 'html', 'disable_wp_embed_desc' )
-					->set_width(70)
-					->set_html( '<i class="fa-regular fa-lightbulb-on"></i> WP-Embed cho phép nội dung của trang WordPress được nhúng vào trang web khác thông qua oEmbed.<br> <b>Khuyến cáo:</b> Nếu không dùng, nên tắt để giảm thiểu tải không cần thiết.' ),
-
-				Field::make('checkbox', 'disable_x_pingback', __('Disable X-Pingback', 'laca'))
+				Field::make('checkbox', 'disable_xml_rpc', __('Disable XML-RPC', 'laca'))
 					->set_width(30),
-				Field::make( 'html', 'disable_x_pingback_desc' )
+				Field::make('html', 'disable_xml_rpc_desc')
 					->set_width(70)
-					->set_html( '<i class="fa-regular fa-lightbulb-on"></i> X-Pingback là cơ chế thông báo giữa các blog (khi ai đó liên kết đến trang web).<br> <b>Khuyến cáo:</b> Nên tắt hoàn toàn nếu không dùng tới.' ),
-					
-				// Thêm các field bảo mật mới
-				Field::make('checkbox', 'enable_remove_wordpress_bloat', __('Loại bỏ bloat WordPress', 'laca'))
+					->set_html('<div style="padding:8px 12px;background:#edfaef;border-left:3px solid #28a745;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>✅ Nên bật luôn — vector tấn công phổ biến</strong><br>
+						<b>Tác dụng:</b> Tắt hoàn toàn XML-RPC (<code>/xmlrpc.php</code>) — giao thức cũ cho phép quản lý WP từ xa.<br>
+						<b>Nên bật khi:</b> Không dùng WordPress Mobile App, Jetpack, hay công cụ quản lý từ xa qua XML-RPC.<br>
+						<b>Rủi ro:</b> Jetpack và WordPress App sẽ ngừng hoạt động. Ngoài ra <strong>không có rủi ro</strong> — tắt giúp ngăn brute force và DDoS amplification.
+					</div>'),
+
+				Field::make('checkbox', 'disable_wp_embed', __('Disable WP-Embed (oEmbed)', 'laca'))
+					->set_width(30),
+				Field::make('html', 'disable_wp_embed_desc')
+					->set_width(70)
+					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>✅ Nên bật nếu không cần nhúng site ra ngoài</strong><br>
+						<b>Tác dụng:</b> Tắt tính năng cho phép người khác nhúng bài viết của bạn vào site họ qua oEmbed. Xóa script <code>wp-embed.js</code> (~2KB) và discovery links.<br>
+						<b>Nên bật khi:</b> Không muốn nội dung site bị nhúng sang site khác.<br>
+						<b>Rủi ro:</b> Không ảnh hưởng việc bạn nhúng YouTube/Twitter/Vimeo vào bài viết. Chỉ tắt chiều "người khác nhúng site bạn".
+					</div>'),
+
+				Field::make('checkbox', 'disable_x_pingback', __('Disable X-Pingback header', 'laca'))
+					->set_width(30),
+				Field::make('html', 'disable_x_pingback_desc')
+					->set_width(70)
+					->set_html('<div style="padding:8px 12px;background:#edfaef;border-left:3px solid #28a745;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>✅ Nên bật luôn</strong><br>
+						<b>Tác dụng:</b> Xóa header <code>X-Pingback</code> khỏi response HTTP — header này tiết lộ đây là WordPress và có thể bị lợi dụng để khuếch đại DDoS.<br>
+						<b>Nên bật khi:</b> Luôn luôn bật. Không ảnh hưởng bất kỳ chức năng nào của site.<br>
+						<b>Rủi ro:</b> Không có.
+					</div>'),
+
+				Field::make('separator', 'title_wordpress_hardening', __('WordPress Hardening', 'laca')),
+
+				Field::make('checkbox', 'enable_remove_wordpress_bloat', __('Ẩn thông tin WordPress (Bloat Removal)', 'laca'))
 					->set_width(30),
 				Field::make('html', 'enable_remove_wordpress_bloat_desc')
 					->set_width(70)
-					->set_html('<i class="fa-regular fa-lightbulb-on"></i> Loại bỏ các thành phần không cần thiết của WordPress để tăng bảo mật và hiệu suất.'),
+					->set_html('<div style="padding:8px 12px;background:#edfaef;border-left:3px solid #28a745;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>✅ Nên bật luôn — tốt cả bảo mật lẫn performance</strong><br>
+						<b>Tác dụng:</b> Xóa các tag lộ thông tin WordPress khỏi <code>&lt;head&gt;</code>: generator tag (phiên bản WP), RSD link, wlwmanifest, REST API link header, adjacent posts links, oEmbed discovery.<br>
+						<b>Nên bật khi:</b> Mọi production site. Ẩn phiên bản WP giúp giảm nguy cơ bị target bởi exploit tự động.<br>
+						<b>Rủi ro:</b> Không có. Các tính năng chức năng không bị ảnh hưởng.
+					</div>'),
 
-				Field::make('checkbox', 'enable_optimize_database_queries', __('Tối ưu hóa truy vấn database', 'laca'))
+				Field::make('separator', 'title_performance_server', __('Tối ưu Server & Database', 'laca')),
+
+				Field::make('checkbox', 'enable_optimize_database_queries', __('Giới hạn Post Revision & Autosave', 'laca'))
 					->set_width(30),
 				Field::make('html', 'enable_optimize_database_queries_desc')
 					->set_width(70)
-					->set_html('<i class="fa-regular fa-lightbulb-on"></i> Giới hạn post revision, tăng autosave interval, bật object cache.'),
+					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>✅ Nên bật — tiết kiệm DB đáng kể theo thời gian</strong><br>
+						<b>Tác dụng:</b> Giới hạn lịch sử bài viết tối đa <strong>3 revision</strong> (thay vì vô hạn). Tăng khoảng thời gian autosave lên <strong>5 phút</strong> (thay vì 60 giây).<br>
+						<b>Nên bật khi:</b> Site có nhiều editor/content. Bảng <code>wp_posts</code> sẽ không phình to theo thời gian.<br>
+						<b>Rủi ro:</b> Chỉ giữ 3 bản gần nhất — không thể khôi phục về revision cũ hơn. Với bài viết quan trọng nên backup thủ công.
+					</div>'),
 
-				Field::make('checkbox', 'enable_optimize_sql_queries', __('Log truy vấn SQL chậm', 'laca'))
-					->set_width(30),
-				Field::make('html', 'enable_optimize_sql_queries_desc')
-					->set_width(70)
-					->set_html('<i class="fa-regular fa-lightbulb-on"></i> Log các truy vấn SQL chậm để phát hiện truy vấn bất thường.'),
-
-				Field::make('checkbox', 'enable_optimize_memory_usage', __('Tối ưu hóa bộ nhớ', 'laca'))
+				Field::make('checkbox', 'enable_optimize_memory_usage', __('Tối ưu PHP Memory', 'laca'))
 					->set_width(30),
 				Field::make('html', 'enable_optimize_memory_usage_desc')
 					->set_width(70)
-					->set_html('<i class="fa-regular fa-lightbulb-on"></i> Tăng memory limit, bật garbage collection.'),
-
-				Field::make('checkbox', 'enable_cleanup_memory', __('Dọn dẹp bộ nhớ cuối trang', 'laca'))
-					->set_width(30),
-				Field::make('html', 'enable_cleanup_memory_desc')
-					->set_width(70)
-					->set_html('<i class="fa-regular fa-lightbulb-on"></i> Dọn dẹp bộ nhớ cuối trang để giảm nguy cơ memory leak.'),
-
-				Field::make('checkbox', 'enable_set_cache_headers', __('Đặt cache header nâng cao', 'laca'))
-					->set_width(30),
-				Field::make('html', 'enable_set_cache_headers_desc')
-					->set_width(70)
-					->set_html('<i class="fa-regular fa-lightbulb-on"></i> Đặt cache header bảo vệ trang admin và user login.'),
-
-				Field::make('checkbox', 'enable_compression', __('Bật gzip nén dữ liệu', 'laca'))
-					->set_width(30),
-				Field::make('html', 'enable_compression_desc')
-					->set_width(70)
-					->set_html('<i class="fa-regular fa-lightbulb-on"></i> Bật gzip để bảo vệ dữ liệu truyền tải.'),
-
-				Field::make('checkbox', 'enable_performance_monitoring', __('Giám sát hiệu suất', 'laca'))
-					->set_width(30),
-				Field::make('html', 'enable_performance_monitoring_desc')
-					->set_width(70)
-					->set_html('<i class="fa-regular fa-lightbulb-on"></i> Giám sát hiệu suất, phát hiện bất thường.'),
+					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>⚠️ Chỉ bật khi gặp lỗi memory</strong><br>
+						<b>Tác dụng:</b> Cố gắng tăng PHP memory limit lên <strong>256MB</strong> qua <code>ini_set</code> và bật PHP garbage collection (<code>gc_enable()</code>).<br>
+						<b>Nên bật khi:</b> Gặp lỗi <em>"Allowed memory size exhausted"</em> hoặc site có plugin nặng (WooCommerce, WPML...).<br>
+						<b>Rủi ro:</b> <code>ini_set</code> có thể bị hosting chặn (shared hosting). Nếu hosting đã cấu hình đủ memory thì tùy chọn này không có tác dụng gì thêm.
+					</div>'),
 			]);
 
 			// Google reCAPTCHA
