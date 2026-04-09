@@ -308,6 +308,16 @@ add_action('init', function () {
 });
 
 /**
+ * Frontend Chatbot — RAG-lite, chỉ trả lời dựa trên nội dung website.
+ * Public endpoint, không cần đăng nhập.
+ */
+add_action('init', function () {
+    if (class_exists('\App\Features\FrontendChatbot\FrontendChatbotHandler')) {
+        (new \App\Features\FrontendChatbot\FrontendChatbotHandler())->init();
+    }
+});
+
+/**
  * ============================================================================
  * SECURITY FEATURES
  * ============================================================================
