@@ -219,20 +219,109 @@ class ProjectAlert
     }
 
     /**
+     * Lấy TẤT CẢ alerts chưa resolve, có tên project, hỗ trợ filter + phân trang
+     *
+     * @param array $filters { project_id?, alert_level?, alert_type? }
+     * @param int   $perPage
+     * @param int   $page
+     * @return array { items: array, total: int }
+     */
+    public static function getAllActiveFiltered(array $filters = [], int $perPage = 30, int $page = 1): array
+    {
+        global $wpdb;
+        $table  = ProjectAlertTable::getTableName();
+        $where  = ['a.is_resolved = 0'];
+        $params = [];
+
+        if (!empty($filters['project_id'])) {
+            $where[]  = 'a.project_id = %d';
+            $params[] = absint($filters['project_id']);
+        }
+        if (!empty($filters['alert_level'])) {
+            $where[]  = 'a.alert_level = %s';
+            $params[] = sanitize_key($filters['alert_level']);
+        }
+        if (!empty($filters['alert_type'])) {
+            $where[]  = 'a.alert_type = %s';
+            $params[] = sanitize_key($filters['alert_type']);
+        }
+
+        $whereClause = implode(' AND ', $where);
+        $offset      = ($page - 1) * $perPage;
+
+        // Đếm tổng
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $countSql = "SELECT COUNT(*) FROM {$table} a WHERE {$whereClause}";
+        $total    = empty($params) ? (int) $wpdb->get_var($countSql) : (int) $wpdb->get_var($wpdb->prepare($countSql, ...$params)); // phpcs:ignore
+
+        // Lấy dữ liệu
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $dataSql = "SELECT a.*, p.post_title AS project_name
+                    FROM {$table} a
+                    LEFT JOIN {$wpdb->posts} p ON p.ID = a.project_id
+                    WHERE {$whereClause}
+                    ORDER BY FIELD(a.alert_level, 'critical', 'warning', 'info'), a.created_at DESC
+                    LIMIT %d OFFSET %d";
+
+        $allParams   = array_merge($params, [$perPage, $offset]);
+        $items       = (array) $wpdb->get_results($wpdb->prepare($dataSql, ...$allParams), ARRAY_A); // phpcs:ignore
+
+        return ['items' => $items ?: [], 'total' => $total];
+    }
+
+    /**
+     * Đếm tổng alerts chưa resolve toàn hệ thống (dùng cho badge menu)
+     */
+    public static function countAllActive(): int
+    {
+        return self::countActive(0);
+    }
+
+    /**
+     * Bulk resolve: đánh dấu nhiều alert đã xử lý
+     *
+     * @param  int[] $alertIds
+     * @return int   Số rows cập nhật
+     */
+    public static function bulkResolve(array $alertIds): int
+    {
+        global $wpdb;
+        if (empty($alertIds)) {
+            return 0;
+        }
+
+        $ids   = array_map('absint', $alertIds);
+        $in    = implode(',', $ids);
+        $table = ProjectAlertTable::getTableName();
+        $user  = wp_get_current_user();
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        return (int) $wpdb->query($wpdb->prepare(
+            "UPDATE {$table}
+             SET is_resolved = 1,
+                 resolved_at = %s,
+                 resolved_by = %s
+             WHERE id IN ({$in}) AND is_resolved = 0",
+            current_time('mysql'),
+            $user->exists() ? sanitize_text_field($user->display_name) : 'System'
+        ));
+    }
+
+    /**
      * Label thân thiện cho alert type
      */
     public static function getTypeLabel(string $type): string
     {
         $labels = [
-            'plugin_update'   => '🔌 Plugin cần cập nhật',
-            'ssl_expiry'      => '🔐 SSL sắp hết hạn',
-            'domain_expiry'   => '🌐 Domain sắp hết hạn',
-            'hosting_expiry'  => '🖥️ Hosting sắp hết hạn',
-            'bug'             => '🐛 Lỗi website',
-            'security'        => '⚠️ Cảnh báo bảo mật',
-            'other'           => '📌 Khác',
+            'plugin_update'   => 'Plugin update',
+            'ssl_expiry'      => 'SSL sắp hết hạn',
+            'domain_expiry'   => 'Domain sắp hết hạn',
+            'hosting_expiry'  => 'Hosting sắp hết hạn',
+            'bug'             => 'Lỗi website',
+            'security'        => 'Bảo mật',
+            'other'           => 'Khác',
         ];
-        return $labels[$type] ?? '📌 ' . ucfirst($type);
+        return $labels[$type] ?? ucfirst($type);
     }
 
     /**

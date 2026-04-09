@@ -165,7 +165,7 @@ class AdminSettings
 
 			wp_add_dashboard_widget(
 				'laca_project_manager_widget',
-				'LacaDev | 🗂️ Quản lý dự án',
+				'LacaDev | Quản lý dự án',
 				static function () {
 					global $wpdb;
 					
@@ -214,17 +214,17 @@ class AdminSettings
 					$alertsCount = class_exists('\App\Models\ProjectAlert') ? \App\Models\ProjectAlert::countActive() : 0;
 					?>
 					<div style="display:flex;gap:15px;margin-bottom:15px;">
-						<div style="flex:1;background:#f8f9fa;padding:15px;border-radius:8px;text-align:center;">
-							<div style="font-size:24px;font-weight:700;color:#2271b1;"><?php echo esc_html($total); ?></div>
-							<div style="font-size:13px;color:#666;">Tổng dự án</div>
+						<div style="flex:1;background:#fafbfc;padding:15px;border-radius:6px;text-align:center;border:1px solid #e8ecf0;">
+							<div style="font-size:24px;font-weight:700;color:#8aadf7;"><?php echo esc_html($total); ?></div>
+							<div style="font-size:13px;color:#8b95a5;">Tổng dự án</div>
 						</div>
-						<div style="flex:1;background:#f8f9fa;padding:15px;border-radius:8px;text-align:center;">
-							<div style="font-size:24px;font-weight:700;color:#f0ad4e;"><?php echo esc_html($inProgress); ?></div>
-							<div style="font-size:13px;color:#666;">Đang làm</div>
+						<div style="flex:1;background:#fafbfc;padding:15px;border-radius:6px;text-align:center;border:1px solid #e8ecf0;">
+							<div style="font-size:24px;font-weight:700;color:#f5c97a;"><?php echo esc_html($inProgress); ?></div>
+							<div style="font-size:13px;color:#8b95a5;">Đang làm</div>
 						</div>
-						<div style="flex:1;background:#f8f9fa;padding:15px;border-radius:8px;text-align:center;">
-							<div style="font-size:24px;font-weight:700;color:#5cb85c;"><?php echo esc_html($done); ?></div>
-							<div style="font-size:13px;color:#666;">Hoàn thành</div>
+						<div style="flex:1;background:#fafbfc;padding:15px;border-radius:6px;text-align:center;border:1px solid #e8ecf0;">
+							<div style="font-size:24px;font-weight:700;color:#7dd3a8;"><?php echo esc_html($done); ?></div>
+							<div style="font-size:13px;color:#8b95a5;">Hoàn thành</div>
 						</div>
 					</div>
 
@@ -232,16 +232,16 @@ class AdminSettings
 						<h4 style="margin-top:0;margin-bottom:10px;">Cần chú ý</h4>
 						<ul style="margin:0;padding-left:20px;">
 							<?php if ($expiringCritical > 0): ?>
-								<li style="color:#d9534f;font-weight:600;">🔴 Có <?php echo esc_html($expiringCritical); ?> dịch vụ sắp/đã hết hạn (&le; 7 ngày)</li>
+								<li style="color:#c0392b;font-weight:600;">Có <?php echo esc_html($expiringCritical); ?> dịch vụ sắp/đã hết hạn (&le; 7 ngày)</li>
 							<?php endif; ?>
 							<?php if ($expiringSoon > 0): ?>
-								<li style="color:#f0ad4e;">🟡 Có <?php echo esc_html($expiringSoon); ?> dịch vụ sắp gia hạn (&le; 30 ngày)</li>
+								<li style="color:#b7770d;">Có <?php echo esc_html($expiringSoon); ?> dịch vụ sắp gia hạn (&le; 30 ngày)</li>
 							<?php endif; ?>
 							<?php if ($alertsCount > 0): ?>
-								<li style="color:#d9534f;">⚠️ Có <?php echo esc_html($alertsCount); ?> cảnh báo lỗi/bảo mật chưa xử lý</li>
+								<li style="color:#c0392b;">Có <?php echo esc_html($alertsCount); ?> cảnh báo lỗi/bảo mật chưa xử lý</li>
 							<?php endif; ?>
 							<?php if ($expiringCritical == 0 && $expiringSoon == 0 && $alertsCount == 0): ?>
-								<li style="color:#5cb85c;">✅ Mọi thứ đều ổn, không có cảnh báo nào.</li>
+								<li style="color:#2e7d52;">Mọi thứ đều ổn, không có cảnh báo nào.</li>
 							<?php endif; ?>
 						</ul>
 					</div>
@@ -1061,11 +1061,9 @@ class AdminSettings
 						->set_width(25)
 						->set_default_value(true),
 						
-					Field::make('checkbox', 'enable_recaptcha_register', __('Kích hoạt cho Đăng ký', 'laca'))
-						->set_width(25)
-						->set_default_value(true),
-						
-					Field::make('checkbox', 'enable_recaptcha_comment', __('Kích hoạt cho Bình luận', 'laca'))
+					Field::make('checkbox', 'enable_recaptcha_register', __('Kích hoạt cho Đăng ký', 'laca')),
+					Field::make('checkbox', 'enable_recaptcha_comment', __('Kích hoạt cho Bình luận', 'laca')),
+					Field::make('checkbox', 'enable_recaptcha_contact', __('Kích hoạt cho Form Liên Hệ', 'laca'))
 						->set_width(25)
 						->set_default_value(true),
 						
@@ -1104,6 +1102,19 @@ class AdminSettings
 					Field::make('text', 'project_admin_email', __('Email nhận thông báo', 'laca'))
 						->set_default_value(get_option('admin_email'))
 						->set_help_text('Bạn có thể nhập nhiều email cách nhau bởi dấu phẩy (,).'),
+				])
+				->add_tab(__('Telegram (Project Manager)', 'laca'), [
+					Field::make('checkbox', 'enable_telegram_notify', __('Bật thông báo Telegram', 'laca')),
+					Field::make('text', 'telegram_bot_token', __('Bot Token', 'laca'))
+						->set_width(50),
+					Field::make('text', 'telegram_chat_id', __('Chat ID', 'laca'))
+						->set_width(50)
+						->set_help_text('Nhập danh sách Chat ID (cách nhau bằng dấu phẩy) để nhận cảnh báo.'),
+				])
+				->add_tab(__('Slack (Project Manager)', 'laca'), [
+					Field::make('checkbox', 'enable_slack_notify', __('Bật thông báo Slack', 'laca')),
+					Field::make('text', 'slack_webhook_url', __('Webhook URL', 'laca'))
+						->set_help_text('Nhập Webhook URL của kênh Slack để nhận cảnh báo.'),
 				]);
 
             Container::make('theme_options', __('Login Socials', 'laca'))

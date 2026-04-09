@@ -160,6 +160,28 @@ class ProjectNotificationHandler
                 }
             }
         }
+
+        // Thông báo qua Telegram
+        $isTelegramEnabled = carbon_get_theme_option('enable_telegram_notify');
+        if ($isTelegramEnabled === 'yes' || $isTelegramEnabled === true) {
+            $telegramToken = carbon_get_theme_option('telegram_bot_token');
+            $chatIdsRaw = carbon_get_theme_option('telegram_chat_id');
+            if ($telegramToken && $chatIdsRaw) {
+                $chatIds = array_map('trim', explode(',', $chatIdsRaw));
+                foreach ($chatIds as $chatId) {
+                    $this->sendTelegramMessage($telegramToken, $chatId, $content);
+                }
+            }
+        }
+
+        // Thông báo qua Slack
+        $isSlackEnabled = carbon_get_theme_option('enable_slack_notify');
+        if ($isSlackEnabled === 'yes' || $isSlackEnabled === true) {
+            $slackWebhook = carbon_get_theme_option('slack_webhook_url');
+            if ($slackWebhook) {
+                $this->sendSlackMessage($slackWebhook, $content);
+            }
+        }
     }
 
     /**
@@ -178,6 +200,42 @@ class ProjectNotificationHandler
                 'Content-Type' => 'application/json',
                 'access_token' => $token,
             ],
+            'body'    => wp_json_encode($body),
+            'timeout' => 15,
+        ]);
+
+        return !is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200;
+    }
+
+    /**
+     * Gửi tin nhắn qua Telegram Bot API
+     */
+    private function sendTelegramMessage(string $token, string $chatId, string $text): bool
+    {
+        $url = "https://api.telegram.org/bot{$token}/sendMessage";
+        $body = [
+            'chat_id' => $chatId,
+            'text'    => $text,
+        ];
+
+        $response = wp_remote_post($url, [
+            'headers' => ['Content-Type' => 'application/json'],
+            'body'    => wp_json_encode($body),
+            'timeout' => 15,
+        ]);
+
+        return !is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200;
+    }
+
+    /**
+     * Gửi tin nhắn qua Slack Webhook
+     */
+    private function sendSlackMessage(string $webhookUrl, string $text): bool
+    {
+        $body = ['text' => $text];
+
+        $response = wp_remote_post($webhookUrl, [
+            'headers' => ['Content-Type' => 'application/json'],
             'body'    => wp_json_encode($body),
             'timeout' => 15,
         ]);

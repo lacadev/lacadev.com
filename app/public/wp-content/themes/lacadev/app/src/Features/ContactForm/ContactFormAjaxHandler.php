@@ -92,6 +92,16 @@ class ContactFormAjaxHandler
             wp_send_json_error(['message' => implode('<br>', $errors), 'errors' => $errors], 422);
         }
 
+        // 3.5. Verify reCAPTCHA
+        $isRecaptchaEnabled = function_exists('getOption') ? getOption('enable_recaptcha_contact') : false;
+        if ($isRecaptchaEnabled) {
+            $token = $_POST['laca_recaptcha_response'] ?? '';
+            $verify = apply_filters('laca_verify_recaptcha', true, $token);
+            if (is_wp_error($verify)) {
+                wp_send_json_error(['message' => $verify->get_error_message()], 400);
+            }
+        }
+
         // 4. Lấy IP
         $ip = self::getClientIp();
 
@@ -128,6 +138,11 @@ class ContactFormAjaxHandler
         $ajaxUrl    = admin_url('admin-ajax.php');
         $extraClass = sanitize_html_class($atts['class']);
         $formElId   = 'laca-cf-form-' . $formId;
+        $wrapId     = 'laca-cf-' . $formId;
+
+        // Build scoped CSS vars from style_settings
+        $styleSettings = json_decode($form['style_settings'] ?? '{}', true) ?: [];
+        $scopedCss     = self::buildScopedCss($wrapId, $styleSettings);
 
         // Enqueue inline CSS once
         if (!wp_style_is('laca-contact-form', 'done')) {
@@ -136,11 +151,17 @@ class ContactFormAjaxHandler
 
         ob_start();
         ?>
-        <div class="laca-contact-form-wrap <?php echo esc_attr($extraClass); ?>" id="laca-cf-<?php echo esc_attr($formId); ?>">
+        <?php if ($scopedCss): ?>
+        <style><?php echo $scopedCss; // Already sanitized via esc_attr on values ?></style>
+        <?php endif; ?>
+        <div class="laca-contact-form-wrap <?php echo esc_attr($extraClass); ?>" id="<?php echo esc_attr($wrapId); ?>">
             <form class="laca-contact-form" id="<?php echo esc_attr($formElId); ?>" novalidate>
                 <input type="hidden" name="_nonce" value="<?php echo esc_attr($nonce); ?>">
                 <input type="hidden" name="form_id" value="<?php echo esc_attr($formId); ?>">
                 <input type="hidden" name="action" value="laca_contact_submit">
+                <?php if (function_exists('getOption') && getOption('enable_recaptcha_contact')): ?>
+                    <input type="hidden" name="laca_recaptcha_response" class="laca-recaptcha-response" value="">
+                <?php endif; ?>
 
                 <?php if ($isRowBased): ?>
                     <?php foreach ($rawData as $row): ?>
@@ -522,8 +543,14 @@ class ContactFormAjaxHandler
         .laca-cf-textarea:focus,
         .laca-cf-select:focus {
             outline: none;
-            border-color: var(--primary-color, #2271b1);
+            border-color: var(--cf-primary, var(--primary-color, #2271b1));
             box-shadow: 0 0 0 3px rgba(34,113,177,.15);
+        }
+        .laca-cf-label { color: var(--cf-label-color, inherit); display: var(--cf-label-display, block); }
+        .laca-cf-input, .laca-cf-textarea, .laca-cf-select {
+            border-color: var(--cf-input-border, #ccc) !important;
+            border-radius: var(--cf-input-radius, 6px) !important;
+            padding: var(--cf-input-spacing, 10px 14px) !important;
         }
         .laca-cf-field-invalid { border-color: #d9534f !important; box-shadow: 0 0 0 3px rgba(217,83,79,.15) !important; }
         .laca-cf-field-error { color: #d9534f; font-size: 12px; margin-top: 2px; }
@@ -535,12 +562,12 @@ class ContactFormAjaxHandler
         .laca-cf-submit-row { flex-direction: row; align-items: center; justify-content: flex-end; }
         .laca-cf-submit-btn {
             display: inline-flex; align-items: center; gap: 8px;
-            padding: 11px 28px; background: var(--primary-color, #2271b1);
-            color: #fff; border: none; border-radius: 6px; font-size: 15px;
+            padding: 11px 28px; background: var(--cf-primary, var(--primary-color, #2271b1));
+            color: #fff; border: none; border-radius: var(--cf-btn-radius, 6px); font-size: 15px;
             font-weight: 600; cursor: pointer;
             transition: background 0.2s, transform 0.1s;
         }
-        .laca-cf-submit-btn:hover  { background: var(--secondary-color, #1a5a9e); }
+        .laca-cf-submit-btn:hover  { background: var(--cf-secondary, var(--secondary-color, #1a5a9e)); }
         .laca-cf-submit-btn:active { transform: scale(0.98); }
         .laca-cf-submit-btn:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
         /* hidden attribute must not be overridden by display:flex */
@@ -626,6 +653,65 @@ class ContactFormAjaxHandler
             return $label . ': Số điện thoại không hợp lệ.';
         }
         return '';
+    }
+
+    /**
+     * Sinh CSS variables scoped theo wrap ID từ style_settings.
+     */
+    private static function buildScopedCss(string $wrapId, array $s): string
+    {
+        if (empty($s)) {
+            return '';
+        }
+
+        $allowed = [
+            'primary_color'       => '--cf-primary',
+            'secondary_color'     => '--cf-secondary',
+            'input_border_color'  => '--cf-input-border',
+            'label_color'         => '--cf-label-color',
+        ];
+
+        $vars = [];
+        foreach ($allowed as $key => $var) {
+            if (!empty($s[$key])) {
+                $val    = preg_replace('/[^a-zA-Z0-9#()\s,%.+-]/', '', $s[$key]);
+                $vars[] = $var . ':' . $val;
+            }
+        }
+
+        // Numeric properties (px values)
+        foreach (['btn_border_radius' => '--cf-btn-radius', 'input_border_radius' => '--cf-input-radius'] as $key => $var) {
+            if (isset($s[$key])) {
+                $val    = (int) $s[$key];
+                $vars[] = $var . ':' . $val . 'px';
+            }
+        }
+
+        // Spacing
+        if (!empty($s['input_spacing'])) {
+            $val = preg_replace('/[^0-9px\s]/', '', $s['input_spacing']);
+            if ($val) $vars[] = '--cf-input-spacing:' . $val;
+        }
+
+        // Show label
+        if (isset($s['show_label']) && !$s['show_label']) {
+            $vars[] = '--cf-label-display:none';
+        }
+
+        $css = '';
+        if (!empty($vars)) {
+            $css .= '#' . $wrapId . '{' . implode(';', $vars) . '}';
+        }
+
+        // Custom CSS
+        if (!empty($s['custom_css'])) {
+            $custom = wp_strip_all_tags($s['custom_css']);
+            // Replace generic selector string with specific form ID
+            $custom = str_replace('__FORM__', '#' . $wrapId, $custom);
+            $css .= "\n" . $custom;
+        }
+
+        return $css;
     }
 
     private static function getClientIp(): string

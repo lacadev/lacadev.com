@@ -219,8 +219,19 @@ class DatabaseCleaner
 
         global $wpdb;
 
+        $revParents = $wpdb->get_col("SELECT post_parent FROM {$wpdb->posts} WHERE post_type='revision'");
+        $revsToDelete = 0;
+        if ($revParents) {
+            $counts = array_count_values($revParents);
+            foreach ($counts as $count) {
+                if ($count > 3) {
+                    $revsToDelete += ($count - 3);
+                }
+            }
+        }
+
         wp_send_json_success([
-            'revisions'     => (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type='revision'"),
+            'revisions'     => $revsToDelete,
             'autodrafts'    => (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status='auto-draft'"),
             'trashed_posts' => (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status='trash'"),
             'orphan_meta'   => (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->postmeta} pm LEFT JOIN {$wpdb->posts} p ON p.ID=pm.post_id WHERE p.ID IS NULL"),
@@ -260,16 +271,14 @@ class DatabaseCleaner
         global $wpdb;
         // Keep the 3 most recent revisions per post, delete the rest
         $revisions = $wpdb->get_results(
-            "SELECT ID FROM {$wpdb->posts} WHERE post_type='revision' ORDER BY post_modified DESC"
+            "SELECT ID, post_parent FROM {$wpdb->posts} WHERE post_type='revision' ORDER BY post_modified DESC"
         );
 
         $keepPerParent = [];
         $toDelete      = [];
 
         foreach ($revisions as $rev) {
-            $post = get_post($rev->ID);
-            if (!$post) { $toDelete[] = $rev->ID; continue; }
-            $parent = $post->post_parent;
+            $parent = $rev->post_parent;
             $keepPerParent[$parent] = $keepPerParent[$parent] ?? 0;
             if ($keepPerParent[$parent] < 3) {
                 $keepPerParent[$parent]++;

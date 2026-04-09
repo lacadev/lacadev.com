@@ -3,6 +3,7 @@ import './custom_thumbnail_support.js';
 import './project.js';
 import './ai-chat.js';
 import './project-charts.js';
+import './contact-form.js';
 
 import Swal from 'sweetalert2';
 window.Swal = Swal;

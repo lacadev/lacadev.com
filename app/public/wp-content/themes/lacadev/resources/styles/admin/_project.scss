@@ -5,9 +5,9 @@
 .laca-pm-item:last-child { border-bottom: none; }
 .laca-pm-meta { font-size: 11px; color: #888; margin-bottom: 4px; display: flex; justify-content: space-between; }
 .laca-pm-badge { padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 11px; }
-.laca-pm-alert-critical { background: #d9534f; color: #fff; }
-.laca-pm-alert-warning { background: #f0ad4e; color: #fff; }
-.laca-pm-alert-info { background: #5bc0de; color: #fff; }
+.laca-pm-alert-critical { background: #fef0f0; color: #c0392b; }
+.laca-pm-alert-warning  { background: #fef7ea; color: #b7770d; }
+.laca-pm-alert-info     { background: #eef3fe; color: #2c5282; }
 .laca-form-group { margin-bottom: 10px; }
 .laca-form-group select, .laca-form-group textarea, .laca-form-group input { width: 100%; border: 1px solid #ddd; padding: 6px; }
 .laca-form-group textarea { height: 60px; }

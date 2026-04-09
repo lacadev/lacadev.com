@@ -48,6 +48,12 @@ class Laca_Recaptcha {
             add_action('comment_form', [$this, 'print_hidden_field']);
             add_filter('preprocess_comment', [$this, 'verify_comment']);
         }
+
+        // Expose filter for external verification (e.g. Contact Form)
+        add_filter('laca_verify_recaptcha', function($is_valid, $token) {
+            $verify = $this->verify_token($token);
+            return is_wp_error($verify) ? $verify : true;
+        }, 10, 2);
     }
 
     /**

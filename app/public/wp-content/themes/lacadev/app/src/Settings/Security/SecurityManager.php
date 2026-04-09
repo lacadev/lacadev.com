@@ -82,16 +82,16 @@ class SecurityManager
     {
         $activeTab = sanitize_key($_GET['tab'] ?? 'audit');
         $tabs = [
-            'audit'   => '📊 Kiểm tra bảo mật',
-            'fim'     => '🗂️ Giám sát file',
-            'malware' => '🦠 Quét mã độc',
-            'users'   => '👥 User ẩn',
-            'login'   => '🔑 URL đăng nhập',
-            '2fa'     => '📱 2FA TOTP',
+            'audit'   => 'Kiểm tra bảo mật',
+            'fim'     => 'Giám sát file',
+            'malware' => 'Quét mã độc',
+            'users'   => 'User ẩn',
+            'login'   => 'URL đăng nhập',
+            '2fa'     => '2FA TOTP',
         ];
         ?>
         <div class="wrap">
-            <h1>🔒 Bảo mật</h1>
+            <h1>Bảo mật</h1>
             <nav class="nav-tab-wrapper">
                 <?php foreach ($tabs as $key => $label): ?>
                     <a href="<?php echo esc_url(add_query_arg(['page' => 'laca-security', 'tab' => $key], admin_url('admin.php'))); ?>"
@@ -170,7 +170,7 @@ class SecurityManager
                     </label>
                 <?php endforeach; ?>
             </div>
-            <button id="btn-malware-scan" class="button button-primary">🦠 Bắt đầu quét</button>
+            <button id="btn-malware-scan" class="button button-primary">Bắt đầu quét</button>
         </div>
         <div id="malware-progress" style="display:none;margin-top:12px;">
             <div id="malware-progress-bar" style="height:6px;background:#2271b1;width:0%;border-radius:3px;transition:width 0.3s;"></div>
@@ -555,7 +555,7 @@ class SecurityManager
             }
 
             function finishScan(errMsg){
-                $('#btn-malware-scan').prop('disabled',false).text('🦠 Bắt đầu quét');
+                $('#btn-malware-scan').prop('disabled',false).text('Bắt đầu quét');
                 if (errMsg) { $('#malware-progress').hide(); $('#malware-result').html('<p style="color:red;">'+errMsg+'</p>'); }
                 else { $('#malware-progress').hide(); }
             }

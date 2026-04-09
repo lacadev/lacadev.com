@@ -219,6 +219,18 @@ add_filter('query_vars', 'lacadev_register_search_query_vars');
 new \App\Features\DynamicCPT\DynamicCptManager();
 
 // =============================================================================
+// DATABASE TABLES
+// =============================================================================
+add_action('after_switch_theme', function () {
+    \App\Databases\ContactFormTable::install();
+    \App\Settings\EmailLog\EmailLogTable::install();
+});
+
+// Đảm bảo bảng luôn tồn tại
+\App\Databases\ContactFormTable::install();
+\App\Settings\EmailLog\EmailLogTable::install();
+
+// =============================================================================
 // COMMENTS CALLBACK
 // =============================================================================
 function lacadev_custom_comments_callback( $comment, $args, $depth ) {

@@ -146,6 +146,15 @@ add_action('init', function () {
 }, 10);
 
 /**
+ * Trang tổng hợp cảnh báo tất cả dự án
+ */
+add_action('init', function () {
+    if (class_exists('\App\Features\ProjectManagement\ProjectGlobalAlertsPage')) {
+        (new \App\Features\ProjectManagement\ProjectGlobalAlertsPage())->register();
+    }
+});
+
+/**
  * Khởi tạo Handler xử lý Notifications & Cron (Project Manager)
  * và Export PDF Quote
  */

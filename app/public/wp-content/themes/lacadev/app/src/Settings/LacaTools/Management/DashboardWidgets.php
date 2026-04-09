@@ -27,14 +27,14 @@ class DashboardWidgets
         add_action('admin_enqueue_scripts', [$this, 'enqueueDashboardScripts']);
 
         add_action('wp_dashboard_setup', function () {
-            wp_add_dashboard_widget('lacadev_management_hub',    '🚀 LacaDev Business Hub',   [$this, 'renderDashboardWidget']);
-            wp_add_dashboard_widget('lacadev_content_tracker',  '📈 Báo cáo Nội dung',       [$this, 'renderContentTrackerWidget']);
-            wp_add_dashboard_widget('lacadev_site_health',      '🩺 Tình trạng Website',      [$this, 'renderSiteHealthWidget']);
-            wp_add_dashboard_widget('lacadev_media_insights',   '🖼️ Thư viện Media',          [$this, 'renderMediaLibraryWidget']);
-            wp_add_dashboard_widget('lacadev_todo_widget',      '✅ Việc cần làm',            [$this, 'renderTodoWidget']);
-            wp_add_dashboard_widget('lacadev_quick_search',     '🔍 Tìm kiếm nhanh',          [$this, 'renderQuickSearchWidget']);
+            wp_add_dashboard_widget('lacadev_management_hub',    'LacaDev — Tổng quan',   [$this, 'renderDashboardWidget']);
+            wp_add_dashboard_widget('lacadev_content_tracker',  'Báo cáo Nội dung',      [$this, 'renderContentTrackerWidget']);
+            wp_add_dashboard_widget('lacadev_site_health',      'Tình trạng Website',     [$this, 'renderSiteHealthWidget']);
+            wp_add_dashboard_widget('lacadev_media_insights',   'Thư viện Media',         [$this, 'renderMediaLibraryWidget']);
+            wp_add_dashboard_widget('lacadev_todo_widget',      'Việc cần làm',           [$this, 'renderTodoWidget']);
+            wp_add_dashboard_widget('lacadev_quick_search',     'Tìm kiếm nhanh',         [$this, 'renderQuickSearchWidget']);
             if (post_type_exists('project')) {
-                wp_add_dashboard_widget('lacadev_project_charts', '📊 Thống kê Dự án', [$this, 'renderProjectChartsWidget']);
+                wp_add_dashboard_widget('lacadev_project_charts', 'Thống kê Dự án', [$this, 'renderProjectChartsWidget']);
             }
         });
 
@@ -135,8 +135,8 @@ class DashboardWidgets
         }
 
         $maintenance_status = (get_option('_is_maintenance') === 'yes')
-            ? '<span class="stat-maintenance--on">🔴 Đang Bật</span>'
-            : '<span class="stat-maintenance--off">🟢 Đã Tắt</span>';
+            ? '<span class="stat-maintenance--on"><span class="laca-dot laca-dot--danger"></span>Đang Bật</span>'
+            : '<span class="stat-maintenance--off"><span class="laca-dot laca-dot--success"></span>Đã Tắt</span>';
         ?>
         <div class="lacadev-dashboard-grid">
             <div class="stat-item"><span class="stat-value"><?php echo esc_html($posts_count); ?></span><span class="stat-label">Bài viết</span></div>
@@ -147,20 +147,20 @@ class DashboardWidgets
         </div>
         <div class="hub-section-title">Thao tác nhanh</div>
         <div class="lacadev-actions-list">
-            <a href="<?php echo esc_url(home_url('/')); ?>" target="_blank" class="lacadev-btn-quick"><span>🌐</span> Xem site</a>
-            <a href="<?php echo esc_url(admin_url('post-new.php')); ?>" class="lacadev-btn-quick"><span>📝</span> Viết bài mới</a>
-            <a href="<?php echo esc_url(admin_url('edit.php?post_status=draft&post_type=post')); ?>" class="lacadev-btn-quick"><span>📋</span> Bản nháp</a>
-            <a href="<?php echo esc_url(admin_url('edit.php?post_status=future&post_type=post')); ?>" class="lacadev-btn-quick"><span>📅</span> Đã lên lịch</a>
+            <a href="<?php echo esc_url(home_url('/')); ?>" target="_blank" class="lacadev-btn-quick">Xem site</a>
+            <a href="<?php echo esc_url(admin_url('post-new.php')); ?>" class="lacadev-btn-quick">Viết bài mới</a>
+            <a href="<?php echo esc_url(admin_url('edit.php?post_status=draft&post_type=post')); ?>" class="lacadev-btn-quick">Bản nháp</a>
+            <a href="<?php echo esc_url(admin_url('edit.php?post_status=future&post_type=post')); ?>" class="lacadev-btn-quick">Đã lên lịch</a>
             <?php foreach (get_post_types(['public' => true, '_builtin' => false], 'objects') as $pt) : ?>
                 <?php if (class_exists('WooCommerce') && $pt->name === 'product') continue; ?>
-                <a href="<?php echo esc_url(admin_url('post-new.php?post_type=' . $pt->name)); ?>" class="lacadev-btn-quick"><span>➕</span> Thêm <?php echo esc_html($pt->labels->singular_name); ?></a>
+                <a href="<?php echo esc_url(admin_url('post-new.php?post_type=' . $pt->name)); ?>" class="lacadev-btn-quick">Thêm <?php echo esc_html($pt->labels->singular_name); ?></a>
             <?php endforeach; ?>
             <?php if (class_exists('WooCommerce')) : ?>
-                <a href="<?php echo esc_url(admin_url('post-new.php?post_type=product')); ?>" class="lacadev-btn-quick"><span>🎁</span> Thêm sản phẩm</a>
-                <a href="<?php echo esc_url(admin_url('edit.php?post_type=shop_order&status=wc-processing')); ?>" class="lacadev-btn-quick"><span>🚩</span> Đơn hàng mới</a>
+                <a href="<?php echo esc_url(admin_url('post-new.php?post_type=product')); ?>" class="lacadev-btn-quick">Thêm sản phẩm</a>
+                <a href="<?php echo esc_url(admin_url('edit.php?post_type=shop_order&status=wc-processing')); ?>" class="lacadev-btn-quick">Đơn hàng mới</a>
             <?php endif; ?>
-            <a href="<?php echo esc_url(admin_url('upload.php?detached=1&mode=list')); ?>" class="lacadev-btn-quick"><span>🖼️</span> Media không dùng</a>
-            <a href="<?php echo esc_url(admin_url('admin.php?page=app-theme-options.php')); ?>" class="lacadev-btn-quick"><span>⚙️</span> Cấu hình Theme</a>
+            <a href="<?php echo esc_url(admin_url('upload.php?detached=1&mode=list')); ?>" class="lacadev-btn-quick">Media không dùng</a>
+            <a href="<?php echo esc_url(admin_url('admin.php?page=app-theme-options.php')); ?>" class="lacadev-btn-quick">Cấu hình Theme</a>
         </div>
         <?php
     }
@@ -187,19 +187,19 @@ class DashboardWidgets
         $scheduled_count = $scheduled->found_posts;
         ?>
         <ul class="laca-health-list">
-            <li><span class="health-label">🔒 SSL (HTTPS)</span><span class="health-value <?php echo $is_ssl ? 'health-ok' : 'health-warn'; ?>"><?php echo $is_ssl ? 'Bật' : 'Tắt'; ?></span></li>
-            <li><span class="health-label">⚙️ WordPress</span><span class="health-value"><?php echo esc_html($wp_ver); ?></span></li>
-            <li><span class="health-label">🐘 PHP</span><span class="health-value"><?php echo esc_html($php_ver); ?></span></li>
+            <li><span class="health-label">SSL (HTTPS)</span><span class="health-value <?php echo $is_ssl ? 'health-ok' : 'health-warn'; ?>"><?php echo $is_ssl ? 'Bật' : 'Tắt'; ?></span></li>
+            <li><span class="health-label">WordPress</span><span class="health-value"><?php echo esc_html($wp_ver); ?></span></li>
+            <li><span class="health-label">PHP</span><span class="health-value"><?php echo esc_html($php_ver); ?></span></li>
             <li>
-                <span class="health-label">📝 Bản nháp</span>
+                <span class="health-label">Bản nháp</span>
                 <span class="health-value"><?php echo esc_html($draft_total); ?><?php if ($draft_total > 0) : ?><a class="health-link" href="<?php echo esc_url(admin_url('edit.php?post_status=draft')); ?>">Xem</a><?php endif; ?></span>
             </li>
             <li>
-                <span class="health-label">📅 Đã lên lịch</span>
+                <span class="health-label">Đã lên lịch</span>
                 <span class="health-value"><?php echo esc_html($scheduled_count); ?><?php if ($scheduled_count > 0) : ?><a class="health-link" href="<?php echo esc_url(admin_url('edit.php?post_status=future')); ?>">Xem</a><?php endif; ?></span>
             </li>
             <li>
-                <span class="health-label">🗑️ Thùng rác</span>
+                <span class="health-label">Thùng rác</span>
                 <span class="health-value"><?php echo esc_html($trash_total); ?><?php if ($trash_total > 0) : ?><a class="health-link" href="<?php echo esc_url(admin_url('edit.php?post_status=trash')); ?>">Dọn</a><?php endif; ?></span>
             </li>
         </ul>
@@ -216,10 +216,10 @@ class DashboardWidgets
         $orphan_count = $stats['orphan_count'];
         ?>
         <ul class="laca-health-list laca-media-list">
-            <li><span class="health-label">📊 Tổng số file</span><span class="health-value"><?php echo esc_html($stats['total_files']); ?></span></li>
-            <li><span class="health-label">💾 Tổng dung lượng</span><span class="health-value"><?php echo esc_html($stats['total_size']); ?></span></li>
+            <li><span class="health-label">Tổng số file</span><span class="health-value"><?php echo esc_html($stats['total_files']); ?></span></li>
+            <li><span class="health-label">Tổng dung lượng</span><span class="health-value"><?php echo esc_html($stats['total_size']); ?></span></li>
             <li>
-                <span class="health-label">🖼️ Media không sử dụng</span>
+                <span class="health-label">Media không sử dụng</span>
                 <span class="health-value">
                     <?php echo esc_html($orphan_count); ?>
                     <?php if ($orphan_count > 0) : ?>

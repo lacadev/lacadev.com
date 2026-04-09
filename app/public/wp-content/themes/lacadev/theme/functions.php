@@ -274,6 +274,7 @@ add_action('after_switch_theme', function () {
 // Đảm bảo bảng luôn tồn tại (có version check bên trong, safe khi gọi mỗi request)
 \App\Databases\ProjectLogTable::install();
 \App\Databases\ProjectAlertTable::install();
+\App\Databases\ContactFormTable::install();
 
 // =============================================================================
 // CUSTOM POST TYPES

@@ -5,6 +5,7 @@
 @use "project";
 @use "admin-dashboard";
 @use "admin-help";
+@use "contact-form";
 
 html :where(.wp-block) {
   max-width: 90rem !important;

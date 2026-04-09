@@ -17,10 +17,10 @@ use App\Models\ProjectLog;
 <!-- ALERTS & TRACKER SECTION -->
 <div class="laca-pm-col" style="display:flex; flex-direction:column; gap:20px;">
     <div>
-        <h3 style="margin-top:0">⚠️ Cảnh báo đang hoạt động</h3>
+        <h3 style="margin-top:0">Cảnh báo đang hoạt động</h3>
         <div class="laca-pm-list">
             <?php if (empty($alerts)): ?>
-                <p style="color:#5cb85c; font-weight:600;">✅ Không có cảnh báo nào.</p>
+                <p style="color:#2e7d52; font-weight:600;">Không có cảnh báo nào.</p>
             <?php else: ?>
                 <?php foreach ($alerts as $a): ?>
                     <div class="laca-pm-item" id="alert-<?php echo $a['id']; ?>">
@@ -42,7 +42,7 @@ use App\Models\ProjectLog;
 
     <!-- LOGS SECTION -->
     <hr style="border:0; border-top:1px dashed #ddd; margin:18px 0 14px;">
-    <h3 style="margin-top:0">📋 Lịch sử & Nhật ký</h3>
+    <h3 style="margin-top:0">Lịch sử & Nhật ký</h3>
 
     <?php
     // Block: Việc chưa hoàn thành
@@ -54,25 +54,19 @@ use App\Models\ProjectLog;
     if (!empty($pendingTasks) || !empty($pendingPlugins)):
     ?>
     <div id="laca-pending-tasks-block" style="margin-bottom:16px; padding:10px 14px; background:#fff8e1; border-left:3px solid #f5a623; border-radius:4px;">
-        <strong style="font-size:13px; color:#7c5b00;">⏳ Việc chưa hoàn thành</strong>
+        <strong style="font-size:13px; color:#7c5b00;">Việc chưa hoàn thành</strong>
 
         <?php if (!empty($pendingTasks)): ?>
         <ul style="margin:8px 0 0 0; padding-left:16px; font-size:13px; color:#444;">
-            <?php
-            $catIcons = ['bug'=>'🐛','page'=>'🖼️','content'=>'📝','seo'=>'🔍','feature'=>'⭐','other'=>'📌'];
-            foreach ($pendingTasks as $pt):
-                $cat = $pt['category'] ?? (($pt['source'] ?? '') === 'page' ? 'page' : 'other');
-            ?>
-            <li style="margin-bottom:3px;">
-                <?php echo $catIcons[$cat] ?? '📌'; ?> <?php echo esc_html($pt['name']); ?>
-            </li>
+            <?php foreach ($pendingTasks as $pt): ?>
+            <li style="margin-bottom:3px;"><?php echo esc_html($pt['name']); ?></li>
             <?php endforeach; ?>
         </ul>
         <?php endif; ?>
 
         <?php if (!empty($pendingPlugins)): ?>
         <div style="margin-top:<?php echo !empty($pendingTasks) ? '10px' : '6px'; ?>;">
-            <strong style="font-size:12px; color:#7c5b00;">🔌 Plugin cần cập nhật:</strong>
+            <strong style="font-size:12px; color:#7c5b00;">Plugin cần cập nhật:</strong>
             <ul style="margin:4px 0 0 0; padding-left:16px; font-size:12px; color:#555;">
                 <?php foreach ($pendingPlugins as $pp): ?>
                 <li style="margin-bottom:2px;">

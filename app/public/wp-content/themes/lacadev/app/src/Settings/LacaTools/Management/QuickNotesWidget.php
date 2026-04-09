@@ -25,7 +25,7 @@ class QuickNotesWidget
     {
         wp_add_dashboard_widget(
             'laca_quick_notes',
-            '🗒 Ghi chú nhanh',
+            'Ghi chú nhanh',
             [$this, 'renderWidget']
         );
     }

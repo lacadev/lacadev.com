@@ -74,8 +74,8 @@ class TrackerEndpointHandler
                 $this->createAlert($projectId, $content, $alertLevel);
             } elseif (in_array($type, $warningTypes, true)) {
                 $logType = 'note';
-                // Tạo Alert warning cho update pending
-                $this->createAlert($projectId, $content, 'warning');
+                // Tạo Alert warning cho update pending — dedup theo type + project
+                $this->createAlertByType($projectId, $content, 'warning', 'plugin_update');
                 // Lưu structured plugin list để UI remote update có thể đọc
                 $pendingPlugins = $log['plugins'] ?? [];
                 if (!empty($pendingPlugins) && is_array($pendingPlugins)) {
@@ -125,7 +125,7 @@ class TrackerEndpointHandler
 
     /**
      * Tạo cảnh báo lên hệ thống chính nếu phát hiện sửa code / file đáng ngờ.
-     * Skip nếu đã tồn tại alert chưa resolve cùng nội dung (tránh trùng lặp).
+     * Double dedup: theo nội dung + theo khoảng thời gian 1 giờ.
      */
     private function createAlert(int $projectId, string $msg, string $level = 'warning'): void
     {
@@ -133,14 +133,53 @@ class TrackerEndpointHandler
             return;
         }
 
-        // Dedup: không tạo alert nếu cùng nội dung + project đang chưa resolve
+        // Dedup kiểu 1: theo nội dung tin nhắn
         if (ProjectAlert::existsActiveByMsg($projectId, $msg)) {
+            return;
+        }
+
+        // Dedup kiểu 2: không tạo thêm alert cùng nội dung trong 1 giờ
+        global $wpdb;
+        $table = \App\Databases\ProjectAlertTable::getTableName();
+        $recentCount = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table}
+             WHERE project_id = %d AND is_resolved = 0
+             AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)
+             AND alert_msg = %s",
+            $projectId,
+            ProjectAlert::stripEmoji(sanitize_textarea_field($msg))
+        ));
+
+        if ($recentCount > 0) {
             return;
         }
 
         ProjectAlert::add([
             'project_id'  => $projectId,
             'alert_type'  => 'security',
+            'alert_level' => $level,
+            'alert_msg'   => $msg,
+        ]);
+    }
+
+    /**
+     * Tạo alert với dedup theo alert_type + project (dùng cho update_pending).
+     * Nếu đã có alert cùng type chưa resolve → skip.
+     */
+    private function createAlertByType(int $projectId, string $msg, string $level, string $alertType): void
+    {
+        if (!class_exists('\App\Models\ProjectAlert')) {
+            return;
+        }
+
+        // Dedup: không tạo nếu đã có alert cùng type + project chưa resolve
+        if (ProjectAlert::existsActive($projectId, $alertType)) {
+            return;
+        }
+
+        ProjectAlert::add([
+            'project_id'  => $projectId,
+            'alert_type'  => $alertType,
             'alert_level' => $level,
             'alert_msg'   => $msg,
         ]);
