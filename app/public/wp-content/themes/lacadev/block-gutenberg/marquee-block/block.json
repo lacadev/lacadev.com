@@ -37,16 +37,33 @@
           "url": ""
         }
       ]
+    },
+    "__isPreview": {
+      "type": "boolean",
+      "default": false
     }
   },
   "example": {
     "attributes": {
       "brands": [
-        { "name": "LA CA DEV", "url": "" },
-        { "name": "CREATIVE AGENCY", "url": "" },
-        { "name": "UI/UX DESIGN", "url": "" },
-        { "name": "WEB DEVELOPMENT", "url": "" }
-      ]
+        {
+          "name": "LA CA DEV",
+          "url": ""
+        },
+        {
+          "name": "CREATIVE AGENCY",
+          "url": ""
+        },
+        {
+          "name": "UI/UX DESIGN",
+          "url": ""
+        },
+        {
+          "name": "WEB DEVELOPMENT",
+          "url": ""
+        }
+      ],
+      "__isPreview": true
     }
   },
   "supports": {

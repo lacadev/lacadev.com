@@ -12,7 +12,8 @@
   "style": "lacadev-block-slogan-block",
   "example": {
     "attributes": {
-      "slogan": "La Cà <span>Dev</span>"
+      "slogan": "La Cà <span>Dev</span>",
+      "__isPreview": true
     }
   },
   "keywords": [
@@ -25,6 +26,10 @@
     "slogan": {
       "type": "string",
       "default": "La Cà <span>Dev</span>"
+    },
+    "__isPreview": {
+      "type": "boolean",
+      "default": false
     }
   },
   "supports": {

@@ -55,6 +55,10 @@
     "buttonUrl": {
       "type": "string",
       "default": "/lien-he/"
+    },
+    "__isPreview": {
+      "type": "boolean",
+      "default": false
     }
   },
   "example": {
@@ -62,7 +66,8 @@
       "title": "LA CÀ DEV CÓ GÌ",
       "description": "<p>La cà Dev là nơi mình làm web WordPress, thiết kế thương hiệu và hỗ trợ marketing online.</p>",
       "buttonText": "Cùng tôi tạo nên thương hiệu của bạn",
-      "buttonUrl": "/lien-he/"
+      "buttonUrl": "/lien-he/",
+      "__isPreview": true
     }
   },
   "supports": {

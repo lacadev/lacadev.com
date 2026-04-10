@@ -49,6 +49,10 @@
           "desc": "Bàn giao, tối ưu và đồng hành cùng sự tăng trưởng."
         }
       ]
+    },
+    "__isPreview": {
+      "type": "boolean",
+      "default": false
     }
   },
   "example": {
@@ -56,11 +60,28 @@
       "title": "QUY TRÌNH HÀNH ĐỘNG",
       "description": "Chúng tôi tin vào một quy trình minh bạch và hiệu quả",
       "steps": [
-        { "num": "01", "title": "Discovery", "desc": "Lắng nghe và thấu hiểu bài toán kinh doanh của bạn." },
-        { "num": "02", "title": "Design", "desc": "Kiến tạo giải pháp tối giản, tập trung vào trải nghiệm." },
-        { "num": "03", "title": "Develop", "desc": "Lập trình tinh gọn, hiệu năng cao và bảo mật." },
-        { "num": "04", "title": "Deliver", "desc": "Bàn giao, tối ưu và đồng hành cùng sự tăng trưởng." }
-      ]
+        {
+          "num": "01",
+          "title": "Discovery",
+          "desc": "Lắng nghe và thấu hiểu bài toán kinh doanh của bạn."
+        },
+        {
+          "num": "02",
+          "title": "Design",
+          "desc": "Kiến tạo giải pháp tối giản, tập trung vào trải nghiệm."
+        },
+        {
+          "num": "03",
+          "title": "Develop",
+          "desc": "Lập trình tinh gọn, hiệu năng cao và bảo mật."
+        },
+        {
+          "num": "04",
+          "title": "Deliver",
+          "desc": "Bàn giao, tối ưu và đồng hành cùng sự tăng trưởng."
+        }
+      ],
+      "__isPreview": true
     }
   },
   "supports": {

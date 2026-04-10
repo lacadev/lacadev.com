@@ -24,12 +24,17 @@
     "subtitle": {
       "type": "string",
       "default": "Triết lý của chúng tôi"
+    },
+    "__isPreview": {
+      "type": "boolean",
+      "default": false
     }
   },
   "example": {
     "attributes": {
       "title": "TỐI GIẢN TRONG THIẾT KẾ",
-      "subtitle": "Triết lý của chúng tôi"
+      "subtitle": "Triết lý của chúng tôi",
+      "__isPreview": true
     }
   },
   "supports": {

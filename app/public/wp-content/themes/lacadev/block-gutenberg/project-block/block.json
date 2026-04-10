@@ -60,6 +60,10 @@
     "buttonUrl": {
       "type": "string",
       "default": ""
+    },
+    "__isPreview": {
+      "type": "boolean",
+      "default": false
     }
   },
   "example": {
@@ -67,7 +71,8 @@
       "title": "Selected Works",
       "description": "A curated showcase by La Cà Dev. Rugged, minimalist, and bold.",
       "countDesktop": 6,
-      "countMobile": 4
+      "countMobile": 4,
+      "__isPreview": true
     }
   },
   "supports": {

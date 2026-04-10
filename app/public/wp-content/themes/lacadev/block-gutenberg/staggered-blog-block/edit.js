@@ -5,7 +5,9 @@ import {
 	RichText,
 	InspectorControls,
 	URLInput,
+	useBlockEditContext,
 } from '@wordpress/block-editor';
+import previewImage from './preview.png';
 import {
 	PanelBody,
 	TextControl,
@@ -19,6 +21,16 @@ import {
 import { useSelect } from '@wordpress/data';
 
 export default function Edit( { attributes, setAttributes } ) {
+	const { __unstableIsPreviewMode } = useBlockEditContext();
+	if ( ( __unstableIsPreviewMode ?? false ) || ( attributes.__isPreview ?? false ) ) {
+		return (
+			<div style={ { width: '100%', lineHeight: 0 } }>
+				<img src={ previewImage } alt="Block Preview" style={ { width: '100%', height: 'auto', display: 'block' } } />
+			</div>
+		);
+	}
+
+
 	const {
 		postType,
 		taxonomy,

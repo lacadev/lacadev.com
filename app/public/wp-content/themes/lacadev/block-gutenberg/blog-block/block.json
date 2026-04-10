@@ -64,6 +64,10 @@
     "buttonUrl": {
       "type": "string",
       "default": "/blog/"
+    },
+    "__isPreview": {
+      "type": "boolean",
+      "default": false
     }
   },
   "example": {
@@ -72,7 +76,8 @@
       "description": "Những bài viết hay nhất từ La Cà Dev",
       "count": 3,
       "buttonText": "Xem tất cả bài viết",
-      "buttonUrl": "/blog/"
+      "buttonUrl": "/blog/",
+      "__isPreview": true
     }
   },
   "supports": {

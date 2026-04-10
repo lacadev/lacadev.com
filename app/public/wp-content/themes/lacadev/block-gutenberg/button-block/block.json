@@ -53,6 +53,10 @@
     "className": {
       "type": "string",
       "default": ""
+    },
+    "__isPreview": {
+      "type": "boolean",
+      "default": false
     }
   },
   "example": {
@@ -60,7 +64,8 @@
       "text": "Tìm hiểu ngay",
       "url": "#",
       "style": "primary",
-      "alignment": "center"
+      "alignment": "center",
+      "__isPreview": true
     }
   },
   "supports": {

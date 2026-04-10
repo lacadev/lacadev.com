@@ -26,11 +26,16 @@
     },
     "bgImageUrl": {
       "type": "string"
+    },
+    "__isPreview": {
+      "type": "boolean",
+      "default": false
     }
   },
   "example": {
     "attributes": {
-      "content": "Xin chào!\nMình là một dev WordPress với niềm đam mê mãnh liệt dành cho du lịch bụi, diy và thiên nhiên."
+      "content": "Xin chào!\nMình là một dev WordPress với niềm đam mê mãnh liệt dành cho du lịch bụi, diy và thiên nhiên.",
+      "__isPreview": true
     }
   },
   "supports": {

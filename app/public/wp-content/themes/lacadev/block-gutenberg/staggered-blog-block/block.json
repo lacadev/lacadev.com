@@ -65,6 +65,10 @@
     "buttonUrl": {
       "type": "string",
       "default": "/blog/"
+    },
+    "__isPreview": {
+      "type": "boolean",
+      "default": false
     }
   },
   "example": {
@@ -73,7 +77,8 @@
       "description": "Khám phá những bài viết hay nhất",
       "count": 3,
       "buttonText": "Khám phá tất cả bài viết",
-      "buttonUrl": "/blog/"
+      "buttonUrl": "/blog/",
+      "__isPreview": true
     }
   },
   "supports": {

@@ -1,8 +1,21 @@
 import { __ } from '@wordpress/i18n';
-import { useBlockProps, RichText, InspectorControls, MediaUpload, MediaUploadCheck } from '@wordpress/block-editor';
+import { useBlockProps, RichText, InspectorControls, MediaUpload, MediaUploadCheck ,
+	useBlockEditContext,
+} from '@wordpress/block-editor';
+import previewImage from './preview.png';
 import { PanelBody, Button, Dashicon } from '@wordpress/components';
 
 export default function Edit( { attributes, setAttributes } ) {
+	const { __unstableIsPreviewMode } = useBlockEditContext();
+	if ( ( __unstableIsPreviewMode ?? false ) || ( attributes.__isPreview ?? false ) ) {
+		return (
+			<div style={ { width: '100%', lineHeight: 0 } }>
+				<img src={ previewImage } alt="Block Preview" style={ { width: '100%', height: 'auto', display: 'block' } } />
+			</div>
+		);
+	}
+
+
 	const { technologies } = attributes;
 
 	const updateTech = ( index, key, value ) => {
