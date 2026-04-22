@@ -11,17 +11,6 @@ if (! defined('ABSPATH')) {
 }
 
 /**
- * Ẩn các menu thừa không cần thiết cho workflow LacaDev.
- */
-add_action('admin_menu', function () {
-    // Ẩn Comments (thường không dùng)
-    remove_menu_page('edit-comments.php');
-
-    // Ẩn Tools mặc định, giữ lại LacaTools custom
-    // remove_menu_page('tools.php');
-}, 999);
-
-/**
  * Admin bar: ẩn WP logo, thay bằng branding LacaDev.
  */
 add_action('admin_bar_menu', function (\WP_Admin_Bar $wp_admin_bar) {
@@ -71,10 +60,3 @@ add_filter('update_footer', function () {
         esc_html(get_bloginfo('version'))
     );
 }, 11);
-
-/**
- * Thêm class body cho theme mặc định dark sidebar.
- */
-// add_filter('admin_body_class', function (string $classes) {
-//     return $classes . ' laca-dark-admin';
-// });

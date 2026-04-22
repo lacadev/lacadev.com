@@ -151,13 +151,32 @@ add_action('init', 'lacadev_register_custom_blocks', 10);
  * Register custom block category
  */
 function lacadev_register_block_category($categories, $post) {
+    $default_category = [
+        'slug'  => 'lacadev-blocks',
+        'title' => __('La Cà Blocks', 'laca'),
+        'icon'  => 'admin-customizer',
+    ];
+
+    /**
+     * Allow each project to override block category config.
+     *
+     * Example:
+     * add_filter('lacadev_block_category_config', function ($config) {
+     *     $config['title'] = __('PĐN Blocks', 'laca');
+     *     return $config;
+     * });
+     */
+    $category = apply_filters('lacadev_block_category_config', $default_category, $post);
+
+    if (!is_array($category)) {
+        $category = $default_category;
+    }
+
+    $category = wp_parse_args($category, $default_category);
+
     return array_merge(
         [
-            [
-                'slug'  => 'lacadev-blocks',
-                'title' => __('La Cà Blocks', 'laca'),
-                'icon'  => 'admin-customizer',
-            ],
+            $category,
         ],
         $categories
     );
