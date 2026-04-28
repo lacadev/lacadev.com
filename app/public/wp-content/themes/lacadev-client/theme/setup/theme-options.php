@@ -40,6 +40,25 @@ $optionsPage = Container::make('theme_options', __('Laca Theme', 'laca'))
 			->set_attribute('placeholder', 'Address | Địa chỉ'),
 		Field::make('textarea', 'googlemap' . currentLanguage(), __('', 'laca'))
 			->set_attribute('placeholder', 'Google map'),
+
+		Field::make('complex', 'phone_numbers' . currentLanguage(), __('Số hotline', 'laca'))->set_width(50)
+			->set_layout('tabbed-vertical')
+			->add_fields([
+				Field::make('text', 'name', __('', 'laca'))->set_width(50)
+				->set_attribute('placeholder', 'Tên hotline'),
+				Field::make('text', 'phone', __('', 'laca'))->set_width(50)
+				->set_attribute('placeholder', 'Số điện thoại'),
+			])->set_header_template('<% if (name) { %><%- name %><% } %>'),
+		
+		Field::make('complex', 'address_locations' . currentLanguage(), __('Địa điểm', 'laca'))->set_width(50)
+			->set_layout('tabbed-vertical')
+			->add_fields([
+				Field::make('text', 'branch', __('', 'laca'))->set_width(50)
+				->set_attribute('placeholder', 'Branch | Chi nhánh'),
+				Field::make('textarea', 'address', __('', 'laca'))->set_width(50)
+				->set_attribute('placeholder', 'Address | Địa chỉ'),
+			])->set_header_template('<% if (branch) { %><%- branch %><% } %>'),
+		
 		Field::make('text', 'email' . currentLanguage(), __('', 'laca'))->set_width(33.33)
 			->set_attribute('placeholder', 'Email'),
 		Field::make('text', 'phone_number' . currentLanguage(), __('', 'laca'))->set_width(33.33)
@@ -96,3 +115,8 @@ $optionsPage = Container::make('theme_options', __('Laca Theme', 'laca'))
 			])
 			->set_default_value('gemini'),
 	]);
+
+/**
+ * Allow child theme to append tabs to the same Laca Theme options page.
+ */
+do_action('lacadev/theme_options/register_child_tabs', $optionsPage);

@@ -34,3 +34,6 @@ Thumbs.db
 composer.lock
 yarn.lock
 package-lock.json
+.phpunit.cache
+/tests
+/phpunit.xml.dist

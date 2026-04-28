@@ -1,6 +1,6 @@
 <?php
 if (!defined('ABSPATH')) {
-    exit;
+	exit;
 }
 
 /**
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 
 <head>
 	<meta http-equiv="Content-Type" content="<?php bloginfo('html_type'); ?>; charset=<?php bloginfo('charset'); ?>" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
 	<link rel="profile" href="http://gmpg.org/xfn/11" />
 	<link rel="pingback" href="<?php bloginfo('pingback_url'); ?>" />
 	<?php wp_head(); ?>
@@ -38,27 +38,33 @@ if (!defined('ABSPATH')) {
 	<link rel="manifest" href="<?php theAsset('favicon/manifest.json'); ?>">
 	<meta name="msapplication-TileColor" content="#ffffff">
 	<meta name="msapplication-TileImage" content="<?php theAsset('favicon/ms-icon-144x144.png'); ?>">
-    <meta name="theme-color" content="#ffffff">
-    <?php
-    $critical_css_path = get_template_directory() . '/dist/styles/critical.css';
-    if (file_exists($critical_css_path)) {
-        echo '<style id="critical-css">' . file_get_contents($critical_css_path) . '</style>';
-    }
-    ?>
-    <style>
-        :root {
-            /* Theme colors */
-            --primary-color: <?php echo carbon_get_theme_option('primary_color'); ?>;
-            --second-color: <?php echo carbon_get_theme_option('secondary_color'); ?>;
-            --bg-color: <?php echo carbon_get_theme_option('bg_color'); ?>;
-        }
-    </style>
+	<meta name="theme-color" content="#ffffff">
+	<?php
+	$critical_css_path = get_template_directory() . '/dist/styles/critical.css';
+	if (file_exists($critical_css_path)) {
+		echo '<style id="critical-css">' . file_get_contents($critical_css_path) . '</style>';
+	}
+	?>
+	<style>
+		:root {
+			/* Theme colors */
+			--primary-color:
+				<?php echo carbon_get_theme_option('primary_color'); ?>
+			;
+			--second-color:
+				<?php echo carbon_get_theme_option('secondary_color'); ?>
+			;
+			--bg-color:
+				<?php echo carbon_get_theme_option('bg_color'); ?>
+			;
+		}
+	</style>
 </head>
 
 <body <?php body_class(); ?>>
-    <?php
-    app_shim_wp_body_open();
-    ?>
+	<?php
+	app_shim_wp_body_open();
+	?>
 
 	<!-- Skip to content link for accessibility -->
 	<a class="skip-link screen-reader-text" href="#main-content">
@@ -71,8 +77,9 @@ if (!defined('ABSPATH')) {
 	endif;
 	?>
 
-	<div class="wrapper" data-barba="wrapper">
-		<?php if (!is_404()) : ?>
-		
-        <?php endif; ?>
-        <div data-barba="container" data-barba-namespace="default">
+	<div class="wrapper">
+		<?php if (!is_404()): ?>
+			<header class="header" id="header">
+					
+			</header>
+		<?php endif; ?>

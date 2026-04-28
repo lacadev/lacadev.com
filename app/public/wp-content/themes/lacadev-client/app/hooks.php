@@ -84,7 +84,10 @@ if (is_admin()) {
  */
 add_action('init', static function () {
     new \App\Settings\BlockSyncReceiver();
-    new \App\Settings\BlockAutoloader();
+    // BlockAutoloader disabled — blocks are already registered by
+    // lacadev_child_register_synced_blocks() at init priority 15.
+    // Having both causes duplicate "already registered" notices → "headers already sent" → admin 403/404.
+    // new \App\Settings\BlockAutoloader();
 }, 5);
 
 /**
@@ -111,15 +114,6 @@ add_action('init', function () {
 add_action('init', function () {
     if (class_exists('\App\Settings\EmailLog\EmailLogManager')) {
         (new \App\Settings\EmailLog\EmailLogManager())->init();
-    }
-});
-
-/**
- * Mobile Sticky CTA Bar
- */
-add_action('init', function () {
-    if (class_exists('\App\Features\MobileStickyCta')) {
-        (new \App\Features\MobileStickyCta())->init();
     }
 });
 

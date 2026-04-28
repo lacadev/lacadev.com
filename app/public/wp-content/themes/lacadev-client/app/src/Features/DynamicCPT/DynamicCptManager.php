@@ -17,6 +17,7 @@ class DynamicCptManager
      * Thư mục chứa meta files — luôn trỏ về child theme (hoặc parent nếu không có child).
      * Dùng method thay vì const để hỗ trợ get_stylesheet_directory() runtime.
      */
+    
     public static function getMetaDir(): string
     {
         $dir = get_stylesheet_directory(); // filesystem path, e.g. .../lacadev-client-child/theme

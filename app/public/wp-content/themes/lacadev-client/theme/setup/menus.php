@@ -50,7 +50,7 @@ add_filter('nav_menu_css_class', function ($classes, $item, $args, $depth) {
         'current_page_parent',
         'current_page_ancestor',
     ]));
-    
+
     $result = [];
 
     if ($is_active) {

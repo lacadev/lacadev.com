@@ -5,19 +5,20 @@
  * Dùng để ghi đè styles mà không cần sửa theme gốc.
  */
 
-/* === CHILD THEME OVERRIDES === */
-
 // Variables & Mixins từ parent theme
 @use "@parent/styles/theme/abstracts/variables" as *;
 @use "@parent/styles/theme/abstracts/mixin" as *;
 
 // === Fonts (child) ===
-@use "./theme/base/fonts";
+// @use "./theme/base/fonts";
 
 // === Layout ===
+@use "./theme/layout/common-blocks";
 @use "./theme/layout/general";
 @use "./theme/layout/header";
 @use "./theme/layout/footer";
+@use "./theme/layout/archive";
+@use "./theme/layout/single-post";
 
 // === Components ===
 @use "./theme/components/breadcumb";
@@ -26,4 +27,3 @@
 
 // === Pages ===
 @use "./theme/pages/contact";
-

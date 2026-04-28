@@ -1,34 +1,29 @@
+@use "../abstracts/variables.scss" as *;
+
 @font-face {
   font-family: "ShopeeDisplay";
-  src: url("~@child-fonts/ShopeeDisplay-Light.ttf") format('ttf');
-  font-weight: 300;
+  src: url("~@child-fonts/") format('woff2');
+  font-weight: $light;
   font-style: normal;
 }
 
 @font-face {
   font-family: "ShopeeDisplay";
-  src: url("~@child-fonts/ShopeeDisplay-Regular.ttf") format('ttf');
-  font-weight: 400;
+  src: url("~@child-fonts/") format('woff2');
+  font-weight: $regular;
   font-style: normal;
 }
 
 @font-face {
   font-family: "ShopeeDisplay";
-  src: url("~@child-fonts/ShopeeDisplay-Medium.ttf") format('ttf');
-  font-weight: 500;
+  src: url("~@child-fonts/") format('woff2');
+  font-weight: $medium;
   font-style: normal;
 }
 
 @font-face {
   font-family: "ShopeeDisplay";
-  src: url("~@child-fonts/ShopeeDisplay-Bold.ttf") format('ttf');
-  font-weight: 700;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: "ShopeeDisplay";
-  src: url("~@child-fonts/ShopeeDisplay-Black.ttf") format('ttf');
-  font-weight: 900;
+  src: url("~@child-fonts/") format('woff2');
+  font-weight: $bold;
   font-style: normal;
 }

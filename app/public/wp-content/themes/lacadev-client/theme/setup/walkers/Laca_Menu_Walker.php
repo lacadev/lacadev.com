@@ -70,9 +70,9 @@ class Laca_Menu_Walker extends Walker_Nav_Menu
             'current_page_ancestor',
             'menu-item-has-children',
         ];
-        
+
         $new_classes = array_values(array_intersect($classes, $allowed_classes));
-        
+
         // Gom mọi trạng thái current* về 1 class hiển thị chung.
         $active_markers = [
             'actived-menu',
@@ -101,7 +101,7 @@ class Laca_Menu_Walker extends Walker_Nav_Menu
         }
 
         // Tạo chuỗi class gọn gàng
-        $class_names = join(' ', array_filter($new_classes));
+        $class_names = join(' ', array_filter(array_unique($new_classes)));
         $class_names = $class_names ? ' class="menu-item ' . esc_attr($class_names) . '"' : ' class="menu-item"';
 
         $output .= '<li' . $class_names . '>';
