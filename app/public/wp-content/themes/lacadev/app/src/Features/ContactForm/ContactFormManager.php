@@ -8,7 +8,7 @@ use App\Databases\ContactFormTable;
  * ContactFormManager
  *
  * Admin UI để tạo và quản lý form liên hệ tùy chỉnh.
- * Menu: Appearance > Form Liên Hệ
+ * Menu: Laca Admin > Form Liên Hệ
  *
  * Views:
  *   (default)             → danh sách tất cả forms

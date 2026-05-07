@@ -19,7 +19,7 @@ use App\Settings\LacaTools\Management\QuickNotesWidget;
  *   - MediaService         — media library stats & orphan detection
  *   - DashboardWidgets     — 6 WordPress dashboard widgets
  *   - ListTableEnhancements— Views column, ID columns, duplication
- *   - AdminUxService       — Help menu, merchant simplification
+ *   - AdminUxService       — merchant simplification, media submenu
  */
 class ManagementExperience
 {
@@ -58,7 +58,7 @@ class ManagementExperience
         // 7b. Quick Notes dashboard widget
         (new QuickNotesWidget())->register();
 
-        // 8. Database Cleaner (Appearance > Dọn dẹp DB)
+        // 8. Database Cleaner (Laca Admin > Dọn dẹp DB)
         (new DatabaseCleaner())->register();
 
         // 7. AI Translation Manager
@@ -70,10 +70,10 @@ class ManagementExperience
         // 9. Project Reports — chart.js data provider
         new ProjectReportsManager();
 
-        // 10. Dynamic CPT admin page (Appearance > Custom Post Types)
+        // 10. Dynamic CPT admin page (Laca Admin > Custom Post Types)
         new \App\Features\DynamicCPT\DynamicCptAdminPage();
 
-        // 11. Contact Form Manager (Appearance > Form Liên Hệ)
+        // 11. Contact Form Manager (Laca Admin > Form Liên Hệ)
         new \App\Features\ContactForm\ContactFormManager();
     }
 }

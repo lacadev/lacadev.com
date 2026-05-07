@@ -16,7 +16,7 @@ namespace App\Features;
  * Cookie: không hiển thị lại trong 24h sau khi đóng hoặc submit.
  *
  * Shortcode nội dung: [laca_exit_popup_content]
- * Admin cấu hình qua: Appearance > Exit Intent Popup
+ * Admin cấu hình qua: Laca Admin > Exit Popup
  *
  * Options (wp_options):
  *   laca_popup_enabled      → '1' | '0'
@@ -181,7 +181,7 @@ class ExitIntentPopup
             update_option($key, $val, false);
         }
 
-        wp_redirect(admin_url('themes.php?page=' . self::MENU_SLUG . '&laca_msg=saved'));
+        wp_redirect(admin_url('admin.php?page=' . self::MENU_SLUG . '&laca_msg=saved'));
         exit;
     }
 

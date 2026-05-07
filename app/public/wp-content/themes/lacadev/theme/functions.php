@@ -284,7 +284,7 @@ new \App\PostTypes\service();
 new \App\PostTypes\project();
 new \App\PostTypes\template();
 
-// Dynamic CPT — đăng ký CPT được tạo qua admin panel (Appearance > Custom Post Types)
+// Dynamic CPT — đăng ký CPT được tạo qua admin panel (Laca Admin > Custom Post Types)
 new \App\Features\DynamicCPT\DynamicCptManager();
 
 // =============================================================================

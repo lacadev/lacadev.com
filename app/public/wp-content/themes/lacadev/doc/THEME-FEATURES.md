@@ -42,6 +42,17 @@ Trang cài đặt chính của theme, đăng ký qua Carbon Fields. Chia thành 
 | Login Socials | `laca-login-socials` | OAuth (Google, Facebook) |
 | Quản trị | `laca-management-settings` | Cài đặt dashboard widget và quản trị nội bộ |
 
+Menu `Laca Admin` được sắp xếp tập trung bởi `app/src/Settings/LacaAdmin/LacaAdminMenuOrganizer.php`.
+Các nhóm chỉ là nhãn hiển thị trong DOM admin, không phải submenu/page slug riêng, để tránh link giả và lỗi 404.
+Các nhóm hiện tại:
+
+- Tổng quan & cấu hình: `laca-admin`, `laca-management-settings`
+- Hiệu năng & bảo trì: `laca-tools`, `laca-db-cleaner`, `laca-email-log`
+- Bảo mật & đăng nhập: `laca-security`, `laca-recaptcha`, `laca-login-socials`
+- Nội dung & cấu trúc: `laca-dynamic-cpt`, `laca-contact-forms`
+- Dự án & thông báo: `laca-project-notifications`
+- Marketing & AI: `laca-exit-popup`, `laca-chatbot`
+
 **Chức năng luôn chạy (không cần bật):**
 - Inject CSS variables màu sắc vào `<head>` admin
 - Thêm custom file extensions cho Media upload (ac3, mpa, flv, svg)

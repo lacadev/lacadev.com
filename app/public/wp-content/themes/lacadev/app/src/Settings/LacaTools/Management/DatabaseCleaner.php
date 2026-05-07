@@ -5,7 +5,7 @@ namespace App\Settings\LacaTools\Management;
 /**
  * DatabaseCleaner
  *
- * Admin tool: Appearance > Dọn dẹp Database
+ * Admin tool: Laca Admin > Dọn dẹp DB
  * Giúp admin dọn dẹp dữ liệu rác WordPress 1 click.
  *
  * Các mục dọn:

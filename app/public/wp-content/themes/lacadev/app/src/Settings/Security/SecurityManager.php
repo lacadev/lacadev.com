@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) {
 /**
  * SecurityManager
  *
- * Trang admin tổng hợp bảo mật (Appearance > 🔒 Bảo mật).
+ * Trang admin tổng hợp bảo mật (Laca Admin > Bảo mật).
  * Đăng ký toàn bộ AJAX endpoints cho 6 tính năng bảo mật.
  *
  * Tabs:

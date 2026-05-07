@@ -6,7 +6,7 @@ namespace App\Settings\EmailLog;
  * EmailLogManager
  *
  * Intercepts all wp_mail() calls to log them.
- * Admin page: Appearance > Email Log
+ * Admin page: Laca Admin > Email Log
  */
 class EmailLogManager
 {
@@ -79,7 +79,7 @@ class EmailLogManager
         $logs    = EmailLogTable::getLogs($page, $perPage, $status);
         $total   = EmailLogTable::countLogs($status);
         $pages   = (int) ceil($total / $perPage);
-        $pageUrl = admin_url('themes.php?page=' . self::MENU_SLUG);
+        $pageUrl = admin_url('admin.php?page=' . self::MENU_SLUG);
         ?>
         <div class="wrap">
             <h1>📨 Email Log <span class="title-count"><?php echo esc_html($total); ?></span></h1>
