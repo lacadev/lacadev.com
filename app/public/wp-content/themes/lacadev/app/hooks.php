@@ -166,6 +166,10 @@ add_action('init', function () {
  * Trang tổng hợp cảnh báo tất cả dự án
  */
 add_action('init', function () {
+    if (class_exists('\App\Features\ProjectManagement\LacaProjectsHub')) {
+        (new \App\Features\ProjectManagement\LacaProjectsHub())->register();
+    }
+
     if (class_exists('\App\Features\ProjectManagement\ProjectGlobalAlertsPage')) {
         (new \App\Features\ProjectManagement\ProjectGlobalAlertsPage())->register();
     }

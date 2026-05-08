@@ -1,107 +1,185 @@
 <?php
 /**
- * View: Project Meta Box — Cột 1 (Alerts + Tracker + Client Portal)
+ * View: Project Workspace — side column.
  *
- * Variables available (từ renderLogsMetaBox()):
+ * Variables available from renderLogsMetaBox():
  *
- * @var int           $projectId
- * @var array         $alerts
- * @var string        $secretKey
- * @var string        $portalAlias
- * @var string        $endpoint
+ * @var int    $projectId
+ * @var array  $alerts
+ * @var array  $pendingTasks
+ * @var array  $pendingPlugins
+ * @var string $secretKey
+ * @var string $portalAlias
+ * @var string $endpoint
+ * @var string $clientPortalUrl
+ * @var string $clientPortalAliasUrl
  */
 
 use App\Models\ProjectAlert;
-use App\Models\ProjectLog;
+
+$pendingTasks = $pendingTasks ?? [];
+$pendingPlugins = $pendingPlugins ?? [];
+$clientPortalUrl = $clientPortalUrl ?? '';
+$clientPortalAliasUrl = $clientPortalAliasUrl ?? '';
 ?>
-<!-- ALERTS & TRACKER SECTION -->
-<div class="laca-pm-col" style="display:flex; flex-direction:column; gap:20px;">
-    <div>
-        <h3 style="margin-top:0">Cảnh báo đang hoạt động</h3>
-        <div class="laca-pm-list">
+
+<div class="laca-pm-col laca-project-workspace__side">
+    <section class="laca-project-panel">
+        <div class="laca-project-panel__header">
+            <div>
+                <h3><?php echo esc_html__('Cảnh báo cần xử lý', 'laca'); ?></h3>
+                <p><?php echo esc_html__('Các vấn đề còn mở từ website khách hàng hoặc tracker.', 'laca'); ?></p>
+            </div>
+        </div>
+
+        <div class="laca-pm-list laca-alert-list">
             <?php if (empty($alerts)): ?>
-                <p style="color:#2e7d52; font-weight:600;">Không có cảnh báo nào.</p>
+                <p class="laca-project-state laca-project-state--ok"><?php echo esc_html__('Không có cảnh báo nào.', 'laca'); ?></p>
             <?php else: ?>
-                <?php foreach ($alerts as $a): ?>
-                    <div class="laca-pm-item" id="alert-<?php echo $a['id']; ?>">
+                <?php foreach ($alerts as $alert): ?>
+                    <div class="laca-pm-item laca-alert-item" id="alert-<?php echo esc_attr($alert['id']); ?>">
                         <div class="laca-pm-meta">
-                            <span class="laca-pm-badge laca-pm-alert-<?php echo esc_attr($a['alert_level']); ?>">
-                                <?php echo ProjectAlert::getTypeLabel($a['alert_type']); ?>
+                            <span class="laca-pm-badge laca-pm-alert-<?php echo esc_attr($alert['alert_level']); ?>">
+                                <?php echo esc_html(ProjectAlert::getTypeLabel($alert['alert_type'])); ?>
                             </span>
-                            <span><?php echo date('d/m/y H:i', strtotime($a['created_at'])); ?></span>
+                            <span><?php echo esc_html(date_i18n('d/m/Y H:i', strtotime($alert['created_at']))); ?></span>
                         </div>
-                        <div style="margin: 6px 0;"><?php echo nl2br(esc_html($a['alert_msg'])); ?></div>
-                        <div style="text-align: right;">
-                            <a class="laca-resolve-btn" data-id="<?php echo $a['id']; ?>">✓ Đánh dấu đã xử lý</a>
-                        </div>
+                        <div class="laca-alert-item__message"><?php echo nl2br(esc_html($alert['alert_msg'])); ?></div>
+                        <button type="button" class="button button-small laca-resolve-btn" data-id="<?php echo esc_attr($alert['id']); ?>">
+                            <?php echo esc_html__('Đã xử lý', 'laca'); ?>
+                        </button>
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
-    </div>
+    </section>
 
-    <!-- LOGS SECTION -->
-    <hr style="border:0; border-top:1px dashed #ddd; margin:18px 0 14px;">
-    <h3 style="margin-top:0">Lịch sử & Nhật ký</h3>
+    <?php if (!empty($pendingTasks) || !empty($pendingPlugins)): ?>
+        <section class="laca-project-panel laca-project-panel--pending" id="laca-pending-tasks-block">
+            <div class="laca-project-panel__header">
+                <div>
+                    <h3><?php echo esc_html__('Việc chưa hoàn thành', 'laca'); ?></h3>
+                    <p><?php echo esc_html__('Những mục cần xử lý trước khi báo cáo hoặc bàn giao.', 'laca'); ?></p>
+                </div>
+            </div>
 
-    <?php
-    // Block: Việc chưa hoàn thành
-    $tasks          = \App\Features\ProjectManagement\Ajax\TaskAjaxHandler::getTaskList($projectId);
-    $pendingTasks   = array_values(array_filter($tasks, fn($t) => !($t['done'] ?? false)));
-    $pendingPlugins = get_post_meta($projectId, '_pending_plugin_updates', true) ?: [];
-    if (!is_array($pendingPlugins)) $pendingPlugins = [];
+            <?php if (!empty($pendingTasks)): ?>
+                <ul class="laca-pending-list" id="laca-pending-list">
+                    <?php foreach ($pendingTasks as $pendingTask): ?>
+                        <li><?php echo esc_html($pendingTask['name'] ?? ''); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
 
-    if (!empty($pendingTasks) || !empty($pendingPlugins)):
-    ?>
-    <div id="laca-pending-tasks-block" style="margin-bottom:16px; padding:10px 14px; background:#fff8e1; border-left:3px solid #f5a623; border-radius:4px;">
-        <strong style="font-size:13px; color:#7c5b00;">Việc chưa hoàn thành</strong>
-
-        <?php if (!empty($pendingTasks)): ?>
-        <ul style="margin:8px 0 0 0; padding-left:16px; font-size:13px; color:#444;">
-            <?php foreach ($pendingTasks as $pt): ?>
-            <li style="margin-bottom:3px;"><?php echo esc_html($pt['name']); ?></li>
-            <?php endforeach; ?>
-        </ul>
-        <?php endif; ?>
-
-        <?php if (!empty($pendingPlugins)): ?>
-        <div style="margin-top:<?php echo !empty($pendingTasks) ? '10px' : '6px'; ?>;">
-            <strong style="font-size:12px; color:#7c5b00;">Plugin cần cập nhật:</strong>
-            <ul style="margin:4px 0 0 0; padding-left:16px; font-size:12px; color:#555;">
-                <?php foreach ($pendingPlugins as $pp): ?>
-                <li style="margin-bottom:2px;">
-                    <?php echo esc_html($pp['name'] ?? $pp['slug'] ?? ''); ?>
-                    <?php if (!empty($pp['current_version']) && !empty($pp['new_version'])): ?>
-                    <span style="color:#999;">(<?php echo esc_html($pp['current_version']); ?> → <strong><?php echo esc_html($pp['new_version']); ?></strong>)</span>
-                    <?php endif; ?>
-                </li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-        <?php endif; ?>
-    </div>
+            <?php if (!empty($pendingPlugins)): ?>
+                <div class="laca-pending-plugins">
+                    <strong><?php echo esc_html__('Plugin cần cập nhật', 'laca'); ?></strong>
+                    <ul>
+                        <?php foreach ($pendingPlugins as $pendingPlugin): ?>
+                            <li>
+                                <?php echo esc_html($pendingPlugin['name'] ?? $pendingPlugin['slug'] ?? ''); ?>
+                                <?php if (!empty($pendingPlugin['current_version']) && !empty($pendingPlugin['new_version'])): ?>
+                                    <span><?php echo esc_html($pendingPlugin['current_version']); ?> → <?php echo esc_html($pendingPlugin['new_version']); ?></span>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+        </section>
     <?php endif; ?>
 
-    <div class="laca-pm-list" id="laca-log-list">
-        <?php if (empty($logs)): ?>
-            <p style="color:#888;">Chưa có nhật ký nào.</p>
-        <?php else: ?>
-            <?php foreach ($logs as $l): ?>
-                <div class="laca-pm-item" id="log-<?php echo $l['id']; ?>">
-                    <div class="laca-pm-meta">
-                        <span style="font-weight:600;color:#0073aa;">
-                            <?php echo ProjectLog::getTypeLabel($l['log_type']); ?>
-                            <?php if ($l['is_auto']) echo '<span style="color:#e67e22;font-size:10px;">(Auto)</span>'; ?>
-                        </span>
-                        <span>
-                            <?php echo date('d/m/y', strtotime($l['log_date'])); ?>
-                            bởi <?php echo esc_html($l['log_by']); ?>
-                        </span>
-                    </div>
-                    <div style="margin: 6px 0;"><?php echo nl2br(esc_html($l['log_content'])); ?></div>
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
-    </div>
+    <section class="laca-project-panel">
+        <div class="laca-project-panel__header">
+            <div>
+                <h3><?php echo esc_html__('Client Portal', 'laca'); ?></h3>
+                <p><?php echo esc_html__('Link theo dõi tiến độ, bảo trì và cập nhật dành cho khách hàng.', 'laca'); ?></p>
+            </div>
+        </div>
 
+        <?php if ($clientPortalUrl): ?>
+            <?php $displayPortalUrl = $clientPortalAliasUrl ?: $clientPortalUrl; ?>
+            <div class="laca-form-group laca-copyable-input">
+                <label for="client_portal_url2"><?php echo esc_html__('Link portal', 'laca'); ?></label>
+                <input type="text" readonly value="<?php echo esc_url($displayPortalUrl); ?>" id="client_portal_url2">
+            </div>
+            <div class="laca-project-actions">
+                <a href="<?php echo esc_url($displayPortalUrl); ?>" target="_blank" rel="noopener" class="button">
+                    <?php echo esc_html__('Xem portal', 'laca'); ?>
+                </a>
+            </div>
+        <?php else: ?>
+            <p class="laca-project-state laca-project-state--warning"><?php echo esc_html__('Client Portal chưa cấu hình. Tạo một page dùng template Client Portal để gửi link cho khách.', 'laca'); ?></p>
+        <?php endif; ?>
+    </section>
+
+    <section class="laca-project-panel">
+        <div class="laca-project-panel__header">
+            <div>
+                <h3><?php echo esc_html__('Auto Activity Tracker', 'laca'); ?></h3>
+                <p><?php echo esc_html__('Cài MU-plugin vào website khách để tự động gửi log, lỗi và cập nhật.', 'laca'); ?></p>
+            </div>
+        </div>
+
+        <div class="laca-form-group laca-copyable-input">
+            <label><?php echo esc_html__('Endpoint URL', 'laca'); ?></label>
+            <input type="text" readonly value="<?php echo esc_url($endpoint); ?>">
+        </div>
+        <div class="laca-form-group laca-copyable-input">
+            <label><?php echo esc_html__('Secret Key', 'laca'); ?></label>
+            <input type="text" readonly value="<?php echo esc_attr($secretKey); ?>">
+        </div>
+        <div class="laca-project-actions">
+            <button type="button" class="button button-primary" id="btn_download_tracker"><?php echo esc_html__('Tải MU-plugin', 'laca'); ?></button>
+            <button type="button" class="button" id="btn_view_tracker_code"><?php echo esc_html__('Xem code PHP', 'laca'); ?></button>
+        </div>
+    </section>
+
+    <section class="laca-project-panel laca-project-panel--remote">
+        <div class="laca-project-panel__header">
+            <div>
+                <h3><?php echo esc_html__('Cập nhật từ xa', 'laca'); ?></h3>
+                <p><?php echo esc_html__('Kiểm tra plugin chờ cập nhật hoặc gửi lệnh update đến website khách.', 'laca'); ?></p>
+            </div>
+            <button type="button" class="button button-secondary" id="btn_load_pending">
+                <?php echo esc_html__('Tải plugin chờ update', 'laca'); ?>
+            </button>
+        </div>
+
+        <div id="pending_plugins_list" class="laca-pending-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th><?php echo esc_html__('Plugin', 'laca'); ?></th>
+                        <th><?php echo esc_html__('Hiện tại', 'laca'); ?></th>
+                        <th><?php echo esc_html__('Bản mới', 'laca'); ?></th>
+                        <th><?php echo esc_html__('Hành động', 'laca'); ?></th>
+                    </tr>
+                </thead>
+                <tbody id="pending_plugins_tbody">
+                    <tr><td colspan="4"><?php echo esc_html__('Chưa có dữ liệu', 'laca'); ?></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="pending_plugins_empty" class="laca-project-state laca-project-state--ok">
+            <?php echo esc_html__('Không có plugin nào cần cập nhật.', 'laca'); ?>
+        </div>
+
+        <details class="laca-project-details">
+            <summary><?php echo esc_html__('Gửi lệnh thủ công', 'laca'); ?></summary>
+            <div class="laca-remote-form">
+                <select id="remote_update_action" aria-label="<?php echo esc_attr__('Loại cập nhật', 'laca'); ?>">
+                    <option value="update_plugin"><?php echo esc_html__('Cập nhật Plugin', 'laca'); ?></option>
+                    <option value="update_theme"><?php echo esc_html__('Cập nhật Theme', 'laca'); ?></option>
+                    <option value="update_core"><?php echo esc_html__('Cập nhật WordPress Core', 'laca'); ?></option>
+                </select>
+                <input type="text" id="remote_update_slug" placeholder="<?php echo esc_attr__('slug, ví dụ: woocommerce/woocommerce.php', 'laca'); ?>">
+                <button type="button" class="button button-primary" id="btn_remote_update">
+                    <?php echo esc_html__('Gửi lệnh', 'laca'); ?>
+                </button>
+            </div>
+            <p class="laca-project-help"><?php echo wp_kses_post(__('Với <code>update_core</code>, bỏ trống slug. Plugin slug dạng <code>folder/file.php</code>, theme slug dạng <code>folder-name</code>.', 'laca')); ?></p>
+        </details>
+        <div id="remote_update_msg" class="laca-project-message"></div>
+    </section>
 </div>

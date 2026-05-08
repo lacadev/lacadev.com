@@ -13,6 +13,7 @@ use App\Features\ProjectManagement\Ajax\LogAjaxHandler;
 use App\Features\ProjectManagement\Ajax\TaskAjaxHandler;
 use App\Features\ProjectManagement\Ajax\RemoteAjaxHandler;
 use App\Features\ProjectManagement\ProjectAdminColumns;
+use App\Features\ProjectManagement\LacaProjectsHub;
 use App\Features\ProjectManagement\ProjectPaymentService;
 
 class Project extends \App\Abstracts\AbstractPostType
@@ -27,9 +28,11 @@ class Project extends \App\Abstracts\AbstractPostType
     {
         $this->showThumbnailOnList = true;
         $this->supports            = ['title', 'thumbnail'];
-        $this->menuIcon            = 'dashicons-layout';
+        $this->menuIcon            = 'dashicons-portfolio';
         $this->post_type           = 'project';
-        $this->singularName        = $this->pluralName = __('Quản lý dự án', 'laca');
+        $this->singularName        = __('Laca Project', 'laca');
+        $this->pluralName          = __('Laca Projects', 'laca');
+        $this->showInMenu          = class_exists(LacaProjectsHub::class) ? LacaProjectsHub::MENU_SLUG : true;
         $this->titlePlaceHolder    = __('Tên dự án / website', 'laca');
         $this->slug                = 'projects';
         parent::__construct();
@@ -42,7 +45,7 @@ class Project extends \App\Abstracts\AbstractPostType
         new TaskAjaxHandler();
         new RemoteAjaxHandler();
 
-        // Meta box Logs & Alerts
+        // Meta box Project Workspace
         add_action('add_meta_boxes', [$this, 'registerLogsMetaBox']);
 
         // Carbon Fields: mã hóa mật khẩu
@@ -85,7 +88,7 @@ class Project extends \App\Abstracts\AbstractPostType
     {
         add_meta_box(
             'laca_project_logs_alerts',
-            'Logs & Alerts',
+            __('Project Workspace', 'laca'),
             [$this, 'renderLogsMetaBox'],
             'project',
             'normal',
@@ -103,6 +106,16 @@ class Project extends \App\Abstracts\AbstractPostType
         $projectId   = $post->ID;
         $logs        = ProjectLog::getByProject($projectId);
         $alerts      = ProjectAlert::getActive($projectId);
+        $tasks       = \App\Features\ProjectManagement\Ajax\TaskAjaxHandler::getTaskList($projectId);
+        $totalTask   = count($tasks);
+        $doneTask    = count(array_filter($tasks, fn($task) => $task['done'] ?? false));
+        $progress    = $totalTask > 0 ? (int) round($doneTask / $totalTask * 100) : 0;
+
+        $pendingTasks   = array_values(array_filter($tasks, fn($task) => !($task['done'] ?? false)));
+        $pendingPlugins = get_post_meta($projectId, '_pending_plugin_updates', true) ?: [];
+        if (!is_array($pendingPlugins)) {
+            $pendingPlugins = [];
+        }
 
         $secretKey = get_post_meta($projectId, '_tracker_secret_key', true);
         if (empty($secretKey)) {
@@ -112,12 +125,62 @@ class Project extends \App\Abstracts\AbstractPostType
 
         $portalAlias = get_post_meta($projectId, '_portal_alias', true);
         $endpoint    = rest_url('laca/v1/tracker/log');
+        $portalPages = get_posts([
+            'post_type'      => 'page',
+            'posts_per_page' => 1,
+            'meta_key'       => '_wp_page_template',
+            'meta_value'     => 'page_templates/template-client-portal.php',
+            'post_status'    => 'publish',
+        ]);
+        $portalUrl = !empty($portalPages) ? get_permalink($portalPages[0]->ID) : '';
+        $clientPortalUrl = $portalUrl ? add_query_arg('key', $secretKey, $portalUrl) : '';
+        $clientPortalAliasUrl = ($portalUrl && $portalAlias) ? add_query_arg('key', $portalAlias, $portalUrl) : '';
+        $latestLog = !empty($logs) ? $logs[0] : null;
 
         wp_nonce_field('laca_project_manager', 'laca_pm_nonce');
         ?>
-        <div class="laca-pm-wrap laca-logs-container" data-project-id="<?php echo esc_attr($projectId); ?>">
-            <?php include __DIR__ . '/../Features/ProjectManagement/Views/meta-box-col1.php'; ?>
-            <?php include __DIR__ . '/../Features/ProjectManagement/Views/meta-box-col2.php'; ?>
+        <div class="laca-pm-wrap laca-logs-container laca-project-workspace" data-project-id="<?php echo esc_attr($projectId); ?>">
+            <div class="laca-project-workspace__header">
+                <div>
+                    <h2><?php echo esc_html__('Workspace dự án', 'laca'); ?></h2>
+                    <p><?php echo esc_html__('Theo dõi tiến độ, cảnh báo, lịch sử bảo trì và các thao tác từ xa của website khách hàng.', 'laca'); ?></p>
+                </div>
+                <span class="laca-project-workspace__status">
+                    <?php echo empty($alerts) ? esc_html__('Ổn định', 'laca') : esc_html__('Cần xử lý', 'laca'); ?>
+                </span>
+            </div>
+
+            <div class="laca-project-summary-grid" aria-label="<?php echo esc_attr__('Tổng quan nhanh dự án', 'laca'); ?>">
+                <div class="laca-project-summary-card">
+                    <span class="laca-project-summary-card__label"><?php echo esc_html__('Cảnh báo', 'laca'); ?></span>
+                    <strong><?php echo esc_html((string) count($alerts)); ?></strong>
+                    <small><?php echo empty($alerts) ? esc_html__('Không có cảnh báo mở', 'laca') : esc_html__('Đang chờ xử lý', 'laca'); ?></small>
+                </div>
+                <div class="laca-project-summary-card">
+                    <span class="laca-project-summary-card__label"><?php echo esc_html__('Tiến độ task', 'laca'); ?></span>
+                    <strong><?php echo esc_html($progress . '%'); ?></strong>
+                    <small><?php echo esc_html(sprintf('%d/%d task hoàn thành', $doneTask, $totalTask)); ?></small>
+                </div>
+                <div class="laca-project-summary-card">
+                    <span class="laca-project-summary-card__label"><?php echo esc_html__('Portal khách hàng', 'laca'); ?></span>
+                    <strong><?php echo $clientPortalUrl ? esc_html__('Sẵn sàng', 'laca') : esc_html__('Chưa cấu hình', 'laca'); ?></strong>
+                    <small><?php echo $clientPortalAliasUrl ? esc_html__('Đang dùng alias thân thiện', 'laca') : esc_html__('Dùng secret key mặc định', 'laca'); ?></small>
+                </div>
+                <div class="laca-project-summary-card">
+                    <span class="laca-project-summary-card__label"><?php echo esc_html__('Nhật ký mới nhất', 'laca'); ?></span>
+                    <strong>
+                        <?php echo $latestLog ? esc_html(date_i18n('d/m/Y', strtotime($latestLog['log_date']))) : esc_html__('Chưa có', 'laca'); ?>
+                    </strong>
+                    <small>
+                        <?php echo $latestLog ? esc_html(ProjectLog::getTypeLabel($latestLog['log_type'])) : esc_html__('Chưa nhận log từ tracker', 'laca'); ?>
+                    </small>
+                </div>
+            </div>
+
+            <div class="laca-project-workspace__grid">
+                <?php include __DIR__ . '/../Features/ProjectManagement/Views/meta-box-col2.php'; ?>
+                <?php include __DIR__ . '/../Features/ProjectManagement/Views/meta-box-col1.php'; ?>
+            </div>
         </div>
         <?php
     }

@@ -25,7 +25,7 @@ class ProjectGlobalAlertsPage
             : '';
 
         add_submenu_page(
-            'edit.php?post_type=project',
+            LacaProjectsHub::MENU_SLUG,
             'Tất cả Cảnh báo',
             'Tất cả Cảnh báo' . $badge,
             'edit_posts',
@@ -81,7 +81,6 @@ class ProjectGlobalAlertsPage
 
             <!-- Bộ lọc -->
             <form method="get" class="laca-filter-bar">
-                <input type="hidden" name="post_type" value="project">
                 <input type="hidden" name="page" value="laca-global-alerts">
 
                 <select name="filter_project">
@@ -127,7 +126,7 @@ class ProjectGlobalAlertsPage
                 <?php submit_button('Lọc', 'secondary', 'submit', false); ?>
 
                 <?php if ($filterProject || $filterLevel || $filterType) : ?>
-                    <a href="?post_type=project&page=laca-global-alerts" class="button">Xoá bộ lọc</a>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=laca-global-alerts')); ?>" class="button">Xoá bộ lọc</a>
                 <?php endif; ?>
             </form>
 
@@ -176,14 +175,13 @@ class ProjectGlobalAlertsPage
                         <?php for ($i = 1; $i <= $maxPages; $i++) : ?>
                             <?php
                             $url = add_query_arg([
-                                'post_type'      => 'project',
                                 'page'           => 'laca-global-alerts',
                                 'alerts_page'    => $i,
                                 'per_page'       => $perPage,
                                 'filter_project' => $filterProject ?: '',
                                 'filter_level'   => $filterLevel,
                                 'filter_type'    => $filterType,
-                            ], admin_url('edit.php'));
+                            ], admin_url('admin.php'));
                             ?>
                             <a href="<?php echo esc_url($url); ?>"
                                class="button <?php echo $i === $page ? 'button-primary' : ''; ?>">

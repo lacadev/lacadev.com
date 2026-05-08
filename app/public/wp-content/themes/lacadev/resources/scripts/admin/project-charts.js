@@ -30,6 +30,200 @@ Chart.register(
 ( function () {
 	'use strict';
 
+	const hubData = window.lacaProjectsHubCharts;
+
+	const hubPalette = {
+		ink: '#111827',
+		muted: '#6b7280',
+		grid: 'rgba(17, 24, 39, 0.08)',
+		blue: '#2563eb',
+		green: '#059669',
+		amber: '#d97706',
+		red: '#dc2626',
+		violet: '#7c3aed',
+		slate: '#94a3b8',
+	};
+
+	const defaultOptions = {
+		responsive: true,
+		maintainAspectRatio: false,
+		plugins: {
+			legend: {
+				position: 'bottom',
+				labels: {
+					boxWidth: 10,
+					color: hubPalette.muted,
+					font: { size: 11 },
+					padding: 12,
+					usePointStyle: true,
+				},
+			},
+			tooltip: {
+				backgroundColor: '#111827',
+				padding: 10,
+				titleColor: '#ffffff',
+				bodyColor: '#e5e7eb',
+			},
+		},
+	};
+
+	const renderHubDoughnut = ( canvasId, labels, values, colors ) => {
+		const canvas = document.getElementById( canvasId );
+		if ( ! canvas || canvas.dataset.lacaChartRendered === '1' ) {
+			return;
+		}
+
+		canvas.dataset.lacaChartRendered = '1';
+
+		new Chart( canvas, {
+			type: 'doughnut',
+			data: {
+				labels,
+				datasets: [
+					{
+						data: values,
+						backgroundColor: colors,
+						borderColor: '#ffffff',
+						borderWidth: 3,
+						hoverOffset: 5,
+					},
+				],
+			},
+			options: {
+				...defaultOptions,
+				cutout: '70%',
+			},
+		} );
+	};
+
+	const renderHubBar = ( canvasId, labels, values, colors ) => {
+		const canvas = document.getElementById( canvasId );
+		if ( ! canvas || canvas.dataset.lacaChartRendered === '1' ) {
+			return;
+		}
+
+		canvas.dataset.lacaChartRendered = '1';
+
+		new Chart( canvas, {
+			type: 'bar',
+			data: {
+				labels,
+				datasets: [
+					{
+						data: values,
+						backgroundColor: colors,
+						borderRadius: 8,
+						borderSkipped: false,
+						barPercentage: 0.58,
+					},
+				],
+			},
+			options: {
+				...defaultOptions,
+				plugins: {
+					...defaultOptions.plugins,
+					legend: { display: false },
+				},
+				scales: {
+					x: {
+						grid: { display: false },
+						ticks: { color: hubPalette.muted, font: { size: 11 } },
+					},
+					y: {
+						beginAtZero: true,
+						grid: { color: hubPalette.grid },
+						ticks: {
+							color: hubPalette.muted,
+							font: { size: 11 },
+							precision: 0,
+						},
+					},
+				},
+			},
+		} );
+	};
+
+	if ( hubData ) {
+		renderHubDoughnut(
+			'laca-projects-finance-chart',
+			hubData.finance?.labels || [],
+			hubData.finance?.values || [],
+			[ hubPalette.green, hubPalette.amber ]
+		);
+
+		renderHubBar(
+			'laca-projects-alert-chart',
+			hubData.alerts?.labels || [],
+			hubData.alerts?.values || [],
+			[ hubPalette.red, hubPalette.amber, hubPalette.blue ]
+		);
+
+		renderHubDoughnut(
+			'laca-projects-status-chart',
+			hubData.status?.labels || [],
+			hubData.status?.values || [],
+			[
+				hubPalette.slate,
+				hubPalette.blue,
+				hubPalette.violet,
+				hubPalette.amber,
+				hubPalette.green,
+			]
+		);
+	}
+
+	const escapeHtml = ( value ) =>
+		String( value || '' ).replace(
+			/[&<>"']/g,
+			( char ) =>
+				( {
+					'&': '&amp;',
+					'<': '&lt;',
+					'>': '&gt;',
+					'"': '&quot;',
+					"'": '&#039;',
+				} )[ char ]
+		);
+
+	document.addEventListener( 'click', ( event ) => {
+		const trigger = event.target.closest( '[data-laca-project-detail]' );
+		if ( ! trigger || event.metaKey || event.ctrlKey || event.shiftKey ) {
+			return;
+		}
+
+		if ( typeof window.Swal === 'undefined' ) {
+			return;
+		}
+
+		event.preventDefault();
+
+		const modalHtml = [
+			'<div class="laca-projects-swal">',
+			`<p class="laca-projects-swal__meta">${ escapeHtml(
+				trigger.dataset.meta
+			) }</p>`,
+			`<p class="laca-projects-swal__message">${ escapeHtml(
+				trigger.dataset.message
+			).replace( /\n/g, '<br>' ) }</p>`,
+			'</div>',
+		].join( '' );
+
+		window.Swal.fire( {
+			title: trigger.dataset.title || 'Project detail',
+			html: modalHtml,
+			showCancelButton: true,
+			confirmButtonText: 'Mở project',
+			cancelButtonText: 'Đóng',
+			confirmButtonColor: '#111827',
+			cancelButtonColor: '#6b7280',
+			width: 520,
+		} ).then( ( result ) => {
+			if ( result.isConfirmed && trigger.dataset.url ) {
+				window.location.href = trigger.dataset.url;
+			}
+		} );
+	} );
+
 	if ( typeof lacaProjectCharts === 'undefined' ) {
 		return;
 	}

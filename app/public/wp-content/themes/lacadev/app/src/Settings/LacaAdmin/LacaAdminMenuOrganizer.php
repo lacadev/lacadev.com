@@ -209,42 +209,10 @@ class LacaAdminMenuOrganizer
                 left: 36px;
             }
 
-            .laca-admin-dock__brand {
-                align-items: center;
-                border-bottom: 1px solid #eef0f3;
-                display: flex;
-                gap: 10px;
-                margin-bottom: 12px;
-                padding: 0 4px 16px;
-                text-decoration: none;
-            }
-
-            .laca-admin-dock__brand-mark {
-                align-items: center;
-                background: #f8fafc;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                color: #111827;
-                display: inline-flex;
-                flex: 0 0 auto;
-                font-size: 13px;
-                font-weight: 700;
-                height: 36px;
-                justify-content: center;
-                width: 36px;
-            }
-
-            .laca-admin-dock__brand-text {
-                color: #111827;
-                font-size: 14px;
-                font-weight: 700;
-                line-height: 1.2;
-            }
-
             .laca-admin-dock__group {
                 border-top: 1px solid #f1f3f5;
-                padding: 20px 4px;
                 margin-bottom: 0;
+                padding: 20px 4px;
             }
 
             .laca-admin-dock__group:first-of-type {
@@ -254,20 +222,22 @@ class LacaAdminMenuOrganizer
 
             .laca-admin-dock__group-title {
                 align-items: center;
-                color: #4b5563;
+                color: #6b7280;
                 display: flex;
                 font-size: 12px;
                 font-weight: 700;
-                gap: 8px;
+                gap: 0;
+                letter-spacing: 0;
                 line-height: 1.35;
                 margin: 0 0 6px;
             }
 
             .laca-admin-dock__group-title .dashicons {
-                color: #6b7280;
-                font-size: 16px;
-                height: 16px;
-                width: 16px;
+                display: none;
+            }
+
+            .laca-admin-dock__group-count {
+                display: none;
             }
 
             .laca-admin-dock__items {
@@ -283,20 +253,13 @@ class LacaAdminMenuOrganizer
                 display: block;
                 font-size: 13px;
                 line-height: 1.35;
-                padding: 7px 10px 7px 28px;
-                position: relative;
+                padding: 7px 10px;
                 text-decoration: none;
+                transition: background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
             }
 
             .laca-admin-dock__item::before {
-                background: #cbd5e1;
-                border-radius: 999px;
-                content: "";
-                height: 4px;
-                left: 14px;
-                position: absolute;
-                top: 14px;
-                width: 4px;
+                content: none;
             }
 
             .laca-admin-dock__item:hover,
@@ -310,12 +273,13 @@ class LacaAdminMenuOrganizer
             .laca-admin-dock__item.is-active {
                 background: #f3f4f6;
                 border-color: #d1d5db;
+                box-shadow: none;
                 color: #111827;
                 font-weight: 700;
             }
 
             .laca-admin-dock__item.is-active::before {
-                background: #111827;
+                content: none;
             }
 
             @media (max-width: 960px) {
@@ -370,6 +334,7 @@ class LacaAdminMenuOrganizer
                     <h2 class="laca-admin-dock__group-title" id="laca-admin-dock-group-<?php echo esc_attr($group['key']); ?>">
                         <span class="dashicons <?php echo esc_attr($group['icon']); ?>" aria-hidden="true"></span>
                         <span><?php echo esc_html($group['label']); ?></span>
+                        <span class="laca-admin-dock__group-count"><?php echo esc_html((string) count($group['items'])); ?></span>
                     </h2>
                     <div class="laca-admin-dock__items">
                         <?php foreach ($group['items'] as $item): ?>

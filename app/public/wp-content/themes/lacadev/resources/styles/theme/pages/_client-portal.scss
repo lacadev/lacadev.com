@@ -1,572 +1,631 @@
 @use "../abstracts/variables.scss" as *;
 @use "../abstracts/mixin.scss" as *;
 
-// =============================================================================
-// CLIENT PORTAL — LacaDev Design System v2
-// Template: theme/page_templates/template-client-portal.php
-//
-// Design DNA từ LacaDev Homepage:
-//   • Background: lavender #e9eaf2 (giống homepage)
-//   • Cards: white với border 1px lavender-100, không dùng shadow nặng
-//   • Typography: uppercase + letter-spacing mạnh, extraBold titles
-//   • Accent: #1a1a1a (đen chủ đạo) + #2563eb (xanh LacaDev)
-//   • Transitions: cubic-bezier(0.4, 0, 0.2, 1), nhẹ nhàng
-//   • WCAG 2.1 AA: focus rings, semantic HTML
-// =============================================================================
-
-
-// -----------------------------------------------------------------------------
-// 1. DESIGN TOKENS — prefix --cp- tránh conflict
-// -----------------------------------------------------------------------------
 :root {
-  // === LacaDev Brand Palette ===
-  --cp-lavender-bg: #{$backgroundColor};   // homepage bg
-  --cp-lavender-100: #{$cBorder};   // card border
-  --cp-lavender-200: #c4c8e8;   // divider
-  --cp-lavender-300: #a8aedd;
-
-  // === Blue (accent) ===
-  --cp-blue-50:   #eff6ff;
-  --cp-blue-100:  #dbeafe;
-  --cp-blue-500:  #3b82f6;
-  --cp-blue-600:  #2563eb;
-  --cp-blue-700:  #1d4ed8;
-  --cp-blue-900:  #1e3a5f;
-
-  // === Green ===
-  --cp-green-50:   #f0fdf4;
-  --cp-green-100:  #dcfce7;
-  --cp-green-400:  #34d399;
-  --cp-green-500:  #10b981;
-  --cp-green-700:  #047857;
-
-  // === Amber ===
-  --cp-amber-50:   #fffbeb;
-  --cp-amber-100:  #fef3c7;
-  --cp-amber-200:  #fde68a;
-  --cp-amber-800:  #92400e;
-
-  // === Red ===
-  --cp-red-50:  #fef2f2;
-  --cp-red-200: #fecaca;
-  --cp-red-800: #991b1b;
-
-  // === Neutral (off-white to dark) ===
-  --cp-gray-50:  #f9fafb;
-  --cp-gray-100: #f0f1f5;   // legible trên lavender bg
-  --cp-gray-200: #e1e3ec;
-  --cp-gray-300: #cacdd8;
-  --cp-gray-400: #9ba0b4;
-  --cp-gray-500: #6b7280;
-  --cp-gray-600: #4b5563;
-  --cp-gray-700: #374151;
-  --cp-gray-800: #1f2937;
-  --cp-gray-900: #111827;
-
-  // === Semantic ===
-  --cp-primary: #{$primaryColor};
-  --cp-primary-h: #{$secondaryColor};
-  --cp-primary-d:  #1e40af;
-  --cp-success:    #10b981;
-  --cp-warning:    #f59e0b;
-  --cp-danger:     #ef4444;
-
+  --cp-bg: #{$backgroundColor};
+  --cp-surface: #{$cSurface};
+  --cp-surface-muted: #f7f8fc;
+  --cp-surface-strong: #eef2ff;
+  --cp-border: #{$cBorder};
+  --cp-border-strong: #cfd5ea;
   --cp-text: #{$cText};
   --cp-text-muted: #{$cMuted};
-  --cp-bg: #{$backgroundColor};   // LacaDev lavender
-  --cp-card: #{$cSurface};
-  --cp-card-border: #{$cBorder};  // lavender-100
-
-  // === Shape ===
+  --cp-accent: #{$primaryColor};
+  --cp-accent-strong: #1d4ed8;
+  --cp-accent-soft: rgba(37, 99, 235, 0.1);
+  --cp-success: #0f9f6e;
+  --cp-warning: #b7791f;
+  --cp-danger: #c24141;
+  --cp-dark: #101828;
   --cp-radius-sm: #{$rSm};
   --cp-radius: #{$rMd};
   --cp-radius-lg: #{$rLg};
   --cp-radius-xl: #{$rXl};
   --cp-radius-pill: #{$rPill};
-
-  // === Shadow — subtle, match theme ===
-  --cp-shadow-xs: #{$shXs};
-  --cp-shadow-sm: #{$shSm};
-  --cp-shadow-md: #{$shMd};
-  --cp-shadow-lg: #{$shMd};
+  --cp-shadow-sm: 0 10px 24px rgba(15, 23, 42, 0.05);
+  --cp-shadow-md: 0 22px 54px rgba(15, 23, 42, 0.08);
 }
 
-// Reduced motion
-@media (prefers-reduced-motion: reduce) {
-  .cp-main *,
-  .cp-main *::before,
-  .cp-main *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-
-// -----------------------------------------------------------------------------
-// 2. BODY BACKGROUND — lavender như homepage
-// -----------------------------------------------------------------------------
 body.has-client-portal {
-  background-color: var(--cp-bg);
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 24rem),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.7), transparent 20rem),
+    var(--cp-bg);
 }
 
-
-// -----------------------------------------------------------------------------
-// 3. MAIN LAYOUT
-// -----------------------------------------------------------------------------
-.cp-main {
-  max-width: 45rem;   // narrower = focused, không quá rộng
-  margin: 0 auto;
-  padding: 2.5rem 1.25rem 5rem;
-  animation: cp-fade-in 0.5s cubic-bezier(0, 0, 0.2, 1) both;
-}
-
-@keyframes cp-fade-in {
-  from { opacity: 0; transform: translateY(1rem); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-
-// -----------------------------------------------------------------------------
-// 4. CARDS — white trên lavender bg, border lavender
-// -----------------------------------------------------------------------------
-.cp-card {
-  background: var(--cp-card);
-  border-radius: var(--cp-radius-lg);
-  border: 0.0625rem solid var(--cp-card-border);
-  padding: 1.75rem 1.5rem;
-  margin-bottom: 1rem;
-  transition: border-color 0.2s ease,
-              box-shadow 0.2s ease;
-
-  &:hover {
-    border-color: var(--cp-lavender-200);
-    box-shadow: var(--cp-shadow-sm);
+.has-client-portal {
+  .header {
+    backdrop-filter: blur(18px);
+    background: rgba(255, 255, 255, 0.72);
+    border-bottom: 0.0625rem solid rgba(207, 213, 234, 0.8);
   }
+}
+
+.cp-main {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 8.5rem 1.25rem 4rem;
+  color: var(--cp-text);
+}
+
+.cp-shell {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.cp-card {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(18px);
+  border: 0.0625rem solid rgba(207, 213, 234, 0.9);
+  border-radius: var(--cp-radius-xl);
+  box-shadow: var(--cp-shadow-sm);
+  padding: 1.5rem;
 
   &__title {
-    font-size: 0.625rem;
-    font-weight: $bold;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--cp-gray-400);
-    margin-bottom: 1.25rem;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.4375rem;
-    font-family: $primaryFont;
+    gap: 0.375rem;
+    margin: 0 0 1rem;
+    color: var(--cp-text-muted);
+    font-size: 0.6875rem;
+    font-weight: $bold;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
 
   &__title-count {
-    font-weight: $regular;
-    font-size: 0.625rem;
-    color: var(--cp-gray-300);
-    margin-left: 0.1875rem;
-  }
-
-  // Stagger fade-in
-  @for $i from 1 through 6 {
-    &:nth-child(#{$i}) {
-      animation: cp-fade-in 0.5s cubic-bezier(0, 0, 0.2, 1) #{($i - 1) * 70ms} both;
-    }
+    color: var(--cp-text);
+    font-size: 0.75rem;
+    font-weight: $semiBold;
+    letter-spacing: 0;
   }
 }
 
-// Divider dùng lavender thay gray
-.cp-divider {
-  border: none;
-  border-top: 0.0625rem solid var(--cp-lavender-200);
-  margin: 1.25rem 0;
+.cp-kicker {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.875rem;
+  padding: 0.375rem 0.75rem;
+  background: var(--cp-accent-soft);
+  border: 0.0625rem solid rgba(37, 99, 235, 0.12);
+  border-radius: var(--cp-radius-pill);
+  color: var(--cp-accent);
+  font-size: 0.6875rem;
+  font-weight: $bold;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
+.cp-overview {
+  padding: 1.75rem;
 
-// -----------------------------------------------------------------------------
-// 5. HERO — trạng thái chưa có key
-// -----------------------------------------------------------------------------
-.cp-hero {
-  text-align: center;
-  padding: 5rem 1rem 3.75rem;
-
-  &__label {
-    font-size: 0.6875rem;
-    font-weight: $bold;
-    text-transform: uppercase;
-    letter-spacing: 0.18em;
-    color: var(--cp-primary);
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
     margin-bottom: 1.25rem;
-    display: block;
   }
 
-  &__title {
-    font-size: 2.625rem;
-    font-weight: $extraBold;
-    color: var(--cp-text);
-    margin-bottom: 1rem;
-    letter-spacing: -0.05rem;
-    line-height: 1.15;
-    font-family: $primaryFont;
+  &__identity {
+    display: grid;
+    gap: 0.875rem;
   }
 
-  &__desc {
-    color: var(--cp-text-muted);
-    font-size: 1.0625rem;
-    line-height: 1.7;
-    max-width: 28.75rem;
-    margin: 0 auto 2.5rem;
-    font-weight: $regular;
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
   }
 }
 
-@keyframes cp-bounce-in {
-  0%   { opacity: 0; transform: scale(0.7); }
-  70%  { transform: scale(1.05); }
-  100% { opacity: 1; transform: scale(1); }
+.cp-project-name {
+  margin: 0;
+  font-family: $primaryFont;
+  font-size: clamp(2rem, 3vw, 3rem);
+  font-weight: $extraBold;
+  letter-spacing: -0.05rem;
+  line-height: 1.05;
 }
 
+.cp-project-domain {
+  color: var(--cp-text-muted);
+  font-size: 0.9375rem;
 
-// -----------------------------------------------------------------------------
-// 6. KEY FORM — input + button
-// -----------------------------------------------------------------------------
-.cp-key-form {
-  display: flex;
-  gap: 0.625rem;
-  max-width: 30rem;
-  margin: 0 auto;
-
-  input {
-    flex: 1;
-    padding: 0.875rem 1.25rem;
-    border: 0.0938rem solid var(--cp-lavender-200);
-    border-radius: var(--cp-radius);
-    font-size: 0.9375rem;
-    font-family: $primaryFont;
-    outline: none;
-    color: var(--cp-text);
-    background: var(--cp-card);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-
-    &::placeholder { color: var(--cp-gray-300); }
-
-    &:focus {
-      border-color: var(--cp-primary);
-      box-shadow: 0 0 0 0.2188rem rgba(37, 99, 235, 0.12);
-    }
-  }
-
-  button {
-    padding: 0.875rem 1.5rem;
-    background: var(--cp-text);  // đen, như homepage CTA
-    color: #fff;
-    border: none;
-    border-radius: var(--cp-radius);
-    font-size: 0.9375rem;
-    font-weight: $bold;
-    font-family: $primaryFont;
-    cursor: pointer;
-    white-space: nowrap;
-    letter-spacing: 0.02em;
-    transition: background 0.2s ease,
-                transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  a {
+    color: inherit;
+    text-decoration: none;
+    font-weight: $semiBold;
 
     &:hover {
-      background: #2d2d2d;
-      transform: translateY(-0.0938rem);
-    }
-
-    &:active { transform: translateY(0); }
-
-    &:focus-visible {
-      outline: 0.1875rem solid var(--cp-primary);
-      outline-offset: 0.1875rem;
+      color: var(--cp-accent);
     }
   }
-
-  &--retry { margin-top: 1.25rem; }
 }
 
+.cp-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--cp-radius-pill);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: $bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
 
-// -----------------------------------------------------------------------------
-// 7. ERROR STATE
-// -----------------------------------------------------------------------------
-.cp-error {
-  background: var(--cp-card);
-  border: 0.0938rem solid var(--cp-red-200);
-  border-radius: var(--cp-radius);
-  padding: 1.25rem 1.5rem;
-  display: flex;
-  align-items: flex-start;
+.cp-meta-chip {
+  display: grid;
+  gap: 0.1875rem;
+  min-width: 10rem;
+  padding: 0.875rem 1rem;
+  background: var(--cp-surface-muted);
+  border: 0.0625rem solid var(--cp-border);
+  border-radius: var(--cp-radius-lg);
+
+  &__label {
+    color: var(--cp-text-muted);
+    font-size: 0.625rem;
+    font-weight: $bold;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  strong {
+    font-size: 0.9375rem;
+    font-weight: $bold;
+    color: var(--cp-text);
+  }
+}
+
+.cp-progress {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+
+  &__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  &__label {
+    color: var(--cp-text-muted);
+    font-size: 0.6875rem;
+    font-weight: $bold;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  &__value {
+    font-family: $primaryFont;
+    font-size: clamp(1.5rem, 2vw, 2.25rem);
+    font-weight: $extraBold;
+    letter-spacing: -0.04rem;
+  }
+
+  &__track {
+    height: 0.625rem;
+    background: #dfe5f3;
+    border-radius: var(--cp-radius-pill);
+    overflow: hidden;
+  }
+
+  &__fill {
+    width: var(--cp-progress, 0%);
+    height: 100%;
+    background: linear-gradient(90deg, var(--cp-dark), #25324a 55%, var(--cp-accent));
+    border-radius: inherit;
+  }
+}
+
+.cp-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.875rem;
-  color: var(--cp-red-800);
-  font-size: 0.9375rem;
-  line-height: 1.55;
+}
 
-  &__icon {
-    font-size: 1.375rem;
-    flex-shrink: 0;
+.cp-metric {
+  display: grid;
+  gap: 0.625rem;
+  min-height: 8.75rem;
+  padding: 1rem;
+  background: var(--cp-surface-muted);
+  border: 0.0625rem solid var(--cp-border);
+  border-radius: var(--cp-radius-lg);
+
+  &--accent {
+    background: linear-gradient(180deg, #111827 0%, #172033 100%);
+    border-color: rgba(17, 24, 39, 0.08);
+    color: #fff;
+
+    .cp-metric__label,
+    .cp-metric__meta {
+      color: rgba(255, 255, 255, 0.68);
+    }
+
+    .cp-metric__value {
+      color: #fff;
+    }
+  }
+
+  &__label {
+    color: var(--cp-text-muted);
+    font-size: 0.6875rem;
+    font-weight: $bold;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  &__value {
+    font-family: $primaryFont;
+    font-size: clamp(1.5rem, 2vw, 2.35rem);
+    font-weight: $extraBold;
+    letter-spacing: -0.04rem;
+    line-height: 1;
+  }
+
+  &__meta {
+    align-self: end;
+    color: var(--cp-text-muted);
+    font-size: 0.8125rem;
+    line-height: 1.55;
   }
 }
 
+.cp-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(19rem, 0.95fr);
+  gap: 1.25rem;
 
-// -----------------------------------------------------------------------------
-// 8. STATUS HEADER — Project name + badge
-// -----------------------------------------------------------------------------
-.cp-status-header {
+  &__main,
+  &__side {
+    display: grid;
+    gap: 1.25rem;
+    align-content: start;
+  }
+}
+
+.cp-section-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  flex-wrap: wrap;
+  margin-bottom: 1rem;
 }
 
-.cp-project-name {
-  font-size: 1.75rem;
-  font-weight: $extraBold;
-  color: var(--cp-text);
-  letter-spacing: -0.05rem;
-  line-height: 1.2;
-  font-family: $primaryFont;
-}
-
-.cp-project-domain {
-  font-size: 0.875rem;
+.cp-section-note {
+  margin: 0;
   color: var(--cp-text-muted);
-  margin-top: 0.375rem;
-  display: flex;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.cp-section-badge {
+  display: inline-flex;
   align-items: center;
-  gap: 0.3125rem;
+  justify-content: center;
+  min-width: 3.25rem;
+  min-height: 3.25rem;
+  padding: 0.5rem;
+  background: var(--cp-accent-soft);
+  border: 0.0625rem solid rgba(37, 99, 235, 0.12);
+  border-radius: 1rem;
+  color: var(--cp-accent);
+  font-family: $primaryFont;
+  font-size: 1.125rem;
+  font-weight: $extraBold;
+}
 
-  a {
-    color: var(--cp-primary);
-    text-decoration: none;
-    font-weight: $semiBold;
+.cp-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
 
-    &:hover { text-decoration: underline; }
-    &:focus-visible {
-      outline: 0.125rem solid var(--cp-primary);
-      outline-offset: 0.125rem;
-      border-radius: 0.125rem;
+  &--compact .cp-stat {
+    min-height: 6.875rem;
+  }
+}
+
+.cp-stat {
+  display: grid;
+  gap: 0.5rem;
+  min-height: 7.5rem;
+  padding: 0.9375rem;
+  background: var(--cp-surface-muted);
+  border: 0.0625rem solid var(--cp-border);
+  border-radius: var(--cp-radius-lg);
+
+  &__label {
+    color: var(--cp-text-muted);
+    font-size: 0.6875rem;
+    font-weight: $bold;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    line-height: 1.45;
+  }
+
+  &__value {
+    align-self: end;
+    font-family: $primaryFont;
+    font-size: 1.875rem;
+    font-weight: $extraBold;
+    line-height: 1;
+    letter-spacing: -0.04rem;
+  }
+}
+
+.cp-card--report {
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.08), transparent 15rem),
+    rgba(255, 255, 255, 0.9);
+}
+
+.cp-report-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1.125rem 1.125rem 1rem;
+  background: linear-gradient(180deg, #101828 0%, #172033 100%);
+  border-radius: var(--cp-radius-xl);
+  color: #fff;
+
+  &__label {
+    color: rgba(255, 255, 255, 0.66);
+    font-size: 0.6875rem;
+    font-weight: $bold;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  &__value {
+    margin-top: 0.625rem;
+    font-family: $primaryFont;
+    font-size: 3rem;
+    font-weight: $extraBold;
+    line-height: 0.95;
+    letter-spacing: -0.08rem;
+  }
+
+  &__latest {
+    align-self: flex-end;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    text-align: right;
+
+    strong {
+      display: block;
+      margin-top: 0.25rem;
+      color: #fff;
+      font-size: 0.9375rem;
     }
   }
 }
 
-// Status badge — pill với đen nền
-.cp-status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3125rem;
-  padding: 0.375rem 0.875rem;
-  border-radius: var(--cp-radius-pill);
-  font-size: 0.75rem;
-  font-weight: $bold;
-  color: #fff;
-  flex-shrink: 0;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-family: $primaryFont;
-
-  &[data-status="planning"]    { background: #7c3aed; }
-  &[data-status="in-progress"] { background: var(--cp-primary); }
-  &[data-status="review"]      { background: var(--cp-warning); color: #1c1917; }
-  &[data-status="done"]        { background: var(--cp-success); }
-  &[data-status="paused"]      { background: var(--cp-gray-400); }
-  &[data-status="cancelled"]   { background: var(--cp-danger); }
-}
-
-
-// -----------------------------------------------------------------------------
-// 9. PROGRESS BAR — thin & elegant
-// -----------------------------------------------------------------------------
-.cp-progress-wrap {
-  margin-top: 1.5rem;
-  padding-top: 1.25rem;
-  border-top: 0.0625rem solid var(--cp-lavender-200);
-}
-
-.cp-progress-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 0.75rem;
-}
-
-.cp-progress-label {
-  font-size: 0.6875rem;
-  font-weight: $bold;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--cp-text-muted);
-}
-
-.cp-progress-pct {
-  font-size: 1.75rem;
-  font-weight: $extraBold;
-  color: var(--cp-text);
-  letter-spacing: -0.075rem;
-  line-height: 1;
-  font-family: $primaryFont;
-
-  .cp-pct-symbol {
-    font-size: 1rem;
-    font-weight: $semiBold;
-    letter-spacing: 0;
-    margin-left: 0.0625rem;
-    color: var(--cp-text-muted);
-  }
-}
-
-.cp-progress-bar {
-  height: 0.5rem;
-  background: var(--cp-lavender-100);
-  border-radius: var(--cp-radius-pill);
-  overflow: hidden;
-  position: relative;
-}
-
-.cp-progress-fill {
-  height: 100%;
-  border-radius: var(--cp-radius-pill);
-  background: var(--cp-text);  // đen — giống homepage element
-  transition: width 0.9s cubic-bezier(0, 0, 0.2, 1);
-  width: var(--cp-progress, 0%);
-  position: relative;
-
-  // Xanh khi gần hoàn thành (> 80%) dùng CSS thay JS
-  // Default: đen → override nếu muốn colorful
-}
-
-@keyframes cp-shimmer {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(200%); }
-}
-
-
-// -----------------------------------------------------------------------------
-// 10. DATES GRID
-// -----------------------------------------------------------------------------
 .cp-dates-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8.75rem, 1fr));
   gap: 0.75rem;
 }
 
 .cp-date-item {
   padding: 1rem;
-  background: var(--cp-bg);    // lavender bg bên trong card trắng = depth
-  border-radius: var(--cp-radius);
-  border: 0.0625rem solid var(--cp-lavender-200);
-  transition: border-color 0.2s ease;
-
-  &:hover { border-color: var(--cp-lavender-300); }
+  background: var(--cp-surface-muted);
+  border: 0.0625rem solid var(--cp-border);
+  border-radius: var(--cp-radius-lg);
 
   &__label {
-    font-size: 0.5625rem;
-    font-weight: $bold;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
+    margin-bottom: 0.375rem;
     color: var(--cp-text-muted);
-    margin-bottom: 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: $bold;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
 
   &__value {
-    font-size: 1.0625rem;
+    font-size: 1rem;
     font-weight: $bold;
     color: var(--cp-text);
-    line-height: 1.2;
-    font-family: $primaryFont;
-    letter-spacing: -0.0125rem;
+    line-height: 1.35;
 
-    &--empty {
-      color: var(--cp-gray-400);
-      font-weight: $regular;
-      font-size: 0.875rem;
+    &--success {
+      color: var(--cp-success);
     }
-
-    &--success { color: var(--cp-green-700); }
   }
 }
 
-
-// -----------------------------------------------------------------------------
-// 11. ALERTS
-// -----------------------------------------------------------------------------
 .cp-alert {
-  display: flex;
-  gap: 0.875rem;
-  align-items: flex-start;
-  padding: 0.875rem 1rem;
-  border-radius: var(--cp-radius);
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
+  padding: 0.9375rem 1rem;
   border: 0.0625rem solid transparent;
+  border-radius: var(--cp-radius-lg);
+  margin-bottom: 0.75rem;
 
-  &:last-child { margin-bottom: 0; }
+  &:last-child {
+    margin-bottom: 0;
+  }
 
   &--info {
-    background: var(--cp-blue-50);
-    border-color: var(--cp-blue-100);
-    color: #1e3a8a;
+    background: #eff6ff;
+    border-color: #dbeafe;
   }
 
   &--warning {
-    background: var(--cp-amber-50);
-    border-color: var(--cp-amber-200);
-    color: var(--cp-amber-800);
+    background: #fff8e8;
+    border-color: #fce7ba;
   }
 
   &--critical {
-    background: var(--cp-red-50);
-    border-color: var(--cp-red-200);
-    color: var(--cp-red-800);
+    background: #fff1f1;
+    border-color: #ffd3d3;
   }
-
-  &__icon {
-    flex-shrink: 0;
-    font-size: 1.125rem;
-    margin-top: 0.0625rem;
-  }
-
-  &__body { flex: 1; min-width: 0; }
 
   &__type {
+    margin-bottom: 0.375rem;
+    color: var(--cp-text);
+    font-size: 0.6875rem;
     font-weight: $bold;
-    font-size: 0.625rem;
-    text-transform: uppercase;
     letter-spacing: 0.1em;
-    opacity: 0.65;
-    margin-bottom: 0.1875rem;
+    text-transform: uppercase;
   }
 
-  &__msg { line-height: 1.6; word-break: break-word; }
+  &__msg {
+    color: var(--cp-text);
+    font-size: 0.875rem;
+    line-height: 1.65;
+  }
 
   &__date {
-    font-size: 0.6875rem;
-    opacity: 0.5;
-    margin-top: 0.3125rem;
-    font-style: italic;
+    margin-top: 0.4375rem;
+    color: var(--cp-text-muted);
+    font-size: 0.75rem;
   }
 }
 
+.cp-request-form {
+  display: grid;
+  gap: 0.875rem;
 
-// -----------------------------------------------------------------------------
-// 12. TASK CHECKLIST
-// -----------------------------------------------------------------------------
-.cp-task-progress {
-  margin-bottom: 1.25rem;
-  padding: 1rem;
-  background: var(--cp-bg);
+  label {
+    display: grid;
+    gap: 0.375rem;
+  }
+
+  label > span {
+    color: var(--cp-text-muted);
+    font-size: 0.6875rem;
+    font-weight: $bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    padding: 0.875rem 0.9375rem;
+    border: 0.0625rem solid var(--cp-border);
+    border-radius: var(--cp-radius);
+    background: #fff;
+    color: var(--cp-text);
+    font-family: $primaryFont;
+    font-size: 0.9375rem;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--cp-accent);
+      box-shadow: 0 0 0 0.1875rem rgba(37, 99, 235, 0.12);
+    }
+  }
+
+  textarea {
+    min-height: 8rem;
+    resize: vertical;
+  }
+
+  button {
+    justify-self: start;
+    min-height: 3rem;
+    padding: 0.75rem 1.125rem;
+    background: var(--cp-dark);
+    border: 0;
+    border-radius: var(--cp-radius-pill);
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: $bold;
+    font-family: $primaryFont;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+
+    &:hover {
+      background: #1c2538;
+      transform: translateY(-0.0625rem);
+    }
+  }
+}
+
+.cp-upload-field {
+  small {
+    color: var(--cp-text-muted);
+    font-size: 0.75rem;
+    line-height: 1.5;
+  }
+
+  input[type="file"] {
+    padding: 0.75rem;
+    background: var(--cp-surface-muted);
+    border-style: dashed;
+  }
+}
+
+.cp-request-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.cp-recent-requests {
+  display: grid;
+  gap: 0.625rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 0.0625rem solid var(--cp-border);
+
+  > strong {
+    color: var(--cp-text);
+    font-size: 0.8125rem;
+    font-weight: $bold;
+  }
+}
+
+.cp-recent-request {
+  padding: 0.8125rem 0.875rem;
+  background: var(--cp-surface-muted);
+  border: 0.0625rem solid var(--cp-border);
   border-radius: var(--cp-radius);
-  border: 0.0625rem solid var(--cp-lavender-200);
+
+  span {
+    display: block;
+    color: var(--cp-text-muted);
+    font-size: 0.6875rem;
+    font-weight: $semiBold;
+    letter-spacing: 0.04em;
+  }
+
+  p {
+    margin: 0.375rem 0 0;
+    color: var(--cp-text);
+    font-size: 0.8125rem;
+    line-height: 1.55;
+  }
+}
+
+.cp-task-progress {
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  background: var(--cp-surface-muted);
+  border: 0.0625rem solid var(--cp-border);
+  border-radius: var(--cp-radius-lg);
 
   &__header {
     display: flex;
     justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.625rem;
+    color: var(--cp-text-muted);
     font-size: 0.75rem;
     font-weight: $semiBold;
-    color: var(--cp-text-muted);
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    line-height: 1.45;
   }
 
   &__remaining {
@@ -576,304 +635,436 @@ body.has-client-portal {
 }
 
 .cp-task-bar {
-  height: 0.3125rem;
-  background: var(--cp-lavender-200);
+  height: 0.375rem;
+  background: #dfe5f3;
   border-radius: var(--cp-radius-pill);
   overflow: hidden;
 }
 
 .cp-task-bar-fill {
-  height: 100%;
-  border-radius: var(--cp-radius-pill);
-  background: var(--cp-success);
   width: var(--cp-task-progress, 0%);
-  transition: width 0.9s cubic-bezier(0, 0, 0.2, 1);
+  height: 100%;
+  background: linear-gradient(90deg, var(--cp-success), #22c55e);
+  border-radius: inherit;
 }
 
 .cp-task-row {
-  display: flex;
-  flex-direction: column;
-  padding: 0.875rem 0;
-  border-bottom: 0.0625rem solid var(--cp-lavender-100);
+  padding: 1rem 0;
+  border-top: 0.0625rem solid rgba(207, 213, 234, 0.72);
 
-  &:last-child { border-bottom: none; }
+  &:first-of-type {
+    border-top: 0;
+  }
 }
 
 .cp-task-main {
   display: flex;
+  gap: 0.875rem;
   align-items: flex-start;
-  gap: 0.75rem;
-}
-
-.cp-task-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3125rem;
-  flex: 1;
-  min-width: 0;
 }
 
 .cp-task-dot {
-  width: 1.375rem;
-  height: 1.375rem;
-  border-radius: 0.25rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: 0.125rem;
+  border-radius: 0.4375rem;
+  flex-shrink: 0;
   font-size: 0.75rem;
   font-weight: $bold;
-  flex-shrink: 0;
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-  margin-top: 0.0938rem;
 
   &--pending {
-    background: transparent;
-    border: 0.0938rem solid var(--cp-lavender-300);
+    border: 0.0938rem solid var(--cp-border-strong);
+    background: #fff;
     color: transparent;
-
-    .cp-task-row:hover & { border-color: var(--cp-primary); }
   }
 
   &--done {
-    background: var(--cp-text);  // đen
+    border: 0.0938rem solid var(--cp-dark);
+    background: var(--cp-dark);
     color: #fff;
-    border: 0.0938rem solid var(--cp-text);
   }
 }
 
+.cp-task-body {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.cp-task-head {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+
+.cp-task-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0.1875rem 0.5rem;
+  background: var(--cp-surface-strong);
+  border-radius: var(--cp-radius-pill);
+  color: var(--cp-accent);
+  font-size: 0.625rem;
+  font-weight: $bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .cp-task-name {
-  font-size: 0.9062rem;
-  line-height: 1.45;
-  color: var(--cp-gray-700);
+  color: var(--cp-text);
+  font-size: 0.9375rem;
   font-weight: $semiBold;
+  line-height: 1.5;
 
   &--done {
+    color: var(--cp-text-muted);
     text-decoration: line-through;
-    color: var(--cp-gray-300);
     text-decoration-thickness: 0.0938rem;
-    font-weight: $regular;
   }
 }
 
 .cp-task-desc {
-  font-size: 0.8125rem;
-  color: var(--cp-gray-500);
-  line-height: 1.55;
-  background: var(--cp-bg);
-  border-left: 0.1562rem solid var(--cp-lavender-300);
-  padding: 0.375rem 0.625rem;
-  border-radius: 0.25rem;
+  padding: 0.75rem 0.875rem;
+  background: var(--cp-surface-muted);
+  border-left: 0.1562rem solid var(--cp-accent);
+  border-radius: 0.75rem;
+  color: var(--cp-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.65;
 }
 
-.cp-task-image {
-  img {
-    max-width: 100%;
-    max-height: 17.5rem;
-    border-radius: 0.5rem;
-    border: 0.0625rem solid var(--cp-lavender-200);
-    object-fit: cover;
-    cursor: zoom-in;
-    transition: opacity 0.2s;
-
-    &:hover { opacity: 0.9; }
-  }
+.cp-task-image img {
+  display: block;
+  width: 100%;
+  max-height: 20rem;
+  object-fit: cover;
+  border-radius: 1rem;
+  border: 0.0625rem solid var(--cp-border);
 }
 
-
-// -----------------------------------------------------------------------------
-// 13. ACTIVITY LOG
-// -----------------------------------------------------------------------------
-.cp-log-truncation {
-  font-size: 0.6875rem;
-  color: var(--cp-gray-400);
-  margin-left: 0.3125rem;
+.cp-card--timeline {
+  overflow: hidden;
 }
 
-.cp-log-item {
-  display: flex;
+.cp-timeline {
+  position: relative;
+  display: grid;
   gap: 0.875rem;
-  align-items: flex-start;
-  padding: 0.875rem 0;
-  border-bottom: 0.0625rem solid var(--cp-lavender-100);
-
-  &:last-child { border-bottom: none; }
-}
-
-.cp-log-indicator {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex-shrink: 0;
-  padding-top: 0.25rem;
-}
-
-.cp-log-dot {
-  width: 0.5625rem;
-  height: 0.5625rem;
-  border-radius: 50%;
-  background: var(--cp-text);
-  box-shadow: 0 0 0 0.1562rem rgba(17, 24, 39, 0.1);
-
-  &--auto {
-    background: var(--cp-gray-300);
-    box-shadow: none;
-  }
-}
-
-.cp-log-body  { flex: 1; min-width: 0; }
-
-.cp-log-meta {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 0.3125rem;
-}
-
-.cp-log-type {
-  font-size: 0.6875rem;
-  font-weight: $bold;
-  color: var(--cp-text);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.cp-log-date {
-  font-size: 0.6875rem;
-  color: var(--cp-gray-400);
 
   &::before {
-    content: '·';
-    margin-right: 0.375rem;
-    opacity: 0.5;
+    content: "";
+    position: absolute;
+    top: 0.875rem;
+    bottom: 0.875rem;
+    left: 0.5rem;
+    width: 0.0625rem;
+    background: var(--cp-border);
   }
 }
 
-.cp-log-by {
-  font-size: 0.6875rem;
-  color: var(--cp-gray-400);
-  font-style: italic;
+.cp-log {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1rem minmax(0, 1fr);
+  gap: 0.875rem;
+
+  &__marker {
+    width: 1rem;
+    height: 1rem;
+    margin-top: 0.625rem;
+    border-radius: 50%;
+    background: var(--cp-dark);
+    border: 0.1875rem solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 0 0.0625rem var(--cp-border);
+    z-index: 1;
+  }
+
+  &--update .cp-log__marker {
+    background: var(--cp-accent);
+  }
+
+  &--fix .cp-log__marker {
+    background: var(--cp-success);
+  }
+
+  &--task .cp-log__marker {
+    background: #7c3aed;
+  }
+
+  &__body {
+    padding: 1rem 1.0625rem;
+    background: var(--cp-surface-muted);
+    border: 0.0625rem solid var(--cp-border);
+    border-radius: var(--cp-radius-lg);
+  }
+
+  &__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  &__type {
+    color: var(--cp-text);
+    font-size: 0.6875rem;
+    font-weight: $bold;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  time,
+  &__by {
+    color: var(--cp-text-muted);
+    font-size: 0.75rem;
+  }
+
+  &__content {
+    color: var(--cp-text);
+    font-size: 0.875rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  &__by {
+    margin-top: 0.625rem;
+  }
 }
 
-.cp-log-content {
-  font-size: 0.875rem;
-  color: var(--cp-gray-600);
+.cp-attachment-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.625rem;
+  margin-top: 0.875rem;
+
+  &--compact {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-top: 0.625rem;
+  }
+}
+
+.cp-attachment-thumb {
+  display: block;
+  overflow: hidden;
+  border: 0.0625rem solid var(--cp-border);
+  border-radius: 0.875rem;
+  background: var(--cp-surface-muted);
+  aspect-ratio: 1 / 1;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease;
+  }
+
+  &:hover img {
+    transform: scale(1.03);
+  }
+}
+
+.cp-empty-state,
+.cp-error {
+  padding: 1rem 1.125rem;
+  border-radius: var(--cp-radius-lg);
+  font-size: 0.9375rem;
   line-height: 1.65;
-  white-space: pre-wrap;
-  word-break: break-word;
 }
 
-
-// -----------------------------------------------------------------------------
-// 14. EMPTY STATES
-// -----------------------------------------------------------------------------
-.cp-empty {
-  text-align: center;
-  padding: 2.5rem 1rem;
+.cp-empty-state {
+  background: var(--cp-surface-muted);
+  border: 0.0625rem dashed var(--cp-border-strong);
   color: var(--cp-text-muted);
+  text-align: center;
+}
+
+.cp-notice {
+  padding: 0.9375rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: var(--cp-radius-lg);
   font-size: 0.875rem;
+  line-height: 1.6;
+
+  &--success {
+    background: #ecfdf5;
+    border: 0.0625rem solid #c6f6d5;
+    color: #166534;
+  }
+
+  &--error {
+    background: #fef2f2;
+    border: 0.0625rem solid #fecaca;
+    color: #991b1b;
+  }
+}
+
+.cp-hero {
+  display: grid;
+  gap: 1.25rem;
+  justify-items: center;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 4rem 1rem;
+  text-align: center;
 
   &__icon {
-    font-size: 2.25rem;
-    margin-bottom: 0.75rem;
-    display: block;
-    opacity: 0.6;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 4.75rem;
+    height: 4.75rem;
+    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, 0.8);
+    border: 0.0625rem solid rgba(207, 213, 234, 0.9);
+    box-shadow: var(--cp-shadow-sm);
+    font-size: 2rem;
+  }
+
+  &__title {
+    font-family: $primaryFont;
+    font-size: clamp(2.2rem, 4vw, 3.4rem);
+    font-weight: $extraBold;
+    letter-spacing: -0.06rem;
+    line-height: 1.05;
+  }
+
+  &__desc {
+    max-width: 34rem;
+    color: var(--cp-text-muted);
+    font-size: 1rem;
+    line-height: 1.75;
   }
 }
 
+.cp-key-form {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 35rem;
 
-// -----------------------------------------------------------------------------
-// 15. FOOTER
-// -----------------------------------------------------------------------------
-.cp-footer {
-  text-align: center;
-  padding: 2rem 1rem 2.5rem;
-  font-size: 0.75rem;
-  color: var(--cp-text-muted);
-  line-height: 1.8;
-
-  a {
-    color: var(--cp-text);
-    text-decoration: none;
-    font-weight: $semiBold;
-
-    &:hover { text-decoration: underline; }
+  input,
+  button {
+    min-height: 3.5rem;
+    border-radius: var(--cp-radius-pill);
+    font-family: $primaryFont;
+    font-size: 0.9375rem;
   }
 
-  &__timestamp {
-    display: block;
-    margin-top: 0.125rem;
-    font-size: 0.6875rem;
-    opacity: 0.6;
+  input {
+    flex: 1;
+    padding: 0 1.125rem;
+    border: 0.0625rem solid var(--cp-border);
+    background: rgba(255, 255, 255, 0.88);
+
+    &:focus {
+      outline: none;
+      border-color: var(--cp-accent);
+      box-shadow: 0 0 0 0.1875rem rgba(37, 99, 235, 0.12);
+    }
+  }
+
+  button {
+    padding: 0 1.375rem;
+    border: 0;
+    background: var(--cp-dark);
+    color: #fff;
+    font-weight: $bold;
+    cursor: pointer;
+  }
+
+  &--retry {
+    max-width: 34rem;
+    margin: 1rem auto 0;
   }
 }
 
-
-// -----------------------------------------------------------------------------
-// 16. FOCUS RING — WCAG AA
-// -----------------------------------------------------------------------------
-.cp-main *:focus-visible {
-  outline: 0.1875rem solid var(--cp-primary);
-  outline-offset: 0.1875rem;
-  border-radius: 0.25rem;
+.cp-error {
+  max-width: 40rem;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.88);
+  border: 0.0625rem solid #fecaca;
+  box-shadow: var(--cp-shadow-sm);
+  color: #991b1b;
 }
 
+@include maxWidth($lg) {
+  .cp-main {
+    max-width: 66rem;
+    padding-top: 7.5rem;
+  }
 
-// -----------------------------------------------------------------------------
-// 20. BADGE
-// -----------------------------------------------------------------------------
-// 20. BADGE
-// -----------------------------------------------------------------------------
-.laca-badge {
-  display: inline-block;
-  background: var(--cp-text);
-  color: #fff;
-  font-size: 0.625rem;
-  font-weight: $bold;
-  padding: 0.15em 0.6em;
-  border-radius: 1.25rem;
-  margin-left: 0.4em;
-  vertical-align: middle;
-  line-height: 1.6;
-  letter-spacing: 0.02em;
+  .cp-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cp-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .cp-layout__side {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
+@include maxWidth($sm) {
+  .cp-main {
+    padding: 6.75rem 1rem 3rem;
+  }
 
-// =============================================================================
-// RESPONSIVE
-// =============================================================================
-@include maxWidth($xs) {
-  .cp-main { padding: 1.5rem 0.875rem 3.75rem; }
+  .cp-card,
+  .cp-overview {
+    padding: 1.125rem;
+  }
 
-  .cp-hero {
-    padding: 3.125rem 0.875rem 2.5rem;
+  .cp-overview__head,
+  .cp-progress__head,
+  .cp-report-hero,
+  .cp-section-head,
+  .cp-log__head {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
 
-    &__title { font-size: 1.875rem; }
-    &__desc  { font-size: 1rem; }
+  .cp-overview__meta,
+  .cp-key-form,
+  .cp-request-grid,
+  .cp-metric-grid,
+  .cp-stat-grid,
+  .cp-layout__side {
+    grid-template-columns: 1fr;
   }
 
   .cp-key-form {
-    flex-direction: column;
-
-    button { width: 100%; }
+    display: grid;
   }
 
-  .cp-card {
-    padding: 1.25rem 1rem;
-    margin-bottom: 0.75rem;
-    border-radius: var(--cp-radius);
+  .cp-report-hero__latest {
+    text-align: left;
   }
 
-  .cp-status-header {
-    flex-direction: column;
-    gap: 0.625rem;
+  .cp-attachment-grid,
+  .cp-attachment-grid--compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .cp-project-name { font-size: 1.375rem; }
-  .cp-dates-grid   { grid-template-columns: repeat(2, 1fr); }
-  .cp-progress-pct { font-size: 1.5rem; }
-}
+  .cp-status-badge,
+  .cp-section-badge {
+    justify-self: start;
+  }
 
-@include maxWidth(400px) {
-  .cp-dates-grid { grid-template-columns: 1fr; }
+  .cp-task-main {
+    gap: 0.75rem;
+  }
+
+  .cp-project-name {
+    font-size: 2rem;
+  }
 }

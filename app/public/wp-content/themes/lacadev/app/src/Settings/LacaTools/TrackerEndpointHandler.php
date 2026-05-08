@@ -59,11 +59,13 @@ class TrackerEndpointHandler
 
             // Map event type → log_type của database
             $deploymentTypes = [
+                'deployment',
                 'plugin_update', 'theme_update', 'core_update',
                 'plugin_install', 'plugin_activate', 'plugin_deactivate', 'plugin_delete',
             ];
-            $securityTypes   = ['file_changed', 'code_edit', 'file_suspicious'];
-            $warningTypes    = ['update_pending'];
+            $securityTypes      = ['file_changed', 'code_edit', 'file_suspicious'];
+            $warningTypes       = ['update_pending'];
+            $clientRequestTypes = ['client_request'];
 
             if (in_array($type, $deploymentTypes, true)) {
                 $logType = 'deployment';
@@ -90,10 +92,17 @@ class TrackerEndpointHandler
                             'new_version'     => sanitize_text_field($p['new_version'] ?? ''),
                         ];
                     }
+
                     if (!empty($clean)) {
                         update_post_meta($projectId, '_pending_plugin_updates', $clean);
                     }
                 }
+            } elseif (in_array($type, $clientRequestTypes, true)) {
+                $logType = 'client_request';
+                $requestType = sanitize_key((string) ($log['request_type'] ?? 'request'));
+                $alertType = $requestType === 'bug' ? 'bug' : 'other';
+                $alertLevel = $requestType === 'bug' || $level === 'warning' ? 'warning' : 'info';
+                $this->createClientRequestAlert($projectId, $content, $alertLevel, $alertType);
             } else {
                 $logType = 'note';
             }
@@ -174,6 +183,24 @@ class TrackerEndpointHandler
 
         // Dedup: không tạo nếu đã có alert cùng type + project chưa resolve
         if (ProjectAlert::existsActive($projectId, $alertType)) {
+            return;
+        }
+
+        ProjectAlert::add([
+            'project_id'  => $projectId,
+            'alert_type'  => $alertType,
+            'alert_level' => $level,
+            'alert_msg'   => $msg,
+        ]);
+    }
+
+    private function createClientRequestAlert(int $projectId, string $msg, string $level, string $alertType): void
+    {
+        if (!class_exists('\App\Models\ProjectAlert')) {
+            return;
+        }
+
+        if (ProjectAlert::existsActiveByMsg($projectId, $msg)) {
             return;
         }
 

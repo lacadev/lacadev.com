@@ -50,6 +50,15 @@ document.addEventListener( 'DOMContentLoaded', () => {
 		alert( message || 'Có lỗi xảy ra' );
 	}
 
+	function escapeHtml( value ) {
+		return String( value || '' )
+			.replace( /&/g, '&amp;' )
+			.replace( /</g, '&lt;' )
+			.replace( />/g, '&gt;' )
+			.replace( /"/g, '&quot;' )
+			.replace( /'/g, '&#039;' );
+	}
+
 	function confirmAction( message ) {
 		if ( typeof Swal !== 'undefined' ) {
 			return Swal.fire( {
@@ -189,37 +198,37 @@ document.addEventListener( 'DOMContentLoaded', () => {
 			}
 		}
 
-		const categoryIcon = {
-			bug: '🐛',
-			page: '🖼️',
-			content: '📝',
-			seo: '🔍',
-			feature: '⭐',
-			other: '📌',
+		const categoryLabel = {
+			bug: 'Bug / Lỗi',
+			page: 'Trang giao diện',
+			content: 'Nội dung',
+			seo: 'SEO',
+			feature: 'Tính năng',
+			other: 'Khác',
 		};
 
 		function buildTaskRow( task ) {
 			const cat =
 				task.category || ( task.source === 'page' ? 'page' : 'other' );
-			const icon = categoryIcon[ cat ] || '📌';
+			const label = categoryLabel[ cat ] || categoryLabel.other;
+			const taskId = escapeHtml( task.id );
 			const demoLink = task.demo_url
-				? `<a href="${ task.demo_url }" target="_blank" style="font-size:11px;color:#0073aa;margin-left:6px;" title="Mẫu giao diện">↗ mẫu</a>`
+				? `<a href="${ escapeHtml(
+						task.demo_url
+				  ) }" target="_blank" rel="noopener" class="laca-task-item__link">Mẫu giao diện</a>`
 				: '';
 			const row = document.createElement( 'div' );
 			row.className = `laca-task-item ${ task.done ? 'task-done' : '' }`;
 			row.dataset.id = task.id;
 			row.innerHTML = `
-                <input type="checkbox" class="task-checkbox" data-id="${
-					task.id
-				}" ${ task.done ? 'checked' : '' }>
-                <div style="flex:1;min-width:0;">
-                    <span class="task-name">${ icon } ${
-						task.name
-					}</span>${ demoLink }
+                <input type="checkbox" class="task-checkbox" data-id="${ taskId }" aria-label="Đánh dấu hoàn thành: ${ escapeHtml(
+					task.name
+				) }" ${ task.done ? 'checked' : '' }>
+                <div class="laca-task-item__content">
+                    <span class="task-name">${ escapeHtml( task.name ) }</span>
+                    <span class="laca-task-item__meta">${ label }</span>${ demoLink }
                 </div>
-                <a class="task-delete-btn" data-id="${
-					task.id
-				}" title="Xoá task">✕</a>
+                <a class="task-delete-btn" data-id="${ taskId }" title="Xoá task">✕</a>
             `;
 			return row;
 		}
@@ -231,85 +240,85 @@ document.addEventListener( 'DOMContentLoaded', () => {
 				return;
 			}
 			if ( ! logs.length ) {
-				$list.html( '<p style="color:#888;">Chưa có nhật ký nào.</p>' );
+				$list.html(
+					'<p class="laca-project-empty">Chưa có nhật ký nào.</p>'
+				);
 				return;
 			}
 			$list.empty();
 			logs.forEach( ( l ) => {
 				const typeLabels = {
-					note: '📝 Ghi chú',
-					task_done: '✅ Hoàn thành task',
-					bug_fix: '🐛 Sửa lỗi',
-					client_request: '👤 Yêu cầu',
-					deployment: '🚀 Deploy',
-					theme_switch: '🎨 Thiết kế',
+					note: 'Ghi chú',
+					task_done: 'Hoàn thành task',
+					bug_fix: 'Sửa lỗi',
+					client_request: 'Yêu cầu',
+					deployment: 'Deploy',
+					theme_switch: 'Thiết kế',
 				};
 				const label = typeLabels[ l.log_type ] || l.log_type;
 				const dateStr = new Date( l.log_date ).toLocaleDateString(
 					'vi-VN',
-					{ day: '2-digit', month: '2-digit', year: '2-digit' }
+					{
+						day: '2-digit',
+						month: '2-digit',
+						year: '2-digit',
+					}
 				);
 				$list.append( `
-                    <div class="laca-pm-item" id="log-${ l.id }">
+                    <div class="laca-pm-item laca-log-item" id="log-${ escapeHtml(
+						l.id
+					) }">
                         <div class="laca-pm-meta">
-                            <span style="font-weight:600;color:#0073aa;">${ label }${
+                            <span class="laca-log-item__type">${ escapeHtml(
+								label
+							) }${
 								l.is_auto
-									? ' <span style="color:#e67e22;font-size:10px;">(Auto)</span>'
+									? ' <span class="laca-project-chip">Auto</span>'
 									: ''
 							}</span>
-                            <span>${ dateStr } bởi ${ l.log_by }</span>
+                            <span>${ dateStr } bởi ${ escapeHtml(
+								l.log_by
+							) }</span>
                         </div>
-                        <div style="margin:6px 0;">${ l.log_content.replace(
-							/\n/g,
-							'<br>'
-						) }</div>
+                        <div class="laca-log-item__content">${ escapeHtml(
+							l.log_content
+						).replace( /\n/g, '<br>' ) }</div>
                     </div>
                 ` );
 			} );
 		}
 
 		// Helper: cập nhật block "Việc chưa hoàn thành" không cần reload
-		const catIcons2 = {
-			bug: '🐛',
-			page: '🖼️',
-			content: '📝',
-			seo: '🔍',
-			feature: '⭐',
-			other: '📌',
-		};
 		function updatePendingBlock( tasks ) {
 			const pending = tasks.filter( ( t ) => ! ( t.done ?? false ) );
-			// Tìm block pending — nằm ngay trước #laca-log-list
 			let $block = jQuery( '#laca-pending-tasks-block' );
 			if ( ! pending.length ) {
 				$block.slideUp( 160, () => $block.remove() );
 				return;
 			}
 			if ( ! $block.length ) {
-				// Tạo lại block nếu chưa có (trường hợp ban đầu không có pending)
 				$block =
-					jQuery( `<div id="laca-pending-tasks-block" style="margin-bottom:16px; padding:10px 14px; background:#fff8e1; border-left:3px solid #f5a623; border-radius:4px;">
-                    <strong style="font-size:13px; color:#7c5b00;">⏳ Việc chưa hoàn thành</strong>
-                    <ul id="laca-pending-list" style="margin:8px 0 0 0; padding-left:16px; font-size:13px; color:#444;"></ul>
-                </div>` );
-				jQuery( '#laca-log-list' ).before( $block );
+					jQuery( `<section class="laca-project-panel laca-project-panel--pending" id="laca-pending-tasks-block">
+                    <div class="laca-project-panel__header">
+                        <div>
+                            <h3>Việc chưa hoàn thành</h3>
+                            <p>Những mục cần xử lý trước khi báo cáo hoặc bàn giao.</p>
+                        </div>
+                    </div>
+                    <ul class="laca-pending-list" id="laca-pending-list"></ul>
+                </section>` );
+				jQuery( '.laca-project-workspace__side' ).prepend( $block );
 			}
 			let $ul = $block.find( '#laca-pending-list' );
 			if ( ! $ul.length ) {
 				$block.append(
-					'<ul id="laca-pending-list" style="margin:8px 0 0 0; padding-left:16px; font-size:13px; color:#444;"></ul>'
+					'<ul class="laca-pending-list" id="laca-pending-list"></ul>'
 				);
 				$ul = $block.find( '#laca-pending-list' );
 			}
 			$ul.empty();
 			pending.forEach( ( pt ) => {
-				const cat2 =
-					pt.category || ( pt.source === 'page' ? 'page' : 'other' );
-				$ul.append(
-					`<li style="margin-bottom:3px;">${
-						catIcons2[ cat2 ] || '📌'
-					} ${ pt.name }</li>`
-				);
+				$ul.append( `<li>${ escapeHtml( pt.name ) }</li>` );
 			} );
 		}
 
@@ -341,7 +350,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 						renderLogs( res.data.logs );
 					}
 					toastSuccess(
-						isDone ? '✅ Đánh dấu hoàn thành' : '↩ Đã mở lại task'
+						isDone ? 'Đánh dấu hoàn thành' : 'Đã mở lại task'
 					);
 				},
 				function () {
@@ -390,7 +399,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 				'laca_add_task',
 				{ task_name: name, task_category: category },
 				function ( res ) {
-					$btn.prop( 'disabled', false ).text( '+ Thêm' );
+					$btn.prop( 'disabled', false ).text( 'Thêm' );
 					jQuery( '#new_task_name' ).val( '' );
 					const $container = jQuery( '#task_list_container' );
 					// Remove empty placeholder
@@ -400,7 +409,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 					toastSuccess( 'Đã thêm task' );
 				},
 				function () {
-					$btn.prop( 'disabled', false ).text( '+ Thêm' );
+					$btn.prop( 'disabled', false ).text( 'Thêm' );
 				}
 			);
 		} );
@@ -414,7 +423,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 				'laca_sync_pages',
 				{},
 				function ( res ) {
-					$btn.prop( 'disabled', false ).text( '🔄 Sync trang' );
+					$btn.prop( 'disabled', false ).text( 'Sync trang' );
 					toastSuccess( res.data.message || 'Đã sync xong' );
 					// Rebuild task list
 					const $container = jQuery( '#task_list_container' );
@@ -425,13 +434,13 @@ document.addEventListener( 'DOMContentLoaded', () => {
 						);
 					} else {
 						$container.html(
-							'<p style="color:#888;font-size:13px;">Chưa có task nào.</p>'
+							'<p class="laca-project-empty">Chưa có task nào.</p>'
 						);
 					}
 					updateProgress( res.data.tasks || [] );
 				},
 				function () {
-					$btn.prop( 'disabled', false ).text( '🔄 Sync trang' );
+					$btn.prop( 'disabled', false ).text( 'Sync trang' );
 				}
 			);
 		} );
@@ -557,12 +566,18 @@ document.addEventListener( 'DOMContentLoaded', () => {
 			'.laca-password-input:not(.processed), .laca-copyable-input:not(.processed)'
 		);
 		fields.forEach( ( fieldWrapper ) => {
-			fieldWrapper.classList.add( 'processed' );
-
-			const input = fieldWrapper.querySelector( 'input' );
+			const input = fieldWrapper.matches( 'input, textarea' )
+				? fieldWrapper
+				: fieldWrapper.querySelector( 'input, textarea' );
 			if ( ! input ) {
 				return;
 			}
+			if ( input.closest( '.laca-input-with-actions' ) ) {
+				fieldWrapper.classList.add( 'processed' );
+				return;
+			}
+
+			fieldWrapper.classList.add( 'processed' );
 
 			const wrapper = document.createElement( 'div' );
 			wrapper.className = 'laca-input-with-actions';
@@ -578,15 +593,15 @@ document.addEventListener( 'DOMContentLoaded', () => {
 				const toggleBtn = document.createElement( 'button' );
 				toggleBtn.type = 'button';
 				toggleBtn.className = 'laca-toggle-pwd-btn';
-				toggleBtn.innerHTML = '👁️';
+				toggleBtn.textContent = 'Show';
 				toggleBtn.title = 'Hiện/Ẩn mật khẩu';
 				toggleBtn.onclick = ( e ) => {
 					e.preventDefault();
 					e.stopPropagation();
 					input.type =
 						input.type === 'password' ? 'text' : 'password';
-					toggleBtn.innerHTML =
-						input.type === 'password' ? '👁️' : '🔒';
+					toggleBtn.textContent =
+						input.type === 'password' ? 'Show' : 'Hide';
 				};
 				actions.appendChild( toggleBtn );
 			}
@@ -595,7 +610,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 			const copyBtn = document.createElement( 'button' );
 			copyBtn.type = 'button';
 			copyBtn.className = 'laca-copy-btn';
-			copyBtn.innerHTML = '📋';
+			copyBtn.textContent = 'Copy';
 			copyBtn.title = 'Copy';
 			copyBtn.onclick = ( e ) => {
 				e.preventDefault();
@@ -606,10 +621,11 @@ document.addEventListener( 'DOMContentLoaded', () => {
 				}
 
 				const doCopy = () => {
-					const originalText = copyBtn.innerHTML;
-					copyBtn.innerHTML = '✅';
+					const originalText = copyBtn.textContent;
+					copyBtn.textContent = 'Copied';
+					toastSuccess( 'Đã copy' );
 					setTimeout(
-						() => ( copyBtn.innerHTML = originalText ),
+						() => ( copyBtn.textContent = originalText ),
 						2000
 					);
 				};
@@ -649,7 +665,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 			! slug
 		) {
 			$msg.show().html(
-				'<div class="notice notice-error inline" style="margin:0;padding:8px 12px;"><p>⚠️ Vui lòng nhập slug trước khi gửi lệnh.</p></div>'
+				'<div class="notice notice-error inline" style="margin:0;padding:8px 12px;"><p>Vui lòng nhập slug trước khi gửi lệnh.</p></div>'
 			);
 			return;
 		}
@@ -668,11 +684,11 @@ document.addEventListener( 'DOMContentLoaded', () => {
 					update_slug: slug,
 				},
 				function ( res ) {
-					$btn.prop( 'disabled', false ).text( '🚀 Gửi lệnh' );
+					$btn.prop( 'disabled', false ).text( 'Gửi lệnh' );
 					if ( res.success ) {
 						$msg.show().html(
-							'<div class="notice notice-success inline" style="margin:0;padding:8px 12px;"><p>✅ ' +
-								( res.data.message || 'Thành công' ) +
+							'<div class="notice notice-success inline" style="margin:0;padding:8px 12px;"><p>' +
+								escapeHtml( res.data.message || 'Thành công' ) +
 								'</p></div>'
 						);
 						toastSuccess(
@@ -680,17 +696,19 @@ document.addEventListener( 'DOMContentLoaded', () => {
 						);
 					} else {
 						$msg.show().html(
-							'<div class="notice notice-error inline" style="margin:0;padding:8px 12px;"><p>❌ ' +
-								( res.data.message || 'Lỗi không xác định' ) +
+							'<div class="notice notice-error inline" style="margin:0;padding:8px 12px;"><p>' +
+								escapeHtml(
+									res.data.message || 'Lỗi không xác định'
+								) +
 								'</p></div>'
 						);
 					}
 				}
 			)
 			.fail( function ( xhr ) {
-				$btn.prop( 'disabled', false ).text( '🚀 Gửi lệnh' );
+				$btn.prop( 'disabled', false ).text( 'Gửi lệnh' );
 				$msg.show().html(
-					'<div class="notice notice-error inline" style="margin:0;padding:8px 12px;"><p>❌ Lỗi kết nối AJAX (HTTP ' +
+					'<div class="notice notice-error inline" style="margin:0;padding:8px 12px;"><p>Lỗi kết nối AJAX (HTTP ' +
 						xhr.status +
 						')</p></div>'
 				);
@@ -722,7 +740,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 		const $empty = jQuery( '#pending_plugins_empty' );
 		const $tbody = jQuery( '#pending_plugins_tbody' );
 
-		$btn.prop( 'disabled', true ).text( '⏳ Đang tải...' );
+		$btn.prop( 'disabled', true ).text( 'Đang tải...' );
 
 		jQuery
 			.post(
@@ -734,7 +752,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 				},
 				function ( res ) {
 					$btn.prop( 'disabled', false ).text(
-						'🔄 Tải danh sách plugin chờ update'
+						'Tải plugin chờ update'
 					);
 					if ( ! res.success ) {
 						return;
@@ -751,17 +769,15 @@ document.addEventListener( 'DOMContentLoaded', () => {
 					$tbody.empty();
 					plugins.forEach( function ( p ) {
 						const slug = p.slug || '';
-						const row = `<tr data-slug="${ slug }" style="border-bottom:1px solid #eee;">
-                    <td style="padding:7px 10px;">${ p.name || slug }</td>
-                    <td style="padding:7px 10px; text-align:center; color:#888; font-size:12px;">${
-						p.current_version || '?'
-					}</td>
-                    <td style="padding:7px 10px; text-align:center; color:#0073aa; font-weight:600; font-size:12px;">${
-						p.new_version || '?'
-					}</td>
-                    <td style="padding:7px 10px; text-align:center;">
-                        <button type="button" class="button js-update-plugin" data-slug="${ slug }" style="font-size:12px; padding:3px 8px;">
-                            ⬆️ Cập nhật
+						const row = `<tr data-slug="${ escapeHtml( slug ) }">
+                    <td>${ escapeHtml( p.name || slug ) }</td>
+                    <td>${ escapeHtml( p.current_version || '?' ) }</td>
+                    <td>${ escapeHtml( p.new_version || '?' ) }</td>
+                    <td>
+                        <button type="button" class="button js-update-plugin" data-slug="${ escapeHtml(
+							slug
+						) }">
+                            Cập nhật
                         </button>
                     </td>
                 </tr>`;
@@ -771,9 +787,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 				}
 			)
 			.fail( function () {
-				$btn.prop( 'disabled', false ).text(
-					'🔄 Tải danh sách plugin chờ update'
-				);
+				$btn.prop( 'disabled', false ).text( 'Tải plugin chờ update' );
 			} );
 	} );
 
@@ -783,7 +797,7 @@ document.addEventListener( 'DOMContentLoaded', () => {
 		const slug = $btn.data( 'slug' );
 		const $msg = jQuery( '#remote_update_msg' );
 
-		$btn.prop( 'disabled', true ).text( '⏳ Đang update...' );
+		$btn.prop( 'disabled', true ).text( 'Đang update...' );
 		$msg.hide();
 
 		jQuery
@@ -799,29 +813,31 @@ document.addEventListener( 'DOMContentLoaded', () => {
 				function ( res ) {
 					if ( res.success ) {
 						$btn.closest( 'tr' ).css( 'opacity', '0.5' );
-						$btn.prop( 'disabled', true ).text( '✅ Đã cập nhật' );
+						$btn.prop( 'disabled', true ).text( 'Đã cập nhật' );
 						$msg.show().html(
-							'<div class="notice notice-success inline" style="margin:0;padding:8px 12px;"><p>✅ ' +
-								( res.data.message || 'Thành công' ) +
+							'<div class="notice notice-success inline" style="margin:0;padding:8px 12px;"><p>' +
+								escapeHtml( res.data.message || 'Thành công' ) +
 								'</p></div>'
 						);
 						toastSuccess(
 							res.data.message || 'Cập nhật plugin thành công'
 						);
 					} else {
-						$btn.prop( 'disabled', false ).text( '⬆️ Cập nhật' );
+						$btn.prop( 'disabled', false ).text( 'Cập nhật' );
 						$msg.show().html(
-							'<div class="notice notice-error inline" style="margin:0;padding:8px 12px;"><p>❌ ' +
-								( res.data.message || 'Lỗi không xác định' ) +
+							'<div class="notice notice-error inline" style="margin:0;padding:8px 12px;"><p>' +
+								escapeHtml(
+									res.data.message || 'Lỗi không xác định'
+								) +
 								'</p></div>'
 						);
 					}
 				}
 			)
 			.fail( function ( xhr ) {
-				$btn.prop( 'disabled', false ).text( '⬆️ Cập nhật' );
+				$btn.prop( 'disabled', false ).text( 'Cập nhật' );
 				$msg.show().html(
-					'<div class="notice notice-error inline" style="margin:0;padding:8px 12px;"><p>❌ Lỗi kết nối AJAX (HTTP ' +
+					'<div class="notice notice-error inline" style="margin:0;padding:8px 12px;"><p>Lỗi kết nối AJAX (HTTP ' +
 						xhr.status +
 						')</p></div>'
 				);
