@@ -136,6 +136,11 @@ class Project extends \App\Abstracts\AbstractPostType
         $clientPortalUrl = $portalUrl ? add_query_arg('key', $secretKey, $portalUrl) : '';
         $clientPortalAliasUrl = ($portalUrl && $portalAlias) ? add_query_arg('key', $portalAlias, $portalUrl) : '';
         $latestLog = !empty($logs) ? $logs[0] : null;
+        $trackerLastSeenAt = (string) get_post_meta($projectId, '_tracker_last_seen_at', true);
+        $trackerLastSeenMeta = get_post_meta($projectId, '_tracker_last_seen_meta', true);
+        $trackerLastSeenMeta = is_array($trackerLastSeenMeta) ? $trackerLastSeenMeta : [];
+        $trackerHealth = $this->getTrackerHealthSummary($trackerLastSeenAt, $trackerLastSeenMeta);
+        $workspaceStatus = !empty($alerts) ? __('Cần xử lý', 'laca') : $trackerHealth['status'];
 
         wp_nonce_field('laca_project_manager', 'laca_pm_nonce');
         ?>
@@ -146,7 +151,7 @@ class Project extends \App\Abstracts\AbstractPostType
                     <p><?php echo esc_html__('Theo dõi tiến độ, cảnh báo, lịch sử bảo trì và các thao tác từ xa của website khách hàng.', 'laca'); ?></p>
                 </div>
                 <span class="laca-project-workspace__status">
-                    <?php echo empty($alerts) ? esc_html__('Ổn định', 'laca') : esc_html__('Cần xử lý', 'laca'); ?>
+                    <?php echo esc_html($workspaceStatus); ?>
                 </span>
             </div>
 
@@ -175,6 +180,11 @@ class Project extends \App\Abstracts\AbstractPostType
                         <?php echo $latestLog ? esc_html(ProjectLog::getTypeLabel($latestLog['log_type'])) : esc_html__('Chưa nhận log từ tracker', 'laca'); ?>
                     </small>
                 </div>
+                <div class="laca-project-summary-card laca-project-summary-card--tracker">
+                    <span class="laca-project-summary-card__label"><?php echo esc_html__('Tracker heartbeat', 'laca'); ?></span>
+                    <strong><?php echo esc_html($trackerHealth['headline']); ?></strong>
+                    <small><?php echo esc_html($trackerHealth['note']); ?></small>
+                </div>
             </div>
 
             <div class="laca-project-workspace__grid">
@@ -183,5 +193,57 @@ class Project extends \App\Abstracts\AbstractPostType
             </div>
         </div>
         <?php
+    }
+
+    /**
+     * @param array<string,mixed> $meta
+     * @return array{status:string,headline:string,note:string,tone:string}
+     */
+    private function getTrackerHealthSummary(string $lastSeenAt, array $meta): array
+    {
+        if ($lastSeenAt === '') {
+            return [
+                'status' => __('Chưa có heartbeat', 'laca'),
+                'headline' => __('Chưa kết nối', 'laca'),
+                'note' => __('Chưa nhận heartbeat từ website khách hàng.', 'laca'),
+                'tone' => 'warning',
+            ];
+        }
+
+        $timestamp = strtotime($lastSeenAt);
+        if (!$timestamp) {
+            return [
+                'status' => __('Cần kiểm tra', 'laca'),
+                'headline' => __('Dữ liệu lỗi', 'laca'),
+                'note' => __('Thời gian heartbeat không hợp lệ.', 'laca'),
+                'tone' => 'warning',
+            ];
+        }
+
+        $ageSeconds = max(0, current_time('timestamp') - $timestamp);
+        $ageLabel = sprintf(__('%s trước', 'laca'), human_time_diff($timestamp, current_time('timestamp')));
+        $failed = (int) ($meta['tracker_health']['failed'] ?? 0);
+        $retry = (int) ($meta['tracker_health']['retry'] ?? 0);
+
+        if ($ageSeconds > 7 * DAY_IN_SECONDS) {
+            $tone = 'danger';
+            $status = __('Tracker im lặng', 'laca');
+            $headline = __('Mất kết nối', 'laca');
+        } elseif ($ageSeconds > 2 * DAY_IN_SECONDS || $failed > 0) {
+            $tone = 'warning';
+            $status = __('Cần kiểm tra', 'laca');
+            $headline = __('Có rủi ro', 'laca');
+        } else {
+            $tone = 'ok';
+            $status = __('Ổn định', 'laca');
+            $headline = __('Online', 'laca');
+        }
+
+        $note = $ageLabel;
+        if ($failed > 0 || $retry > 0) {
+            $note .= sprintf(__(' · %d lỗi, %d retry', 'laca'), $failed, $retry);
+        }
+
+        return compact('status', 'headline', 'note', 'tone');
     }
 }

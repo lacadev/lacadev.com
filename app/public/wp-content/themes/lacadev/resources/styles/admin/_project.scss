@@ -54,7 +54,7 @@
 
 .laca-project-summary-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.75rem;
   margin-bottom: 1rem;
 }
@@ -89,6 +89,73 @@
   font-weight: 700;
   letter-spacing: 0;
   text-transform: uppercase;
+}
+
+.laca-project-summary-card--tracker {
+  border-top: 3px solid #1f2937;
+}
+
+.laca-project-health-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.65rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--laca-admin-border);
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #374151;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.laca-project-health-pill--ok {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #047857;
+}
+
+.laca-project-health-pill--warning {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.laca-project-health-pill--danger {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.laca-project-health-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+
+  div {
+    display: grid;
+    gap: 0.2rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--laca-admin-border-soft);
+
+    &:first-child {
+      padding-top: 0;
+      border-top: 0;
+    }
+  }
+
+  dt {
+    color: var(--laca-admin-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--laca-admin-text);
+    font-size: 0.85rem;
+  }
 }
 
 .laca-project-workspace__grid {

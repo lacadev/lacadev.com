@@ -52,8 +52,23 @@ class TrackerEndpointHandler
             // Loại bỏ emoji (ký tự 4-byte, U+10000 trở lên) để DB utf8 lưu đúng
             $content = preg_replace('/[\x{10000}-\x{10FFFF}]/u', '', $content) ?? $content;
             $level   = sanitize_key($log['level']   ?? 'info');
+            $meta    = $this->sanitizeMeta($log['meta'] ?? []);
+            $meta    = is_array($meta) ? $meta : [];
+
+            if (!empty($log['request_id'])) {
+                $meta['request_id'] = sanitize_text_field((string) $log['request_id']);
+            }
+
+            if (!empty($log['attachments']) && is_array($log['attachments'])) {
+                $meta['attachments'] = $this->sanitizeMeta($log['attachments']);
+            }
 
             if (empty($content)) {
+                continue;
+            }
+
+            if ($type === 'heartbeat') {
+                $this->recordHeartbeat((int) $projectId, $content, $meta);
                 continue;
             }
 
@@ -62,10 +77,12 @@ class TrackerEndpointHandler
                 'deployment',
                 'plugin_update', 'theme_update', 'core_update',
                 'plugin_install', 'plugin_activate', 'plugin_deactivate', 'plugin_delete',
+                'block_sync',
             ];
             $securityTypes      = ['file_changed', 'code_edit', 'file_suspicious'];
             $warningTypes       = ['update_pending'];
             $clientRequestTypes = ['client_request'];
+            $maintenanceTypes   = ['maintenance_summary'];
 
             if (in_array($type, $deploymentTypes, true)) {
                 $logType = 'deployment';
@@ -88,8 +105,8 @@ class TrackerEndpointHandler
                         $clean[] = [
                             'slug'            => sanitize_text_field($p['slug'] ?? ''),
                             'name'            => sanitize_text_field($p['name'] ?? $p['slug']),
-                            'current_version' => sanitize_text_field($p['current_version'] ?? ''),
-                            'new_version'     => sanitize_text_field($p['new_version'] ?? ''),
+                            'current_version' => sanitize_text_field($p['current_version'] ?? $p['current'] ?? ''),
+                            'new_version'     => sanitize_text_field($p['new_version'] ?? $p['new'] ?? ''),
                         ];
                     }
 
@@ -103,6 +120,8 @@ class TrackerEndpointHandler
                 $alertType = $requestType === 'bug' ? 'bug' : 'other';
                 $alertLevel = $requestType === 'bug' || $level === 'warning' ? 'warning' : 'info';
                 $this->createClientRequestAlert($projectId, $content, $alertLevel, $alertType);
+            } elseif (in_array($type, $maintenanceTypes, true)) {
+                $logType = 'maintenance_summary';
             } else {
                 $logType = 'note';
             }
@@ -118,6 +137,7 @@ class TrackerEndpointHandler
                 'log_type'    => $logType,
                 'is_auto'     => 1,
                 'log_by'      => 'LacaDev Tracker Bot',
+                'meta'        => $meta,
             ]);
 
             if ($logId) {
@@ -210,5 +230,43 @@ class TrackerEndpointHandler
             'alert_level' => $level,
             'alert_msg'   => $msg,
         ]);
+    }
+
+    private function recordHeartbeat(int $projectId, string $content, array $meta): void
+    {
+        update_post_meta($projectId, '_tracker_last_seen_at', current_time('mysql'));
+        update_post_meta($projectId, '_tracker_last_seen_message', sanitize_text_field($content));
+
+        if (!empty($meta)) {
+            update_post_meta($projectId, '_tracker_last_seen_meta', $meta);
+        }
+    }
+
+    private function sanitizeMeta(mixed $value): array|string|int|float|bool|null
+    {
+        if (is_array($value)) {
+            $clean = [];
+
+            foreach ($value as $key => $item) {
+                $cleanKey = is_int($key) ? $key : sanitize_key((string) $key);
+                if ($cleanKey === '') {
+                    continue;
+                }
+
+                $clean[$cleanKey] = $this->sanitizeMeta($item);
+            }
+
+            return $clean;
+        }
+
+        if (is_bool($value) || is_int($value) || is_float($value) || $value === null) {
+            return $value;
+        }
+
+        if (is_string($value) && filter_var($value, FILTER_VALIDATE_URL)) {
+            return esc_url_raw($value);
+        }
+
+        return sanitize_text_field((string) $value);
     }
 }

@@ -20,6 +20,36 @@ class LacaAdminMenuOrganizer
     private array $navigationGroups = [];
 
     /**
+     * @var array<string,array{label:string,tab:string}>
+     */
+    private const SECURITY_TABS = [
+        'laca-security-audit' => [
+            'label' => 'Kiểm tra bảo mật',
+            'tab' => 'audit',
+        ],
+        'laca-security-fim' => [
+            'label' => 'Giám sát file',
+            'tab' => 'fim',
+        ],
+        'laca-security-malware' => [
+            'label' => 'Quét mã độc',
+            'tab' => 'malware',
+        ],
+        'laca-security-users' => [
+            'label' => 'User ẩn',
+            'tab' => 'users',
+        ],
+        'laca-security-login' => [
+            'label' => 'URL đăng nhập',
+            'tab' => 'login',
+        ],
+        'laca-security-2fa' => [
+            'label' => '2FA TOTP',
+            'tab' => '2fa',
+        ],
+    ];
+
+    /**
      * @var array<string,array{label:string,icon:string,items:string[]}>
      */
     private const GROUPS = [
@@ -44,7 +74,12 @@ class LacaAdminMenuOrganizer
             'label' => 'Bảo mật & đăng nhập',
             'icon' => 'dashicons-shield-alt',
             'items' => [
-                'laca-security',
+                'laca-security-audit',
+                'laca-security-fim',
+                'laca-security-malware',
+                'laca-security-users',
+                'laca-security-login',
+                'laca-security-2fa',
                 'laca-recaptcha',
                 'laca-login-socials',
             ],
@@ -115,6 +150,15 @@ class LacaAdminMenuOrganizer
             $groupItems = [];
 
             foreach ($group['items'] as $slug) {
+                if (isset(self::SECURITY_TABS[$slug])) {
+                    if (!isset($itemsBySlug['laca-security'])) {
+                        continue;
+                    }
+
+                    $groupItems[] = $this->buildNavigationItemFromSlug($slug);
+                    continue;
+                }
+
                 if (!isset($itemsBySlug[$slug])) {
                     continue;
                 }
@@ -132,6 +176,11 @@ class LacaAdminMenuOrganizer
                     'items' => $groupItems,
                 ];
             }
+        }
+
+        if (isset($itemsBySlug['laca-security'])) {
+            $organized[] = $itemsBySlug['laca-security'];
+            unset($unassigned['laca-security']);
         }
 
         if ($unassigned !== []) {
@@ -158,8 +207,32 @@ class LacaAdminMenuOrganizer
         $slug = (string) ($item[2] ?? '');
         $label = wp_strip_all_tags((string) ($item[0] ?? $slug));
 
+        return $this->buildNavigationItemFromSlug($slug, $label);
+    }
+
+    /**
+     * @return array{label:string,slug:string,url:string}
+     */
+    private function buildNavigationItemFromSlug(string $slug, ?string $label = null): array
+    {
+        if (isset(self::SECURITY_TABS[$slug])) {
+            $tab = self::SECURITY_TABS[$slug]['tab'];
+
+            return [
+                'label' => self::SECURITY_TABS[$slug]['label'],
+                'slug' => $slug,
+                'url' => add_query_arg(
+                    [
+                        'page' => 'laca-security',
+                        'tab' => $tab,
+                    ],
+                    admin_url('admin.php')
+                ),
+            ];
+        }
+
         return [
-            'label' => $label !== '' ? $label : $slug,
+            'label' => ($label !== null && $label !== '') ? $label : $this->getFallbackItemLabel($slug),
             'slug' => $slug,
             'url' => add_query_arg('page', $slug, admin_url('admin.php')),
         ];
@@ -367,11 +440,7 @@ class LacaAdminMenuOrganizer
             $items = [];
 
             foreach ($group['items'] as $slug) {
-                $items[] = [
-                    'label' => $this->getFallbackItemLabel($slug),
-                    'slug' => $slug,
-                    'url' => add_query_arg('page', $slug, admin_url('admin.php')),
-                ];
+                $items[] = $this->buildNavigationItemFromSlug($slug);
             }
 
             $groups[] = [
@@ -394,6 +463,12 @@ class LacaAdminMenuOrganizer
             'laca-db-cleaner' => 'Dọn dẹp DB',
             'laca-email-log' => 'Email Log',
             'laca-security' => 'Bảo mật',
+            'laca-security-audit' => 'Kiểm tra bảo mật',
+            'laca-security-fim' => 'Giám sát file',
+            'laca-security-malware' => 'Quét mã độc',
+            'laca-security-users' => 'User ẩn',
+            'laca-security-login' => 'URL đăng nhập',
+            'laca-security-2fa' => '2FA TOTP',
             'laca-recaptcha' => 'Google reCAPTCHA',
             'laca-login-socials' => 'Login Socials',
             'laca-dynamic-cpt' => 'Custom Post Types',
@@ -426,6 +501,20 @@ class LacaAdminMenuOrganizer
 
     private function getCurrentPageSlug(): string
     {
-        return sanitize_key(wp_unslash($_GET['page'] ?? ''));
+        $page = sanitize_key(wp_unslash($_GET['page'] ?? ''));
+
+        if ($page !== 'laca-security') {
+            return $page;
+        }
+
+        $tab = sanitize_key(wp_unslash($_GET['tab'] ?? 'audit'));
+
+        foreach (self::SECURITY_TABS as $slug => $config) {
+            if ($config['tab'] === $tab) {
+                return $slug;
+            }
+        }
+
+        return 'laca-security-audit';
     }
 }

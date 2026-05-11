@@ -232,6 +232,34 @@ Use these rules before adding code:
 - Gutenberg block: `block-gutenberg/[block-name]/`.
 - Template-only partial: `theme/template-parts/`.
 
+## 7.1 Laca Projects CRM Context
+
+The `project` CPT is managed through the `Laca Projects` top-level admin hub, not as a loose WordPress submenu list.
+
+Primary files:
+
+- Hub shell and grouped views: `app/src/Features/ProjectManagement/LacaProjectsHub.php`.
+- CPT menu placement: `app/src/PostTypes/project.php`.
+- Project workspace metabox views: `app/src/Features/ProjectManagement/Views/`.
+- Client Portal REST API: `app/src/Settings/LacaTools/ClientPortalEndpoint.php`.
+- Client Portal template: `theme/page_templates/template-client-portal.php`.
+- Admin CRM assets: `resources/scripts/admin/project.js`, `resources/scripts/admin/project-charts.js`, `resources/styles/admin/_project.scss`.
+- Client Portal styles: `resources/styles/theme/pages/_client-portal.scss`.
+
+Current CRM surface:
+
+- Dashboard: finance KPIs, outstanding payments, active alerts, client-site updates and Chart.js charts.
+- Notifications: client requests, issues, finance, renewals and stale projects.
+- Action center: urgent issues, unpaid projects, renewals and stale work.
+- Pipeline: board grouped by project status.
+- Clients: grouped CRM rows by client name/email, aggregating projects, revenue and debt.
+- Reports: monthly revenue, logs, issue summary and monthly website-care report.
+- Portal links: per-project customer portal URLs using tracker key or portal alias.
+
+Client Portal exposes only public-safe data. It hides security/file-change logs, sanitizes sensitive strings, shows progress/checklists/service reports, and lets customers submit support requests through `POST /wp-json/laca/v1/portal/request`. Customer requests create `ProjectLog` rows with `log_type = client_request` and related `ProjectAlert` rows so the admin hub can surface them.
+
+Permission/role separation for project/client access is intentionally deferred; do not implement it until explicitly requested.
+
 ## 8. Security Rules
 
 - Escape output at render time:

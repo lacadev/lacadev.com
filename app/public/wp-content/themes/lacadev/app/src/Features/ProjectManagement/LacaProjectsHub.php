@@ -226,12 +226,14 @@ class LacaProjectsHub
         $stats = $this->getStats($projects);
         $finance = $this->getFinanceReport($projects);
         $alertReport = $this->getAlertReport();
+        $trackerReport = $this->getTrackerReport($projects);
         $alerts = class_exists(ProjectAlert::class) ? ProjectAlert::getAllActiveCritical() : [];
         $logs = class_exists(ProjectLog::class) ? ProjectLog::getRecent(12) : [];
         $clientUpdates = $this->getClientUpdates($logs);
         $riskProjects = $this->getRiskProjects($projects, 8);
         $projectRows = $this->getProjectSummaryRows($projects, 10);
         $chartData = $this->getDashboardChartData($projects, $finance, $alertReport);
+        $trackerSilent = $trackerReport['stale'] + $trackerReport['missing'];
 
         ?>
         <div class="wrap laca-projects-wrap">
@@ -244,6 +246,7 @@ class LacaProjectsHub
                 <?php $this->renderMetric('Còn phải thu', $this->formatMoney($finance['outstanding']), $finance['unpaid_count'] . ' dự án còn công nợ', 'warning'); ?>
                 <?php $this->renderMetric('Bảo trì / năm', $this->formatMoney($finance['maintenance_yearly']), $stats['maintenance'] . ' dự án maintenance', 'info'); ?>
                 <?php $this->renderMetric('Cảnh báo active', (string) $alertReport['total'], $alertReport['critical'] . ' critical', $alertReport['critical'] > 0 ? 'danger' : 'neutral'); ?>
+                <?php $this->renderMetric('Tracker online', $trackerReport['online'] . '/' . $trackerReport['total'], $trackerSilent . ' site im lặng', $trackerSilent > 0 ? 'warning' : 'success'); ?>
             </div>
 
             <div class="laca-projects-report-grid">
@@ -664,14 +667,15 @@ class LacaProjectsHub
                 esc_html($this->meta($id, 'domain_name') ?: '—'),
                 esc_html($this->formatDate($this->meta($id, 'domain_expiry'))),
                 esc_html($this->formatDate($this->meta($id, 'hosting_expiry'))),
+                esc_html($this->getTrackerLastSeenLabel($id)),
                 esc_html((string) ProjectAlert::countActive($id)),
             ];
         }
 
         $this->renderSimpleTablePage(
             'Vận hành',
-            'Theo dõi domain, hosting, cảnh báo và trạng thái vận hành.',
-            ['Dự án', 'Domain', 'Hết hạn domain', 'Hết hạn hosting', 'Cảnh báo'],
+            'Theo dõi domain, hosting, tracker heartbeat, cảnh báo và trạng thái vận hành.',
+            ['Dự án', 'Domain', 'Hết hạn domain', 'Hết hạn hosting', 'Heartbeat', 'Cảnh báo'],
             $rows
         );
     }
@@ -706,8 +710,8 @@ class LacaProjectsHub
 
         $this->renderSimpleTablePage(
             'Health score',
-            'Chấm điểm sức khoẻ dự án dựa trên cảnh báo, công nợ, hạn dịch vụ và cập nhật gần đây.',
-            ['Dự án', 'Khách hàng', 'Score', 'Trạng thái', 'Điểm trừ chính', 'Cập nhật cuối'],
+            'Chấm điểm sức khoẻ dự án dựa trên cảnh báo, công nợ, hạn dịch vụ, cập nhật và heartbeat tracker.',
+            ['Dự án', 'Khách hàng', 'Score', 'Trạng thái', 'Điểm trừ chính', 'Heartbeat', 'Cập nhật cuối'],
             $rows
         );
     }
@@ -998,10 +1002,10 @@ class LacaProjectsHub
             .laca-projects-overview {
                 display: grid;
                 gap: 12px;
-                grid-template-columns: repeat(5, minmax(140px, 1fr));
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
                 margin-bottom: 18px;
             }
-            .laca-projects-overview--compact { grid-template-columns: repeat(4, minmax(140px, 1fr)); }
+            .laca-projects-overview--compact { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
             .laca-projects-metric {
                 background: #fff;
                 border: 1px solid #e5e7eb;
@@ -1604,6 +1608,33 @@ class LacaProjectsHub
 
     /**
      * @param \WP_Post[] $projects
+     * @return array{total:int,online:int,stale:int,missing:int}
+     */
+    private function getTrackerReport(array $projects): array
+    {
+        $report = [
+            'total' => count($projects),
+            'online' => 0,
+            'stale' => 0,
+            'missing' => 0,
+        ];
+
+        foreach ($projects as $project) {
+            $age = $this->getTrackerAgeDays((int) $project->ID);
+            if ($age === null) {
+                $report['missing']++;
+            } elseif ($age <= 2) {
+                $report['online']++;
+            } else {
+                $report['stale']++;
+            }
+        }
+
+        return $report;
+    }
+
+    /**
+     * @param \WP_Post[] $projects
      * @return array{total_build:int,total_paid:int,outstanding:int,maintenance_yearly:int,unpaid_count:int,collection_rate:int}
      */
     private function getFinanceReport(array $projects): array
@@ -1690,6 +1721,7 @@ class LacaProjectsHub
                 'file_changed',
                 'bug_fix',
                 'security',
+                'maintenance_summary',
             ], true);
         }));
 
@@ -2151,6 +2183,7 @@ class LacaProjectsHub
                 '<span class="laca-projects-badge">' . esc_html((string) $health['score']) . '</span>',
                 esc_html($health['status']),
                 esc_html($health['reason']),
+                esc_html($this->getTrackerLastSeenLabel($id)),
                 esc_html($this->formatDateTime($lastActivity[$id] ?? '')),
             ];
         }
@@ -2217,6 +2250,18 @@ class LacaProjectsHub
         } else {
             $score -= 8;
             $reasons[] = 'Chưa có log';
+        }
+
+        $trackerAge = $this->getTrackerAgeDays($projectId);
+        if ($trackerAge === null) {
+            $score -= 8;
+            $reasons[] = 'Chưa có heartbeat';
+        } elseif ($trackerAge > 7) {
+            $score -= 25;
+            $reasons[] = 'Tracker im lặng';
+        } elseif ($trackerAge > 2) {
+            $score -= 12;
+            $reasons[] = 'Heartbeat chậm';
         }
 
         $score = max(0, min(100, (int) $score));
@@ -2332,6 +2377,36 @@ class LacaProjectsHub
         return $timestamp ? date_i18n('d/m/Y H:i', $timestamp) : '—';
     }
 
+    private function getTrackerLastSeenLabel(int $projectId): string
+    {
+        $lastSeen = (string) get_post_meta($projectId, '_tracker_last_seen_at', true);
+        if ($lastSeen === '') {
+            return 'Chưa có heartbeat';
+        }
+
+        $timestamp = strtotime($lastSeen);
+        if (!$timestamp) {
+            return 'Dữ liệu không hợp lệ';
+        }
+
+        return sprintf('%s trước', human_time_diff($timestamp, current_time('timestamp')));
+    }
+
+    private function getTrackerAgeDays(int $projectId): ?int
+    {
+        $lastSeen = (string) get_post_meta($projectId, '_tracker_last_seen_at', true);
+        if ($lastSeen === '') {
+            return null;
+        }
+
+        $timestamp = strtotime($lastSeen);
+        if (!$timestamp) {
+            return null;
+        }
+
+        return (int) floor(max(0, current_time('timestamp') - $timestamp) / DAY_IN_SECONDS);
+    }
+
     private function moneyToInt(string $value): int
     {
         return (int) preg_replace('/[^0-9]/', '', $value);
@@ -2367,6 +2442,7 @@ class LacaProjectsHub
             'bug_fix' => 'Sửa lỗi',
             'security' => 'Bảo mật',
             'client_request' => 'Yêu cầu khách hàng',
+            'maintenance_summary' => 'Báo cáo bảo trì',
             'task_done' => 'Hoàn thành task',
         ][$type] ?? ucfirst(str_replace('_', ' ', $type));
     }

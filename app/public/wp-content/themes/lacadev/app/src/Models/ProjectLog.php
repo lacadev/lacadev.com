@@ -18,6 +18,7 @@ use App\Databases\ProjectLogTable;
  *  - bug_fix       : Sửa lỗi
  *  - security      : Sự kiện bảo mật
  *  - client_request: Yêu cầu từ khách hàng
+ *  - maintenance_summary: Báo cáo bảo trì định kỳ từ website khách
  */
 class ProjectLog
 {
@@ -182,6 +183,7 @@ class ProjectLog
             'bug_fix'            => '🐛 Sửa lỗi',
             'security'           => '🔒 Bảo mật',
             'client_request'     => '👤 Yêu cầu khách hàng',
+            'maintenance_summary' => '📊 Báo cáo bảo trì',
         ];
 
         return $labels[$type] ?? '📋 ' . ucfirst($type);

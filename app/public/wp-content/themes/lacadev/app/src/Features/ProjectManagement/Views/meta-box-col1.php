@@ -13,6 +13,8 @@
  * @var string $endpoint
  * @var string $clientPortalUrl
  * @var string $clientPortalAliasUrl
+ * @var array  $trackerHealth
+ * @var array  $trackerLastSeenMeta
  */
 
 use App\Models\ProjectAlert;
@@ -21,6 +23,8 @@ $pendingTasks = $pendingTasks ?? [];
 $pendingPlugins = $pendingPlugins ?? [];
 $clientPortalUrl = $clientPortalUrl ?? '';
 $clientPortalAliasUrl = $clientPortalAliasUrl ?? '';
+$trackerHealth = is_array($trackerHealth ?? null) ? $trackerHealth : [];
+$trackerLastSeenMeta = is_array($trackerLastSeenMeta ?? null) ? $trackerLastSeenMeta : [];
 ?>
 
 <div class="laca-pm-col laca-project-workspace__side">
@@ -52,6 +56,39 @@ $clientPortalAliasUrl = $clientPortalAliasUrl ?? '';
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
+    </section>
+
+    <section class="laca-project-panel laca-project-panel--tracker-health">
+        <div class="laca-project-panel__header">
+            <div>
+                <h3><?php echo esc_html__('Client health', 'laca'); ?></h3>
+                <p><?php echo esc_html__('Heartbeat, hàng đợi gửi log và thông tin môi trường website khách.', 'laca'); ?></p>
+            </div>
+            <span class="laca-project-health-pill laca-project-health-pill--<?php echo esc_attr((string) ($trackerHealth['tone'] ?? 'warning')); ?>">
+                <?php echo esc_html((string) ($trackerHealth['headline'] ?? __('Chưa có dữ liệu', 'laca'))); ?>
+            </span>
+        </div>
+
+        <dl class="laca-project-health-list">
+            <div>
+                <dt><?php echo esc_html__('Heartbeat gần nhất', 'laca'); ?></dt>
+                <dd><?php echo esc_html((string) ($trackerHealth['note'] ?? __('Chưa nhận heartbeat', 'laca'))); ?></dd>
+            </div>
+            <div>
+                <dt><?php echo esc_html__('WordPress / PHP', 'laca'); ?></dt>
+                <dd>
+                    <?php
+                    $wpVersion = (string) ($trackerLastSeenMeta['wp_version'] ?? '—');
+                    $phpVersion = (string) ($trackerLastSeenMeta['php_version'] ?? '—');
+                    echo esc_html($wpVersion . ' / ' . $phpVersion);
+                    ?>
+                </dd>
+            </div>
+            <div>
+                <dt><?php echo esc_html__('Theme', 'laca'); ?></dt>
+                <dd><?php echo esc_html((string) ($trackerLastSeenMeta['theme'] ?? '—')); ?></dd>
+            </div>
+        </dl>
     </section>
 
     <?php if (!empty($pendingTasks) || !empty($pendingPlugins)): ?>

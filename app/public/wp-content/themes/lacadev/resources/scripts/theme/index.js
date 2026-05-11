@@ -30,6 +30,7 @@ import {
 	initRippleEffect,
 } from './micro-interactions.js';
 import { initReadingProgress } from './components/reading-progress.js';
+import { initContactFormMultiSteps } from './components/contact-form-multistep.js';
 import {
 	initBackToTop,
 	initCopyCode,
@@ -76,6 +77,7 @@ function initPageFeatures() {
 	initContactPage();
 	initCommentForm();
 	initReadingProgress();
+	initContactFormMultiSteps();
 	initCopyCode();
 	initImageLightbox();
 

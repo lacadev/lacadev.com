@@ -1,6 +1,6 @@
 # LacaDev Theme — Danh sách chức năng đầy đủ
 
-> Cập nhật: 2026-04-08  
+> Cập nhật: 2026-05-07
 > Namespace gốc: `App\` | Carbon Fields | WP Emerge
 
 ---
@@ -43,10 +43,10 @@ Trang cài đặt chính của theme, đăng ký qua Carbon Fields. Chia thành 
 | Quản trị | `laca-management-settings` | Cài đặt dashboard widget và quản trị nội bộ |
 
 Menu `Laca Admin` được sắp xếp tập trung bởi `app/src/Settings/LacaAdmin/LacaAdminMenuOrganizer.php`.
-Các nhóm chỉ là nhãn hiển thị trong DOM admin, không phải submenu/page slug riêng, để tránh link giả và lỗi 404.
+Submenu mặc định của WordPress được ẩn để tránh danh sách phẳng dưới sidebar. Các trang con vẫn được đăng ký thật, còn điều hướng chính hiển thị bằng dock nội bộ trong màn hình Laca Admin.
 Các nhóm hiện tại:
 
-- Tổng quan & cấu hình: `laca-admin`, `laca-management-settings`
+- Tổng quan / Cấu hình chung: `laca-admin`, `laca-management-settings`
 - Hiệu năng & bảo trì: `laca-tools`, `laca-db-cleaner`, `laca-email-log`
 - Bảo mật & đăng nhập: `laca-security`, `laca-recaptcha`, `laca-login-socials`
 - Nội dung & cấu trúc: `laca-dynamic-cpt`, `laca-contact-forms`
@@ -196,12 +196,33 @@ Chạy 20+ kiểm tra và cho điểm 0–100%:
 
 ---
 
-## 5. Quản lý dự án (Project Manager)
+## 5. Laca Projects CRM
 
-**CPT:** `project` | **Menu:** Quản lý dự án  
+**CPT:** `project` | **Menu:** Laca Projects
 **Files:** `app/src/PostTypes/project.php`, `app/src/Features/ProjectManagement/`
 
-Hệ thống quản lý dự án web agency đầy đủ:
+Hệ thống CRM/project hub cho web agency. Dữ liệu gốc vẫn là CPT `project`; lớp hub `LacaProjectsHub` gom lại thành dashboard và các view vận hành.
+
+### Laca Projects Hub
+**File:** `app/src/Features/ProjectManagement/LacaProjectsHub.php`
+
+- Top-level menu: `Laca Projects`
+- Dock nội bộ minimal/clean, ẩn submenu phẳng mặc định của WordPress
+- Dashboard: doanh thu dự kiến, đã thu, công nợ, bảo trì/năm, cảnh báo active, updates từ website khách hàng, project cần xử lý; có Chart.js cho tài chính, cảnh báo và trạng thái dự án
+- View Notifications: gom yêu cầu từ Client Portal, issues, công nợ, gia hạn và dự án cần chăm sóc thành một trung tâm thông báo
+- View Action center: gom việc cần xử lý theo nhóm critical issues, công nợ, gia hạn trong 30 ngày và dự án ít cập nhật
+- View Pipeline: board theo trạng thái `pending`, `in_progress`, `maintenance`, `paused`, `done`, mỗi card có khách hàng, tài chính, alerts và hạn gần nhất
+- View CRM: khách hàng tổng hợp theo tên/email từ project meta, kèm danh sách dự án, doanh thu, công nợ và cập nhật cuối
+- View Issues: lỗi/cảnh báo active từ `ProjectAlert`, phân loại critical/warning/website-security
+- View Updates: log tự động và cập nhật từ website khách hàng qua `ProjectLog`
+- View Renewals: domain/hosting cần gia hạn trong 120 ngày
+- View vận hành: domain, hosting, cảnh báo
+- View Health score: chấm điểm sức khỏe dự án theo cảnh báo, công nợ, hạn dịch vụ và mức cập nhật
+- View tài chính: giá build, đã thanh toán, trạng thái thanh toán
+- View Reports: báo cáo tháng hiện tại về doanh thu đã thu, công nợ, updates, issues, cơ cấu trạng thái và bảng chăm sóc website theo từng dự án
+- View portal: link portal theo tracker key/alias; khách hàng xem tiến độ, checklist, báo cáo chăm sóc website, cập nhật plugin/hệ thống, bảo trì, nhật ký sửa lỗi công khai và gửi yêu cầu hỗ trợ
+- UI interaction: các item cần xem chi tiết dùng SweetAlert2 popup trước khi mở project
+- Các URL core vẫn là page thật: `edit.php?post_type=project`, `post-new.php?post_type=project`, `admin.php?page=laca-global-alerts`
 
 ### Thông tin dự án (Carbon Fields)
 - Thông tin khách hàng: tên, SĐT, email
@@ -214,10 +235,11 @@ Hệ thống quản lý dự án web agency đầy đủ:
 ### Cột danh sách (ProjectAdminColumns)
 - Thumbnail, trạng thái, ngày hết hạn, số alerts, tên khách hàng, domain
 
-### Logs & Alerts (AJAX)
+### Logs & Alerts (AJAX + Client Portal)
 - Thêm/xóa/resolve log cho từng dự án
-- 4 loại log: deployment, security, warning, info
+- Các loại log chính: note, deployment, plugin update, core update, bug fix, security, task_done, client_request
 - Hệ thống alert tự động khi sắp hết hạn
+- Client Portal request tự tạo `ProjectLog` loại `client_request` và alert tương ứng để admin xử lý trong Notifications/Action Center
 - AJAX: `laca_*_log`, `laca_*_task`, `laca_remote_*`
 
 ### Tracker (Nhận log từ site client)
@@ -227,11 +249,14 @@ Hệ thống quản lý dự án web agency đầy đủ:
 - Nhận log: deployment, security event, plugin updates, warnings
 - Tự tạo alert khi có event quan trọng
 
-### Client Portal (API đọc dự án)
+### Client Portal (API đọc dự án + nhận yêu cầu)
 **File:** `ClientPortalEndpoint.php`  
 - REST endpoint: `GET /wp-json/laca/v1/portal/project?key=SECRET`
+- REST endpoint: `POST /wp-json/laca/v1/portal/request`
 - Không cần đăng nhập WordPress
 - Trả về thông tin dự án, logs, alerts cho client portal
+- Nhận yêu cầu hỗ trợ/báo lỗi/cập nhật nội dung/bảo trì/thanh toán từ khách, rate-limit 5 phút theo key + IP
+- Portal template hiển thị báo cáo tháng, báo cáo chăm sóc website, form gửi yêu cầu và danh sách yêu cầu gần đây
 
 ### Xuất báo giá PDF (ProjectPdfExporter)
 - Meta box "📄 Báo giá / Invoice" trên trang edit project
