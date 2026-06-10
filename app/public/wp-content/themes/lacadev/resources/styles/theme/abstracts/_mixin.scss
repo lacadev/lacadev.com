@@ -1,9 +1,9 @@
-@use "../abstracts/variables.scss" as *;
+@use "sass:math";
 
 /// Chuyển đổi px → rem (base 16px)
 /// Cách dùng: font-size: rem(14); → 0.875rem
 @function rem($px) {
-  @return #{$px / 16}rem;
+  @return #{math.div($px, 16)}rem;
 }
 
 /// Block Element
@@ -28,7 +28,7 @@
     }
   }
 
-  @include maxWidth($lg) {
+  @include maxWidth(1200px) {
     $font-size: calc(#{$max-size}rem - ((#{$max-size}rem - #{$min-size}rem)) / 2);
     & {
       font-size: $font-size;
@@ -38,7 +38,7 @@
     }
   }
 
-  @include maxWidth($sm) {
+  @include maxWidth(768px) {
     $font-size: #{$min-size}rem;
     & {
       font-size: $font-size;
@@ -61,9 +61,9 @@
   }
 }
 
-@mixin aspectRatio($ratio: 16 / 9) {
+@mixin aspectRatio($ratio: math.div(16, 9)) {
   height: 0;
-  padding-bottom: 100% / $ratio;
+  padding-bottom: math.div(100%, $ratio);
 
   @supports (aspect-ratio: 16 / 9) {
     aspect-ratio: $ratio;

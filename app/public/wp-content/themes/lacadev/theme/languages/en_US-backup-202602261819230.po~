@@ -1,0 +1,595 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: La Cà Dev\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-12-30 08:23+0000\n"
+"PO-Revision-Date: 2025-12-30 08:26+0000\n"
+"Last-Translator: La Cà Dev\n"
+"Language-Team: English (United States)\n"
+"Language: en_US\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.8.0; wp-6.9; php-8.3.23\n"
+"X-Domain: laca"
+
+#: loop_templates/post_meta.php:32
+msgid "% Comments"
+msgstr ""
+
+#: comments.php:20
+msgid "% Responses"
+msgstr ""
+
+#. comment date and time
+#: loop_templates/comment_single.php:25
+#, php-format
+msgid "%1$s at %2$s"
+msgstr ""
+
+#: search.php:224
+#, php-format
+msgid "%s liên quan"
+msgstr ""
+
+#: loop_templates/comment_single.php:29
+msgid "(Edit)"
+msgstr ""
+
+#: loop_templates/post_meta.php:32
+msgid "1 Comment"
+msgstr ""
+
+#: 404.php:48
+msgid "404"
+msgstr ""
+
+#: setup/taxonomies/blog_cat.php:37
+msgid "Add new"
+msgstr ""
+
+#: setup/taxonomies/blog_cat.php:31
+msgid "All Custom Taxonomies"
+msgstr ""
+
+#: setup/theme-support.php:150
+msgid "Amber"
+msgstr ""
+
+#: setup/theme-options.php:25
+msgid "Background color"
+msgstr ""
+
+#: setup/theme-options.php:35
+msgid "Background color dark"
+msgstr ""
+
+#: setup/blocks/about.php:8
+msgid "BLOCK ABOUT ME"
+msgstr ""
+
+#: setup/blocks/about.php:6
+msgid "Block ABOUT ME"
+msgstr ""
+
+#: setup/blocks/blog.php:11
+msgid "Block blog"
+msgstr ""
+
+#: setup/blocks/service.php:8
+msgid "BLOCK SERVICE"
+msgstr ""
+
+#: setup/blocks/service.php:6
+msgid "Block Service"
+msgstr ""
+
+#: setup/blocks/slider.php:8
+msgid "BLOCK SLIDER"
+msgstr ""
+
+#: setup/blocks/slider.php:6
+msgid "Block Slider"
+msgstr ""
+
+#: setup/blocks/blog.php:13
+msgid "BLOCK TIN TỨC"
+msgstr ""
+
+#: setup/taxonomies/blog_cat.php:28 setup/taxonomies/blog_cat.php:39
+msgid "Blog Category"
+msgstr ""
+
+#: setup/taxonomies/blog_tags.php:27
+msgid "Blog Tags"
+msgstr ""
+
+#: setup/theme-support.php:110
+msgid "Blue"
+msgstr ""
+
+#: setup/theme-support.php:175
+msgid "Blue Grey"
+msgstr ""
+
+#: setup/theme-options.php:18
+msgid "Branding | Thương hiệu"
+msgstr ""
+
+#: setup/theme-support.php:165
+msgid "Brown"
+msgstr ""
+
+#. post author attribution
+#: loop_templates/post_meta.php:22
+#, php-format
+msgid "by %s"
+msgstr ""
+
+#: search.php:123
+msgid "Bài viết liên quan"
+msgstr ""
+
+#: header.php:94
+msgid "Chuyển chế độ tối/sáng"
+msgstr ""
+
+#: setup/users/auth.php:244
+#, php-format
+msgid "Chào buổi chiều %s"
+msgstr ""
+
+#: setup/users/auth.php:240
+#, php-format
+msgid "Chào buổi sáng %s"
+msgstr ""
+
+#: setup/users/auth.php:248
+#, php-format
+msgid "Chào buổi tối %s"
+msgstr ""
+
+#: setup/users/auth.php:44 setup/users/auth.php:150
+msgid "Chúc mừng bạn đã đăng nhập thành công"
+msgstr ""
+
+#: setup/users/auth.php:181
+msgid "Chúc mừng bạn đã đăng nhập thành công với quyền admin"
+msgstr ""
+
+#: setup/blocks/blog.php:37
+msgid "Chọn bài viết thủ công"
+msgstr ""
+
+#: setup/blocks/service.php:14
+msgid "Chọn dịch vụ hiển thị:"
+msgstr ""
+
+#: setup/blocks/slider.php:9
+msgid "Chọn hình ảnh (khuyến nghị tỉ lệ 16/9)"
+msgstr ""
+
+#: comments.php:52
+msgid "Comments are closed."
+msgstr ""
+
+#: setup/theme-options.php:49
+msgid "Contact | Liên hệ"
+msgstr ""
+
+#: setup/taxonomies/blog_cat.php:29
+msgid "Custom Taxonomy"
+msgstr ""
+
+#: setup/users/auth.php:234
+msgid "Cuối tuần vui vẻ, "
+msgstr ""
+
+#: setup/theme-support.php:120
+msgid "Cyan"
+msgstr ""
+
+#: setup/theme-support.php:160
+msgid "Deep Orange"
+msgstr ""
+
+#: setup/theme-support.php:100
+msgid "Deep Purple"
+msgstr ""
+
+#: setup/theme-options.php:43
+msgid "Default image | Hình ảnh mặc định"
+msgstr ""
+
+#: setup/sidebars.php:31
+msgid "Default Sidebar"
+msgstr ""
+
+#: setup/taxonomies/blog_cat.php:35
+msgid "Edit"
+msgstr ""
+
+#: setup/theme-support.php:224
+msgid "extra large"
+msgstr ""
+
+#: setup/theme-support.php:200
+msgid "extra small"
+msgstr ""
+
+#: setup/menus.php:21
+msgid "Footer Menu"
+msgstr ""
+
+#: setup/theme-options.php:93
+msgid "Footer Script"
+msgstr ""
+
+#: setup/users/auth.php:245
+msgid "Giữ vững năng lượng để hoàn thành nốt công việc nào! ☀️"
+msgstr ""
+
+#: setup/theme-support.php:130
+msgid "Green"
+msgstr ""
+
+#: setup/theme-support.php:170
+msgid "Grey"
+msgstr ""
+
+#: setup/theme-options.php:76
+msgid "Header  |  Footer"
+msgstr ""
+
+#: setup/theme-options.php:92
+msgid "Header Script"
+msgstr ""
+
+#: setup/users/auth.php:235
+msgid "Hãy làm việc nhẹ nhàng và thư giãn nhé."
+msgstr ""
+
+#: setup/theme-support.php:105
+msgid "Indigo"
+msgstr ""
+
+#: search.php:259
+#, php-format
+msgid "Không tìm thấy kết quả nào cho \"%s\""
+msgstr ""
+
+#: search.php:20
+msgid "Kết quả tìm kiếm"
+msgstr ""
+
+#: setup/theme-support.php:219
+msgid "L"
+msgstr ""
+
+#: setup/gutenberg-blocks.php:109
+msgid "La Cà Blocks"
+msgstr ""
+
+#: 404.php:49
+msgid "La cà hơi xa rồi bạn ơi!"
+msgstr ""
+
+#: setup/theme-options.php:15
+msgid "Laca Theme"
+msgstr ""
+
+#. Name of the theme
+msgid "lacadev/lacadev/theme"
+msgstr ""
+
+#: setup/theme-support.php:218
+msgid "large"
+msgstr ""
+
+#: comments.php:59
+msgid "Leave a Reply"
+msgstr ""
+
+#: setup/theme-support.php:115
+msgid "Light Blue"
+msgstr ""
+
+#: setup/theme-support.php:135
+msgid "Light Green"
+msgstr ""
+
+#: setup/theme-support.php:140
+msgid "Lime"
+msgstr ""
+
+#. Name of the template
+#: page_templates/template-contact.php:2
+msgid "Liên hệ"
+msgstr ""
+
+#: setup/theme-options.php:39
+msgid "Logo"
+msgstr ""
+
+#: setup/theme-options.php:41
+msgid "Logo Dark"
+msgstr ""
+
+#: setup/theme-support.php:213
+msgid "M"
+msgstr ""
+
+#: setup/menus.php:20
+msgid "Main Menu"
+msgstr ""
+
+#: header.php:119
+msgid "Menu chính"
+msgstr ""
+
+#: setup/menus.php:30
+msgid "Menu image"
+msgstr ""
+
+#: header.php:120
+msgid "Mở menu"
+msgstr ""
+
+#: setup/taxonomies/blog_cat.php:38
+msgid "New Custom Taxonomy Name"
+msgstr ""
+
+#: comments.php:46
+msgid "Next Comments »"
+msgstr ""
+
+#: loop_templates/loop.php:45
+msgid "Next Entries »"
+msgstr ""
+
+#: loop_templates/loop_single.php:40
+msgid "Next Entry »"
+msgstr ""
+
+#: header.php:148
+msgid "Nhập từ khóa tìm kiếm"
+msgstr ""
+
+#: setup/users/auth.php:241
+msgid "Nhớ uống một tách cà phê trước khi bắt đầu nhé! ☕"
+msgstr ""
+
+#: loop_templates/post_meta.php:32
+msgid "No Comments"
+msgstr ""
+
+#: comments.php:20
+msgid "No Responses"
+msgstr ""
+
+#: comments.php:20
+msgid "One Response"
+msgstr ""
+
+#: setup/theme-support.php:155
+msgid "Orange"
+msgstr ""
+
+#: setup/taxonomies/blog_cat.php:33
+msgid "Parent Custom Taxonomy:"
+msgstr ""
+
+#: setup/taxonomies/blog_cat.php:32
+msgid "Parent Taxonomy"
+msgstr ""
+
+#: setup/theme-support.php:90
+msgid "Pink"
+msgstr ""
+
+#. generic error page content; placeholders represents homepage opening and closing anchor tags
+#: error.php:16
+#, php-format
+msgid ""
+"Please check the URL for proper spelling and capitalization. If you're "
+"having trouble locating a destination, try visiting the %1$shome page%2$s."
+msgstr ""
+
+#: loop_templates/post_meta.php:28
+msgid "Posted in "
+msgstr ""
+
+#: setup/theme-options.php:19
+msgid "Primary color"
+msgstr ""
+
+#: setup/theme-options.php:29
+msgid "Primary color dark"
+msgstr ""
+
+#: setup/theme-support.php:95
+msgid "Purple"
+msgstr ""
+
+#: setup/security.php:83
+msgid "Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau 15 phút."
+msgstr ""
+
+#: setup/theme-support.php:85
+msgid "Red"
+msgstr ""
+
+#: setup/theme-support.php:212
+msgid "regular"
+msgstr ""
+
+#: setup/theme-support.php:207
+msgid "S"
+msgstr ""
+
+#: loop_templates/comment_single.php:14
+msgid "says:"
+msgstr ""
+
+#: setup/theme-options.php:91
+msgid "Scripts"
+msgstr ""
+
+#: searchform.php:18
+msgid "Search"
+msgstr ""
+
+#: searchform.php:15
+msgid "Search &hellip;"
+msgstr ""
+
+#: setup/taxonomies/blog_cat.php:30
+msgid "Search Custom Taxonomies"
+msgstr ""
+
+#: searchform.php:13 searchform.php:15
+msgid "Search for:"
+msgstr ""
+
+#: setup/theme-options.php:22
+msgid "Secondary color"
+msgstr ""
+
+#: setup/theme-options.php:32
+msgid "Secondary color dark"
+msgstr ""
+
+#: header.php:79
+msgid "Skip to content"
+msgstr ""
+
+#: setup/theme-support.php:206
+msgid "small"
+msgstr ""
+
+#: search.php:75
+msgid "Sản phẩm liên quan"
+msgstr ""
+
+#: setup/taxonomies/blog_tags.php:26
+msgid "Tags"
+msgstr ""
+
+#: loop_templates/post_meta.php:37
+msgid "Tags:"
+msgstr ""
+
+#: setup/theme-support.php:125
+msgid "Teal"
+msgstr ""
+
+#: setup/users/auth.php:22 setup/users/auth.php:73
+msgid "Token mismatch!"
+msgstr ""
+
+#: search.php:171
+msgid "Trang liên quan"
+msgstr ""
+
+#: setup/users/auth.php:26
+msgid "Tài khoản hoặc mật khẩu không đúng, vui lòng kiểm tra lại"
+msgstr ""
+
+#: header.php:142
+msgid "Tìm kiếm"
+msgstr ""
+
+#: header.php:147
+msgid "Tìm kiếm ..."
+msgstr ""
+
+#: header.php:143
+msgid "Từ khóa tìm kiếm"
+msgstr ""
+
+#: search.php:23
+#, php-format
+msgid "Từ khóa: \"%s\""
+msgstr ""
+
+#: setup/blocks/blog.php:31
+msgid "Tự động hiển thị 3 bài viết mới nhất"
+msgstr ""
+
+#: setup/taxonomies/blog_cat.php:36
+msgid "Update"
+msgstr ""
+
+#: setup/taxonomies/blog_cat.php:34
+msgid "View Custom Taxonomy"
+msgstr ""
+
+#: setup/users/auth.php:93
+msgid "Vui lòng kiểm tra lại mật khẩu"
+msgstr ""
+
+#: setup/users/auth.php:85
+msgid "Vui lòng nhập email"
+msgstr ""
+
+#: setup/users/auth.php:77
+msgid "Vui lòng nhập họ"
+msgstr ""
+
+#: setup/users/auth.php:89
+msgid "Vui lòng nhập mật khẩu"
+msgstr ""
+
+#: setup/users/auth.php:81
+msgid "Vui lòng nhập tên"
+msgstr ""
+
+#: search.php:260
+msgid "Vui lòng thử lại với từ khóa khác."
+msgstr ""
+
+#: search.php:96 search.php:144 search.php:192 search.php:245
+msgid "Xem thêm"
+msgstr ""
+
+#: setup/users/auth.php:43 setup/users/auth.php:149 setup/users/auth.php:180
+msgid "Xin chào, "
+msgstr ""
+
+#: setup/theme-support.php:225
+msgid "XL"
+msgstr ""
+
+#: setup/theme-support.php:201
+msgid "XS"
+msgstr ""
+
+#: header.php:149
+msgid "Xóa tìm kiếm"
+msgstr ""
+
+#: setup/theme-support.php:145
+msgid "Yellow"
+msgstr ""
+
+#: loop_templates/comment_single.php:18
+msgid "Your comment is awaiting moderation."
+msgstr ""
+
+#: comments.php:45
+msgid "« Previous Comments"
+msgstr ""
+
+#: loop_templates/loop.php:44
+msgid "« Previous Entries"
+msgstr ""
+
+#: loop_templates/loop_single.php:39
+msgid "« Previous Entry"
+msgstr ""
+
+#: setup/users/auth.php:249
+msgid "Đừng làm việc quá khuya nhé! 🌙"
+msgstr "Take care and don't work too late 🌙"

@@ -37,7 +37,7 @@ body {
   font-family: $secondaryFont !important;
   font-weight: $regular !important;
   line-height: $lhBase !important;
-  color: $cText !important;
+  color: var(--text-color, #333) !important;
   background-color: $backgroundColor;
   transition: background-color 0.3s ease, color 0.3s ease;
 

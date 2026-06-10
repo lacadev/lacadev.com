@@ -65,6 +65,7 @@ const dimensions = [
         });
 
         console.log('✅ Critical CSS generated successfully at: dist/styles/critical.css');
+        process.exit(0);
     } catch (err) {
         console.error('❌ Critical CSS Generation Failed:', err);
         // Default to non-fatal so `yarn build` can succeed even if Puppeteer crashes.
