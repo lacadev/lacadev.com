@@ -1,6 +1,7 @@
 /wp-admin/
 /wp-includes/
 /wp-content/uploads/
+/wp-content/plugins/
 /wp-content/upgrade/
 /wp-content/cache/
 /wp-content/languages/
