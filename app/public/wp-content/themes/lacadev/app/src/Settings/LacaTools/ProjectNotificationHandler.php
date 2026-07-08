@@ -16,6 +16,23 @@ class ProjectNotificationHandler
     {
         add_action('init', [$this, 'scheduleCronJob']);
         add_action(self::CRON_HOOK, [$this, 'processDailyChecks']);
+        add_action('laca_project_alert_notify', [$this, 'handleRealtimeAlert'], 10, 3);
+    }
+
+    /**
+     * Đẩy ngay cảnh báo warning/critical vào các kênh Email/Zalo/Telegram/Slack
+     * thay vì chỉ chờ cron kiểm tra hết hạn hằng ngày. Được gọi qua
+     * do_action('laca_project_alert_notify', $projectId, $level, $message)
+     * từ TrackerEndpointHandler / ClientWebhook ngay sau khi tạo ProjectAlert mới.
+     */
+    public function handleRealtimeAlert(int $projectId, string $level, string $message): void
+    {
+        if (!in_array($level, ['warning', 'critical'], true)) {
+            return;
+        }
+
+        $projectName = get_the_title($projectId) ?: "#{$projectId}";
+        $this->sendNotifications(["[{$projectName}] {$message}"]);
     }
 
     /**

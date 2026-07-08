@@ -329,11 +329,15 @@ class ClientWebhook
             }
         }
 
-        ProjectAlert::add([
+        $alertId = ProjectAlert::add([
             'project_id'  => $projectId,
             'alert_type'  => 'security',
             'alert_level' => $level,
             'alert_msg'   => $message,
         ]);
+
+        if ($alertId !== false) {
+            do_action('laca_project_alert_notify', $projectId, $level, $message);
+        }
     }
 }

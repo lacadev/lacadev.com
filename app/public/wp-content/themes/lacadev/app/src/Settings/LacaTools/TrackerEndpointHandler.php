@@ -183,12 +183,16 @@ class TrackerEndpointHandler
             return;
         }
 
-        ProjectAlert::add([
+        $alertId = ProjectAlert::add([
             'project_id'  => $projectId,
             'alert_type'  => 'security',
             'alert_level' => $level,
             'alert_msg'   => $msg,
         ]);
+
+        if ($alertId !== false) {
+            do_action('laca_project_alert_notify', (int) $projectId, $level, $msg);
+        }
     }
 
     /**
@@ -206,12 +210,16 @@ class TrackerEndpointHandler
             return;
         }
 
-        ProjectAlert::add([
+        $alertId = ProjectAlert::add([
             'project_id'  => $projectId,
             'alert_type'  => $alertType,
             'alert_level' => $level,
             'alert_msg'   => $msg,
         ]);
+
+        if ($alertId !== false) {
+            do_action('laca_project_alert_notify', (int) $projectId, $level, $msg);
+        }
     }
 
     private function createClientRequestAlert(int $projectId, string $msg, string $level, string $alertType): void
@@ -224,12 +232,16 @@ class TrackerEndpointHandler
             return;
         }
 
-        ProjectAlert::add([
+        $alertId = ProjectAlert::add([
             'project_id'  => $projectId,
             'alert_type'  => $alertType,
             'alert_level' => $level,
             'alert_msg'   => $msg,
         ]);
+
+        if ($alertId !== false) {
+            do_action('laca_project_alert_notify', (int) $projectId, $level, $msg);
+        }
     }
 
     private function recordHeartbeat(int $projectId, string $content, array $meta): void

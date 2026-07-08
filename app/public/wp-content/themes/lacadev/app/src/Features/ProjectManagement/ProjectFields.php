@@ -533,6 +533,18 @@ class ProjectFields
                 ->set_attribute('type', 'password')
                 ->set_classes('laca-password-input'),
 
+            // SSL
+            Field::make('separator', 'sep_ssl', __('Thông tin SSL', 'laca')),
+
+            Field::make('date', 'ssl_expiry', __('Ngày hết hạn SSL', 'laca'))
+                ->set_width(50)
+                ->set_storage_format('Y-m-d'),
+
+            Field::make('text', 'ssl_notify_days', __('Cảnh báo trước (ngày)', 'laca'))
+                ->set_width(50)
+                ->set_default_value('14')
+                ->set_attribute('placeholder', '14'),
+
             // FTP
             Field::make('separator', 'sep_ftp', __('FTP / SFTP', 'laca')),
 
