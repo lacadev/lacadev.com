@@ -8,4 +8,8 @@ Site hub quản lý dự án — theme `lacadev` chạy CPT `project`, CRM/dashb
 
 Trạng thái hiện tại: cả 3 giai đoạn (P0 nối cảnh báo real-time + field `ssl_expiry`; P1/P2 là thay đổi phía site khách) đều đã xong. Chỉ còn thao tác cấu hình + test thủ công (xem hướng dẫn test trong file trên).
 
-Các class liên quan chính: `App\Settings\LacaTools\ProjectNotificationHandler` (fan-out Email/Zalo/Telegram/Slack), `App\Settings\LacaTools\TrackerEndpointHandler` (nhận `/laca/v1/tracker/log`), `App\Features\ProjectManagement\Api\ClientWebhook` (nhận `/laca/v1/client-report`), `App\Features\ProjectManagement\LacaProjectsHub` (dashboard CRM).
+Các class liên quan chính: `App\Settings\LacaTools\ProjectNotificationHandler` (fan-out Email/Zalo/Telegram/Slack, tự refresh token Zalo, ghi log kênh thất bại, cron health-check), `App\Settings\LacaTools\TrackerEndpointHandler` (nhận `/laca/v1/tracker/log`), `App\Features\ProjectManagement\Api\ClientWebhook` (nhận `/laca/v1/client-report`), `App\Features\ProjectManagement\LacaProjectsHub` (dashboard CRM), `App\Settings\LacaTools\ClientPortalEndpoint` (Client Portal, có hiện trạng thanh toán).
+
+## Trước khi đụng vào thông báo Zalo/Email/Telegram/Slack, cron health-check, hoặc thanh toán trên Client Portal
+
+Đọc `app/public/wp-content/themes/lacadev/doc/NOTIFICATION_RELIABILITY_AND_BILLING.md` trước — ghi lại chi tiết 4 fix P1: ghi log khi gửi thông báo thất bại, tự động refresh token Zalo OA, tự phát hiện cron trễ, và hiện trạng thái thanh toán trên Client Portal — kèm hướng dẫn cấu hình/test từng phần. Trạng thái: cả 4 đã xong.

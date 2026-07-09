@@ -75,6 +75,8 @@ Tài liệu này dùng như runbook để đội triển khai và vận hành we
   - **Làm ở đâu**: tài liệu release nội bộ.
 - [ ] Kiểm tra page cache/object cache/CDN cache đang healthy.
   - **Làm ở đâu**: cache plugin + Redis/Memcached + CDN dashboard.
+- [ ] Site ít traffic (site khách mới, chưa có khách vào thường xuyên): thêm cron hệ thống thật gọi `wp-cron.php?doing_wp_cron` mỗi 15 phút, thay vì phụ thuộc pseudo-cron của WordPress. Xem chi tiết ở `doc/TRACKER_HUB_CLIENT_SYNC.md` mục "Cron hệ thống thật cho site ít traffic". Chỉ set `DISABLE_WP_CRON` sau khi xác nhận cron thật chạy ổn.
+  - **Làm ở đâu**: Cron Jobs của hosting (cPanel/hosting panel).
 
 ### 1.5 Kiểm thử bắt buộc trước release
 
