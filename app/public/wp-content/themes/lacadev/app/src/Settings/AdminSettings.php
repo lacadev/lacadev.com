@@ -1151,10 +1151,23 @@ class AdminSettings
 					Field::make('checkbox', 'enable_zalo_notify', __('Bật thông báo Zalo', 'laca')),
 
 					Field::make('text', 'zalo_oa_access_token', __('Access Token', 'laca'))
-						->set_width(50),
-						
+						->set_width(50)
+						->set_help_text('Tự động được làm mới khi gần hết hạn — không cần cập nhật tay nếu đã điền App ID/App Secret bên dưới.'),
+
 					Field::make('text', 'zalo_oa_refresh_token', __('Refresh Token', 'laca'))
-						->set_width(50),
+						->set_width(50)
+						->set_help_text('Zalo cấp token mới mỗi lần refresh — hệ thống tự ghi đè giá trị này, không cần sửa tay.'),
+
+					Field::make('separator', 'sep_zalo_app', __('Zalo App (để tự động refresh token)', 'laca')),
+
+					Field::make('text', 'zalo_app_id', __('App ID', 'laca'))
+						->set_width(50)
+						->set_help_text('Lấy từ Zalo Developers (developers.zalo.me) — App đã đăng ký OA này, KHÁC với Access/Refresh Token của OA phía trên.'),
+
+					Field::make('text', 'zalo_app_secret', __('App Secret Key', 'laca'))
+						->set_width(50)
+						->set_attribute('type', 'password')
+						->set_help_text('Secret Key của App (không phải của OA). Bắt buộc để hệ thống tự refresh Access Token khi hết hạn (~1h/lần).'),
 
 					Field::make('text', 'zalo_default_receiver', __('Zalo User ID nhận mặc định', 'laca'))
 						->set_help_text('Nhập danh sách Zalo User ID (cách nhau bằng dấu phẩy) của Admin để nhận các cảnh báo quan trọng.'),

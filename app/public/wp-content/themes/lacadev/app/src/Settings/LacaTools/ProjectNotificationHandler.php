@@ -12,11 +12,120 @@ class ProjectNotificationHandler
 {
     private const CRON_HOOK = 'laca_project_manager_daily_cron';
 
+    /** Option lưu timestamp lần processDailyChecks() chạy gần nhất — dùng để phát hiện cron bị trễ. */
+    private const OPT_LAST_RUN = '_laca_cron_last_run_daily';
+
+    /** Option lưu trạng thái gửi gần nhất của từng kênh (ok/at/error) — xem recordChannelResult(). */
+    private const OPT_CHANNEL_STATUS = 'laca_notify_channel_status';
+
+    /** Option lưu thời điểm Access Token Zalo OA hết hạn — xem refreshZaloToken(). */
+    private const OPT_ZALO_TOKEN_EXPIRES_AT = '_zalo_oa_token_expires_at';
+
+    /** Ghi lại bởi hook wp_mail_failed — chỉ dùng tạm trong 1 lượt sendNotifications(). */
+    private string $lastMailError = '';
+
     public function init(): void
     {
         add_action('init', [$this, 'scheduleCronJob']);
         add_action(self::CRON_HOOK, [$this, 'processDailyChecks']);
         add_action('laca_project_alert_notify', [$this, 'handleRealtimeAlert'], 10, 3);
+        add_action('admin_notices', [$this, 'renderCronHealthNotice']);
+        add_action('admin_notices', [$this, 'renderChannelFailureNotice']);
+        add_action('wp_mail_failed', function (\WP_Error $error): void {
+            $this->lastMailError = $error->get_error_message();
+        });
+    }
+
+    /**
+     * Cảnh báo trong wp-admin nếu kênh thông báo nào đang bật mà lần gửi gần
+     * nhất thất bại — trước đây sendZaloMessage()/sendTelegramMessage()/
+     * sendSlackMessage() trả về bool nhưng bị bỏ qua hoàn toàn, nên 1 token
+     * hết hạn hay webhook sai có thể chết êm re không ai biết.
+     */
+    public function renderChannelFailureNotice(): void
+    {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        $channelLabels = ['email' => 'Email', 'zalo' => 'Zalo OA', 'telegram' => 'Telegram', 'slack' => 'Slack'];
+        $status = $this->getChannelStatusReport();
+
+        foreach ($channelLabels as $channel => $label) {
+            if (empty($status[$channel]) || !empty($status[$channel]['ok'])) {
+                continue;
+            }
+
+            $at = !empty($status[$channel]['at']) ? wp_date('H:i d/m/Y', (int) $status[$channel]['at']) : '?';
+            $error = $status[$channel]['error'] ?? '';
+            ?>
+            <div class="notice notice-error">
+                <p>
+                    ⚠️ <strong><?php echo esc_html(sprintf(__('Gửi thông báo qua %s thất bại', 'laca'), $label)); ?></strong>
+                    — <?php echo esc_html(sprintf(__('lần cuối lúc %s.', 'laca'), $at)); ?>
+                    <?php if ($error): ?>
+                        <?php echo esc_html__('Lỗi:', 'laca'); ?> <code><?php echo esc_html($error); ?></code>.
+                    <?php endif; ?>
+                    <?php echo esc_html__('Kiểm tra cấu hình tại Laca Admin → LacaDev PM & Bots.', 'laca'); ?>
+                </p>
+            </div>
+            <?php
+        }
+    }
+
+    /**
+     * Trạng thái gửi gần nhất của từng kênh (dùng cho notice trên + dashboard
+     * tile ở LacaProjectsHub).
+     *
+     * @return array<string,array{ok:bool,at:int,error:string}>
+     */
+    public function getChannelStatusReport(): array
+    {
+        $status = get_option(self::OPT_CHANNEL_STATUS, []);
+        return is_array($status) ? $status : [];
+    }
+
+    /**
+     * Ghi lại kết quả gửi gần nhất của 1 kênh — gọi từ sendNotifications()
+     * ngay sau mỗi lần gửi thực tế (không gọi nếu kênh đang tắt).
+     */
+    private function recordChannelResult(string $channel, bool $ok, string $error = ''): void
+    {
+        $status = $this->getChannelStatusReport();
+        $status[$channel] = [
+            'ok'    => $ok,
+            'at'    => time(),
+            'error' => $ok ? '' : substr($error, 0, 300),
+        ];
+        update_option(self::OPT_CHANNEL_STATUS, $status, false);
+    }
+
+    /**
+     * Cảnh báo trong wp-admin nếu cron daily đã trễ quá 3 ngày so với lần
+     * chạy gần nhất — dấu hiệu WordPress pseudo-cron không tự chạy đều vì
+     * site ít traffic. Bỏ qua nếu chưa từng có baseline (site mới cài).
+     */
+    public function renderCronHealthNotice(): void
+    {
+        if (!current_user_can('manage_options') || !wp_next_scheduled(self::CRON_HOOK)) {
+            return;
+        }
+
+        $lastRun = (int) get_option(self::OPT_LAST_RUN, 0);
+        if ($lastRun === 0 || (time() - $lastRun) < 3 * DAY_IN_SECONDS) {
+            return;
+        }
+
+        $hoursLate = (int) round((time() - $lastRun) / HOUR_IN_SECONDS);
+        ?>
+        <div class="notice notice-warning">
+            <p>
+                ⏰ <strong><?php echo esc_html__('Cron có thể đang trễ:', 'laca'); ?></strong>
+                <?php echo esc_html(sprintf(__('Cronjob kiểm tra hết hạn dịch vụ (laca_project_manager_daily_cron) chưa chạy lại trong %d giờ qua.', 'laca'), $hoursLate)); ?>
+                <?php echo esc_html__('Site ít traffic thì WordPress pseudo-cron không tự chạy đều — xem hướng dẫn cài cron hệ thống thật trong doc/TRACKER_HUB_CLIENT_SYNC.md.', 'laca'); ?>
+            </p>
+        </div>
+        <?php
     }
 
     /**
@@ -61,6 +170,7 @@ class ProjectNotificationHandler
      */
     public function processDailyChecks(): void
     {
+        update_option(self::OPT_LAST_RUN, time(), false);
         $this->checkExpirations();
     }
 
@@ -161,20 +271,42 @@ class ProjectNotificationHandler
             if ($emailRaw) {
                 $emails = array_map('trim', explode(',', $emailRaw));
                 $subject = '[LacaDev PM] Cảnh báo dịch vụ sắp hết hạn';
-                wp_mail($emails, $subject, $content);
+                $this->lastMailError = '';
+                $sent = wp_mail($emails, $subject, $content);
+                $this->recordChannelResult('email', $sent, $this->lastMailError ?: 'wp_mail() trả về false');
             }
         }
 
         // Thông báo qua Zalo
         $isZaloEnabled = carbon_get_theme_option('enable_zalo_notify');
         if ($isZaloEnabled === 'yes' || $isZaloEnabled === true) {
+            // Access Token Zalo OA sống ~1h — refresh chủ động trước khi gửi
+            // nếu đã qua/sắp qua hạn (buffer 5 phút), tránh gửi thất bại vô ích.
+            $expiresAt = (int) get_option(self::OPT_ZALO_TOKEN_EXPIRES_AT, 0);
+            if ($expiresAt > 0 && $expiresAt - 300 < time()) {
+                $this->refreshZaloToken();
+            }
+
             $oaToken = carbon_get_theme_option('zalo_oa_access_token');
             $receiversRaw = carbon_get_theme_option('zalo_default_receiver');
             if ($oaToken && $receiversRaw) {
                 $receivers = array_map('trim', explode(',', $receiversRaw));
+                $ok = true;
+                $error = '';
                 foreach ($receivers as $uid) {
-                    $this->sendZaloMessage($oaToken, $uid, $content);
+                    $result = $this->sendZaloMessage($oaToken, $uid, $content);
+                    // Thất bại có thể do token hết hạn ngoài dự kiến — refresh
+                    // 1 lần rồi gửi lại đúng 1 lần, không lặp vô hạn.
+                    if (!$result['ok'] && $this->refreshZaloToken()) {
+                        $oaToken = carbon_get_theme_option('zalo_oa_access_token');
+                        $result = $this->sendZaloMessage($oaToken, $uid, $content);
+                    }
+                    if (!$result['ok']) {
+                        $ok = false;
+                        $error = $result['error'];
+                    }
                 }
+                $this->recordChannelResult('zalo', $ok, $error);
             }
         }
 
@@ -185,9 +317,16 @@ class ProjectNotificationHandler
             $chatIdsRaw = carbon_get_theme_option('telegram_chat_id');
             if ($telegramToken && $chatIdsRaw) {
                 $chatIds = array_map('trim', explode(',', $chatIdsRaw));
+                $ok = true;
+                $error = '';
                 foreach ($chatIds as $chatId) {
-                    $this->sendTelegramMessage($telegramToken, $chatId, $content);
+                    $result = $this->sendTelegramMessage($telegramToken, $chatId, $content);
+                    if (!$result['ok']) {
+                        $ok = false;
+                        $error = $result['error'];
+                    }
                 }
+                $this->recordChannelResult('telegram', $ok, $error);
             }
         }
 
@@ -196,15 +335,71 @@ class ProjectNotificationHandler
         if ($isSlackEnabled === 'yes' || $isSlackEnabled === true) {
             $slackWebhook = carbon_get_theme_option('slack_webhook_url');
             if ($slackWebhook) {
-                $this->sendSlackMessage($slackWebhook, $content);
+                $result = $this->sendSlackMessage($slackWebhook, $content);
+                $this->recordChannelResult('slack', $result['ok'], $result['error']);
             }
         }
     }
 
     /**
-     * Gửi tin nhắn qua Zalo OA API
+     * Refresh Access Token của Zalo OA bằng Refresh Token hiện có.
+     *
+     * Cần App ID + App Secret (đăng ký ở Zalo Developers, khác với Access/
+     * Refresh Token của riêng OA) — không có 2 giá trị này thì bỏ qua, giữ
+     * nguyên hành vi cũ (gửi thất bại nếu token thật sự đã hết hạn).
+     * Zalo xoay cả access_token và refresh_token mỗi lần refresh — token cũ
+     * hết hiệu lực ngay, nên phải ghi đè cả 2 giá trị mới vào theme option.
      */
-    private function sendZaloMessage(string $token, string $userId, string $text): bool
+    private function refreshZaloToken(): bool
+    {
+        $appId = carbon_get_theme_option('zalo_app_id');
+        $appSecret = carbon_get_theme_option('zalo_app_secret');
+        $refreshToken = carbon_get_theme_option('zalo_oa_refresh_token');
+
+        if (!$appId || !$appSecret || !$refreshToken) {
+            return false;
+        }
+
+        $response = wp_remote_post('https://oauth.zaloapp.com/v4/oa/access_token', [
+            'headers' => [
+                'secret_key'   => $appSecret,
+                'Content-Type' => 'application/x-www-form-urlencoded',
+            ],
+            'body' => [
+                'app_id'        => $appId,
+                'refresh_token' => $refreshToken,
+                'grant_type'    => 'refresh_token',
+            ],
+            'timeout' => 15,
+        ]);
+
+        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+            return false;
+        }
+
+        $data = json_decode(wp_remote_retrieve_body($response), true);
+        if (empty($data['access_token'])) {
+            return false;
+        }
+
+        // Carbon Fields theme options lưu ngầm dưới option name có tiền tố
+        // "_" — ghi trực tiếp qua update_option() thay vì qua Carbon Fields
+        // API (chỉ hỗ trợ đọc tiện lợi ở runtime, không có API set chuẩn).
+        update_option('_zalo_oa_access_token', sanitize_text_field($data['access_token']), false);
+        if (!empty($data['refresh_token'])) {
+            update_option('_zalo_oa_refresh_token', sanitize_text_field($data['refresh_token']), false);
+        }
+        update_option(self::OPT_ZALO_TOKEN_EXPIRES_AT, time() + (int) ($data['expires_in'] ?? 3600), false);
+
+        return true;
+    }
+
+    /**
+     * Gửi tin nhắn qua Zalo OA API
+     *
+     * @return array{ok:bool,error:string}
+     */
+    private function sendZaloMessage(string $token, string $userId, string $text): array
     {
         $url = 'https://openapi.zalo.me/v3.0/oa/message/cs';
         $body = [
@@ -221,13 +416,15 @@ class ProjectNotificationHandler
             'timeout' => 15,
         ]);
 
-        return !is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200;
+        return $this->toChannelResult($response);
     }
 
     /**
      * Gửi tin nhắn qua Telegram Bot API
+     *
+     * @return array{ok:bool,error:string}
      */
-    private function sendTelegramMessage(string $token, string $chatId, string $text): bool
+    private function sendTelegramMessage(string $token, string $chatId, string $text): array
     {
         $url = "https://api.telegram.org/bot{$token}/sendMessage";
         $body = [
@@ -241,13 +438,15 @@ class ProjectNotificationHandler
             'timeout' => 15,
         ]);
 
-        return !is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200;
+        return $this->toChannelResult($response);
     }
 
     /**
      * Gửi tin nhắn qua Slack Webhook
+     *
+     * @return array{ok:bool,error:string}
      */
-    private function sendSlackMessage(string $webhookUrl, string $text): bool
+    private function sendSlackMessage(string $webhookUrl, string $text): array
     {
         $body = ['text' => $text];
 
@@ -257,6 +456,27 @@ class ProjectNotificationHandler
             'timeout' => 15,
         ]);
 
-        return !is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200;
+        return $this->toChannelResult($response);
+    }
+
+    /**
+     * Chuẩn hoá kết quả wp_remote_post() thành {ok, error} — dùng chung cho
+     * cả 3 kênh Zalo/Telegram/Slack.
+     *
+     * @param mixed $response Kết quả wp_remote_post() (WP_Error hoặc array).
+     * @return array{ok:bool,error:string}
+     */
+    private function toChannelResult($response): array
+    {
+        if (is_wp_error($response)) {
+            return ['ok' => false, 'error' => $response->get_error_message()];
+        }
+
+        $code = wp_remote_retrieve_response_code($response);
+        if ($code === 200) {
+            return ['ok' => true, 'error' => ''];
+        }
+
+        return ['ok' => false, 'error' => 'HTTP ' . $code . ': ' . wp_remote_retrieve_body($response)];
     }
 }

@@ -235,6 +235,16 @@ class LacaProjectsHub
         $chartData = $this->getDashboardChartData($projects, $finance, $alertReport);
         $trackerSilent = $trackerReport['stale'] + $trackerReport['missing'];
 
+        $channelStatus = class_exists(\App\Settings\LacaTools\ProjectNotificationHandler::class)
+            ? (new \App\Settings\LacaTools\ProjectNotificationHandler())->getChannelStatusReport()
+            : [];
+        $channelFailedCount = 0;
+        foreach ($channelStatus as $channelResult) {
+            if (empty($channelResult['ok'])) {
+                $channelFailedCount++;
+            }
+        }
+
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Laca Projects', 'Báo cáo nhanh về doanh thu, công nợ, lỗi và cập nhật từ website khách hàng.'); ?>
@@ -247,6 +257,7 @@ class LacaProjectsHub
                 <?php $this->renderMetric('Bảo trì / năm', $this->formatMoney($finance['maintenance_yearly']), $stats['maintenance'] . ' dự án maintenance', 'info'); ?>
                 <?php $this->renderMetric('Cảnh báo active', (string) $alertReport['total'], $alertReport['critical'] . ' critical', $alertReport['critical'] > 0 ? 'danger' : 'neutral'); ?>
                 <?php $this->renderMetric('Tracker online', $trackerReport['online'] . '/' . $trackerReport['total'], $trackerSilent . ' site im lặng', $trackerSilent > 0 ? 'warning' : 'success'); ?>
+                <?php $this->renderMetric('Kênh thông báo', $channelFailedCount > 0 ? $channelFailedCount . ' lỗi' : 'Ổn định', $channelFailedCount > 0 ? 'Kiểm tra LacaDev PM & Bots' : 'Email/Zalo/Telegram/Slack', $channelFailedCount > 0 ? 'danger' : 'success'); ?>
             </div>
 
             <div class="laca-projects-report-grid">
