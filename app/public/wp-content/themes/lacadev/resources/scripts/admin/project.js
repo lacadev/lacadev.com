@@ -493,7 +493,8 @@ document.addEventListener( 'DOMContentLoaded', () => {
 								} else if ( typeof Swal !== 'undefined' ) {
 									Swal.fire( {
 										title: 'Mã PHP Tracker',
-										html: `<textarea id="swal_tracker_code" readonly style="width:100%; height:250px; font-family:monospace; font-size:12px; background:#f4f4f4; padding:10px; border:1px solid #ddd;">${ res.data.code }</textarea>
+										html: `<p style="text-align:left; background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; padding:10px 12px; color:#9a3412; font-size:13px; margin:0 0 10px;">⚠️ Chỉ dùng nếu site khách <strong>không</strong> chạy theme lacadev-client. Site chạy lacadev-client đã có tracker sẵn — dán Endpoint URL + Secret Key ở trên vào trang Laca Admin → 📡 Tracker của theme đó thay vì cài file này, để tránh tạo 2 hệ tracker song song.</p>
+                                       <textarea id="swal_tracker_code" readonly style="width:100%; height:250px; font-family:monospace; font-size:12px; background:#f4f4f4; padding:10px; border:1px solid #ddd;">${ res.data.code }</textarea>
                                        <div style="margin-top:10px;text-align:right;">
                                            <button class="button button-primary" onclick="var copyText = document.getElementById('swal_tracker_code'); copyText.select(); navigator.clipboard.writeText(copyText.value); Swal.showValidationMessage('Đã copy!'); setTimeout(()=>Swal.resetValidationMessage(), 2000);">📋 Copy Code</button>
                                        </div>`,

@@ -46,6 +46,13 @@ class ProjectTrackerGenerator
  * Version: 2.0.0
  * Network: false
  * Author: MOOMS.DEV
+ *
+ * ⚠️ CHỈ CÀI FILE NÀY NẾU SITE KHÁCH KHÔNG CHẠY THEME lacadev-client.
+ * Theme lacadev-client đã có sẵn tracker riêng (App\\Settings\\LacaDevTrackerClient),
+ * cùng hợp nhất + chống mất log khi mạng gián đoạn. Cài thêm mu-plugin này vào
+ * 1 site đang chạy lacadev-client sẽ tạo ra 2 hệ tracker chạy song song, không
+ * đồng bộ với nhau. Với site chạy lacadev-client, hãy dán Endpoint URL + Secret
+ * Key vào trang Laca Admin → 📡 Tracker của theme đó thay vì dùng file này.
  */
 
 if (!defined('ABSPATH')) {

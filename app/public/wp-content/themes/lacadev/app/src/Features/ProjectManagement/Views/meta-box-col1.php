@@ -154,9 +154,13 @@ $trackerLastSeenMeta = is_array($trackerLastSeenMeta ?? null) ? $trackerLastSeen
         <div class="laca-project-panel__header">
             <div>
                 <h3><?php echo esc_html__('Auto Activity Tracker', 'laca'); ?></h3>
-                <p><?php echo esc_html__('Cài MU-plugin vào website khách để tự động gửi log, lỗi và cập nhật.', 'laca'); ?></p>
+                <p><?php echo esc_html__('Kết nối website khách để tự động gửi log, lỗi và cập nhật về đây.', 'laca'); ?></p>
             </div>
         </div>
+
+        <p class="laca-project-state">
+            <?php echo esc_html__('Cách chuẩn: nếu site khách chạy theme lacadev-client (hoặc theme con) — vào Laca Admin → 📡 Tracker trên site đó, dán 2 giá trị dưới đây vào. Không cần cài thêm gì khác — tracker đã có sẵn trong theme, đã hợp nhất và có cơ chế chống mất log khi mạng gián đoạn.', 'laca'); ?>
+        </p>
 
         <div class="laca-form-group laca-copyable-input">
             <label><?php echo esc_html__('Endpoint URL', 'laca'); ?></label>
@@ -166,10 +170,17 @@ $trackerLastSeenMeta = is_array($trackerLastSeenMeta ?? null) ? $trackerLastSeen
             <label><?php echo esc_html__('Secret Key', 'laca'); ?></label>
             <input type="text" readonly value="<?php echo esc_attr($secretKey); ?>">
         </div>
-        <div class="laca-project-actions">
-            <button type="button" class="button button-primary" id="btn_download_tracker"><?php echo esc_html__('Tải MU-plugin', 'laca'); ?></button>
-            <button type="button" class="button" id="btn_view_tracker_code"><?php echo esc_html__('Xem code PHP', 'laca'); ?></button>
-        </div>
+
+        <details class="laca-project-tracker-fallback">
+            <summary><?php echo esc_html__('Site khách KHÔNG chạy theme lacadev-client? Dùng MU-plugin dự phòng', 'laca'); ?></summary>
+            <p class="laca-project-state laca-project-state--warning">
+                <?php echo esc_html__('Chỉ dùng cách này khi site khách không phải theme lacadev-client (ví dụ site có sẵn của khách, theme khác). MU-plugin này chạy 1 tracker riêng, độc lập với theme — nếu dùng cho site đang chạy lacadev-client sẽ tạo ra 2 hệ tracker song song, không đồng bộ với nhau.', 'laca'); ?>
+            </p>
+            <div class="laca-project-actions">
+                <button type="button" class="button" id="btn_download_tracker"><?php echo esc_html__('Tải MU-plugin', 'laca'); ?></button>
+                <button type="button" class="button" id="btn_view_tracker_code"><?php echo esc_html__('Xem code PHP', 'laca'); ?></button>
+            </div>
+        </details>
     </section>
 
     <section class="laca-project-panel laca-project-panel--remote">
