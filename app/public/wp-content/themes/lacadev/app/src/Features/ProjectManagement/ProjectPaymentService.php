@@ -43,13 +43,14 @@ class ProjectPaymentService
     }
 
     // -----------------------------------------------------------------------
-    // Private helpers
+    // Public helpers (đọc số liệu — dùng chung cho autoCalculate() và
+    // ClientPortalEndpoint để hiện tình trạng thanh toán cho khách)
     // -----------------------------------------------------------------------
 
     /**
      * Đọc giá build (CF lưu với prefix _ → meta key: _price_build).
      */
-    private function readBuildPrice(int $postId): int
+    public function readBuildPrice(int $postId): int
     {
         $raw = get_post_meta($postId, '_price_build', true);
         return (int) preg_replace('/[^0-9]/', '', (string) $raw);
@@ -59,7 +60,7 @@ class ProjectPaymentService
      * Tổng tiền đã thanh toán — CF lưu sub-field theo format PIPE:
      *   _payment_history|pay_amount|0, _payment_history|pay_amount|1, ...
      */
-    private function readTotalPaid(int $postId): int
+    public function readTotalPaid(int $postId): int
     {
         $total = 0;
         for ($i = 0; $i < 100; $i++) {

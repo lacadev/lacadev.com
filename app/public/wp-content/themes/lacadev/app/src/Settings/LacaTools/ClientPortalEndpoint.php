@@ -4,6 +4,7 @@ namespace App\Settings\LacaTools;
 
 use App\Models\ProjectLog;
 use App\Models\ProjectAlert;
+use App\Features\ProjectManagement\ProjectPaymentService;
 
 /**
  * Client Portal REST API
@@ -420,6 +421,10 @@ class ClientPortalEndpoint
         $maintenanceEnd  = carbon_get_post_meta($projectId, 'maintenance_end') ?: '';
         $maintenanceType = carbon_get_post_meta($projectId, 'maintenance_type') ?: 'none';
 
+        // Thanh toán — chỉ tổng số (status/total/paid/remaining), KHÔNG expose
+        // finance_note (ghi chú nội bộ), invoice_file, hay pay_note từng dòng.
+        $payment = $this->buildPaymentInfo($projectId);
+
         // Logs công khai cho client portal: ẩn security/internal-sensitive.
         $rawLogs = array_values(array_filter(
             ProjectLog::getByProject($projectId, 50),
@@ -479,6 +484,7 @@ class ClientPortalEndpoint
                 'type'    => $maintenanceType,
                 'end'     => $maintenanceEnd ? date('d/m/Y', strtotime($maintenanceEnd)) : '',
             ],
+            'payment'      => $payment,
             'logs'         => $logs,
             'service_report' => $this->buildServiceReport($logs),
             'monthly_report' => $this->buildMonthlyReport($logs),
@@ -486,6 +492,46 @@ class ClientPortalEndpoint
             'alerts'       => $alerts,
             'log_count'    => count($logs),
             'tasks'        => $tasks,
+        ];
+    }
+
+    /**
+     * Tổng hợp tình trạng thanh toán cho client portal — chỉ số liệu tổng,
+     * KHÔNG expose finance_note (ghi chú nội bộ), invoice_file, hay pay_note
+     * từng dòng trong payment_history (có thể chứa ghi chú không dành cho khách).
+     *
+     * @return array{status:string,status_label:string,total:int,paid:int,remaining:int}|null
+     */
+    private function buildPaymentInfo(int $projectId): ?array
+    {
+        if (!class_exists(ProjectPaymentService::class)) {
+            return null;
+        }
+
+        $paymentService = new ProjectPaymentService();
+        $total = $paymentService->readBuildPrice($projectId);
+
+        // Chưa nhập giá build — coi như dự án này không cần hiện mục thanh toán.
+        if ($total <= 0) {
+            return null;
+        }
+
+        $paid = $paymentService->readTotalPaid($projectId);
+        $status = get_post_meta($projectId, '_payment_status', true) ?: 'pending';
+
+        $statusLabels = [
+            'pending'  => 'Chưa thanh toán',
+            'partial'  => 'Đã thanh toán một phần',
+            'paid'     => 'Đã thanh toán đủ',
+            'overdue'  => 'Quá hạn thanh toán',
+        ];
+
+        return [
+            'status'       => sanitize_key($status),
+            'status_label' => $statusLabels[$status] ?? ucfirst($status),
+            'total'        => $total,
+            'paid'         => $paid,
+            'remaining'    => max(0, $total - $paid),
         ];
     }
 

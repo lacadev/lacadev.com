@@ -368,6 +368,29 @@ add_filter('body_class', function($classes) {
                     </div>
                 </section>
 
+                <?php if (!empty($project['payment'])): $payment = $project['payment']; ?>
+                <section class="cp-card">
+                    <div class="cp-section-head">
+                        <div class="cp-card__title">Thanh toán</div>
+                        <div class="cp-section-badge"><?php echo esc_html($payment['status_label']); ?></div>
+                    </div>
+                    <div class="cp-stat-grid">
+                        <article class="cp-stat">
+                            <span class="cp-stat__label">Tổng giá trị</span>
+                            <strong class="cp-stat__value"><?php echo esc_html(number_format((float) $payment['total'], 0, ',', '.')); ?>đ</strong>
+                        </article>
+                        <article class="cp-stat">
+                            <span class="cp-stat__label">Đã thanh toán</span>
+                            <strong class="cp-stat__value"><?php echo esc_html(number_format((float) $payment['paid'], 0, ',', '.')); ?>đ</strong>
+                        </article>
+                        <article class="cp-stat">
+                            <span class="cp-stat__label">Còn lại</span>
+                            <strong class="cp-stat__value"><?php echo esc_html(number_format((float) $payment['remaining'], 0, ',', '.')); ?>đ</strong>
+                        </article>
+                    </div>
+                </section>
+                <?php endif; ?>
+
                 <?php
                 $dateStart    = $project['dates']['start'];
                 $dateHandover = $project['dates']['handover'];
