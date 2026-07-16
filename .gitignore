@@ -8,3 +8,4 @@ local-site.json
 .codex/
 .github/skills/
 .agent/
+.envrc
