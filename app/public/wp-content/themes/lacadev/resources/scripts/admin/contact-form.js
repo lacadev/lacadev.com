@@ -168,8 +168,7 @@ document.addEventListener( 'DOMContentLoaded', function () {
 					current = {
 						index: sections.length + 1,
 						label:
-							marker.label ||
-							'Bước ' + ( sections.length + 1 ),
+							marker.label || 'Bước ' + ( sections.length + 1 ),
 						marker,
 						markerRow: row,
 						rows: [],
@@ -217,12 +216,8 @@ document.addEventListener( 'DOMContentLoaded', function () {
 			return `
 				<div class="lcf-condition-box">
 					<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600">
-						<input type="checkbox" ${
-							condition.field ? 'checked' : ''
-						}
-							onchange="lcfFieldConditionToggle('${ escAttr(
-								field.id
-							) }',this.checked)">
+						<input type="checkbox" ${ condition.field ? 'checked' : '' }
+							onchange="lcfFieldConditionToggle('${ escAttr( field.id ) }',this.checked)">
 						Chỉ hiện field này khi có điều kiện
 					</label>
 					<div class="lcf-condition-controls" style="${
@@ -243,7 +238,8 @@ document.addEventListener( 'DOMContentLoaded', function () {
 								field.id
 							) }','operator',this.value)">
 								<option value="equals" ${
-									( condition.operator || 'equals' ) === 'equals'
+									( condition.operator || 'equals' ) ===
+									'equals'
 										? 'selected'
 										: ''
 								}>bằng</option>
@@ -263,7 +259,9 @@ document.addEventListener( 'DOMContentLoaded', function () {
 										: ''
 								}>đã nhập/chọn</option>
 								<option value="empty" ${
-									condition.operator === 'empty' ? 'selected' : ''
+									condition.operator === 'empty'
+										? 'selected'
+										: ''
 								}>đang trống</option>
 							</select>
 						</div>
@@ -302,9 +300,7 @@ document.addEventListener( 'DOMContentLoaded', function () {
 						<span class="lcf-label-preview">${ labelPrev }</span>
 						<span class="lcf-toggle-icon">⌄</span>
 						<button type="button" class="lcf-remove-field-btn"
-							onclick="lcfRemoveField(event,'${ escAttr(
-								field.id
-							) }')"
+							onclick="lcfRemoveField(event,'${ escAttr( field.id ) }')"
 							title="Xoá field">✕</button>
 					</div>
 					<div class="laca-cf-field-card-body">
@@ -313,9 +309,7 @@ document.addEventListener( 'DOMContentLoaded', function () {
 								<label class="lcf-label">Tên bước</label>
 								<input type="text" class="widefat" placeholder="VD: Bước 2 - Nhu cầu"
 									value="${ escAttr( field.label || '' ) }"
-									oninput="lcfFieldUpdate('${ escAttr(
-										field.id
-									) }','label',this.value)">
+									oninput="lcfFieldUpdate('${ escAttr( field.id ) }','label',this.value)">
 								<p class="description">Đặt field này giữa các nhóm field. Những field phía sau sẽ thuộc bước mới.</p>
 							</div>
 						</div>
@@ -427,9 +421,7 @@ document.addEventListener( 'DOMContentLoaded', function () {
 								return field.type !== 'step_break';
 						  } )
 						: col.fields;
-					const fieldsHtml = fields
-						.map( buildFieldCard )
-						.join( '' );
+					const fieldsHtml = fields.map( buildFieldCard ).join( '' );
 					const pct = Math.round( ( col.span / 12 ) * 100 );
 					return `<div class="laca-cf-col-slot" data-col-id="${ escAttr(
 						col.id
@@ -514,9 +506,7 @@ document.addEventListener( 'DOMContentLoaded', function () {
 				data-marker-row-id="${ escAttr(
 					section.markerRow ? section.markerRow.id : ''
 				) }"
-				data-marker-field-id="${ escAttr(
-					section.marker ? section.marker.id : ''
-				) }">
+				data-marker-field-id="${ escAttr( section.marker ? section.marker.id : '' ) }">
 				<div class="lcf-step-builder-header">
 					<div class="lcf-step-builder-title">
 						<span class="lcf-step-builder-number">${ section.index }</span>
@@ -528,9 +518,9 @@ document.addEventListener( 'DOMContentLoaded', function () {
 					${
 						section.marker
 							? `<button type="button" class="lcf-step-remove-btn"
-								onclick="lcfRemoveStepMarker('${ escAttr(
-									section.markerRow.id
-								) }','${ escAttr( section.marker.id ) }')">
+								onclick="lcfRemoveStepMarker('${ escAttr( section.markerRow.id ) }','${ escAttr(
+									section.marker.id
+								) }')">
 								Xoá bước
 							</button>`
 							: ''
@@ -580,7 +570,10 @@ document.addEventListener( 'DOMContentLoaded', function () {
 			} else {
 				builder.classList.remove( 'is-step-builder' );
 				rows.forEach( function ( row ) {
-					builder.insertAdjacentHTML( 'beforeend', buildRowHtml( row ) );
+					builder.insertAdjacentHTML(
+						'beforeend',
+						buildRowHtml( row )
+					);
 				} );
 			}
 
@@ -642,11 +635,11 @@ document.addEventListener( 'DOMContentLoaded', function () {
 							'.lcf-col-empty-hint'
 						);
 						if ( hint ) {
-							hint.style.display = newFields.filter( function (
-								field
-							) {
-								return field.type !== 'step_break';
-							} ).length
+							hint.style.display = newFields.filter(
+								function ( field ) {
+									return field.type !== 'step_break';
+								}
+							).length
 								? 'none'
 								: '';
 						}
@@ -708,11 +701,7 @@ document.addEventListener( 'DOMContentLoaded', function () {
 								}
 							} );
 
-						if (
-							markerField &&
-							! markerAttached &&
-							markerRow
-						) {
+						if ( markerField && ! markerAttached && markerRow ) {
 							sectionRows.unshift( markerRow );
 						}
 
@@ -959,9 +948,7 @@ document.addEventListener( 'DOMContentLoaded', function () {
 						behavior: 'smooth',
 						block: 'center',
 					} );
-					const input = last.querySelector(
-						'.lcf-step-title-input'
-					);
+					const input = last.querySelector( '.lcf-step-title-input' );
 					if ( input ) {
 						input.focus();
 						input.select();
