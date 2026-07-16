@@ -368,8 +368,8 @@ add_action('init', function () {
  */
 
 /**
- * Custom Login URL — phải chạy ở plugins_loaded priority 99 (gọi trong constructor).
- * Khởi tạo ở init priority 1 để hook đăng ký kịp trước plugins_loaded callback.
+ * Custom Login URL — khởi tạo ở init priority 1 để interceptDefaultLogin
+ * (cũng hook vào init) và template_redirect kịp đăng ký trước khi chạy.
  */
 add_action('init', function () {
     if (class_exists('\App\Settings\Security\CustomLoginManager')) {
