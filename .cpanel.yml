@@ -4,8 +4,8 @@ deployment:
     - export GITPATH=/home/moomsdev/lacadev-git
     - export DEPLOYPATH=/home/moomsdev/public_html
 
-    # Deploy Theme (chỉ copy những file thay đổi)
+    - echo "=== Đang deploy theme lacadev ==="
     - /usr/bin/rsync -av --delete --exclude='.git' $GITPATH/app/public/wp-content/themes/lacadev/ $DEPLOYPATH/wp-content/themes/lacadev/
 
-    # Deploy Plugins
+    - echo "=== Đang deploy plugins ==="
     - /usr/bin/rsync -av --exclude='.git' $GITPATH/app/public/wp-content/plugins/ $DEPLOYPATH/wp-content/plugins/
