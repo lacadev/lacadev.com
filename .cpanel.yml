@@ -1,8 +1,8 @@
 ---
 deployment:
   tasks:
-    - export GITPATH=/home/moom sdev/lacadev-git
-    - export DEPLOYPATH=/home/moom sdev/public_html
+    - export GITPATH=/home/moomsdev/lacadev-git
+    - export DEPLOYPATH=/home/moomsdev/public_html
 
     # Deploy Theme (chỉ copy những file thay đổi)
     - /usr/bin/rsync -av --delete --exclude='.git' $GITPATH/app/public/wp-content/themes/lacadev/ $DEPLOYPATH/wp-content/themes/lacadev/
