@@ -6,6 +6,8 @@
     </div>
     <p class="rating-cta"><?php _e('Tiếp thêm nhiên liệu cho Trạm Laca nhé người anh em!', 'laca'); ?></p>
     <div class="rating-stars">
-        <?php echo kk_star_ratings(); ?>
+        <?php if (function_exists('kk_star_ratings')) : ?>
+            <?php echo kk_star_ratings(); ?>
+        <?php endif; ?>
     </div>
 </div>
