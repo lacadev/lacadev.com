@@ -17,47 +17,50 @@ class Optimize
 
     public function applyOptions(): void
     {
-        if (carbon_get_theme_option('disable_use_jquery_migrate') === 'yes') {
+        // Checkbox_Field::get_formatted_value() trả về boolean (true/false),
+        // KHÔNG phải chuỗi 'yes' — so sánh === 'yes' luôn false, khiến mọi
+        // toggle ở đây không bao giờ có hiệu lực. Dùng truthy check thay thế.
+        if (carbon_get_theme_option('disable_use_jquery_migrate')) {
             $this->disableUseJqueryMigrate();
         }
 
-        if (carbon_get_theme_option('disable_gutenberg_css') === 'yes') {
+        if (carbon_get_theme_option('disable_gutenberg_css')) {
             $this->disableGutenbergCss();
         }
 
-        if (carbon_get_theme_option('disable_classic_css') === 'yes') {
+        if (carbon_get_theme_option('disable_classic_css')) {
             $this->disableClassicCss();
         }
 
-        if (carbon_get_theme_option('disable_emoji') === 'yes') {
+        if (carbon_get_theme_option('disable_emoji')) {
             $this->disableEmoji();
         }
 
-        if (carbon_get_theme_option('enable_instant_page') === 'yes') {
+        if (carbon_get_theme_option('enable_instant_page')) {
             $this->enableInstantPage();
         }
 
-        if (carbon_get_theme_option('enable_smooth_scroll') === 'yes') {
+        if (carbon_get_theme_option('enable_smooth_scroll')) {
             $this->enableSmoothScroll();
         }
 
-        if (carbon_get_theme_option('remove_comments') === 'yes') {
+        if (carbon_get_theme_option('remove_comments')) {
             $this->removeHtmlComments();
         }
 
-        if (carbon_get_theme_option('enable_advanced_resource_hints') === 'yes') {
+        if (carbon_get_theme_option('enable_advanced_resource_hints')) {
             $this->enableAdvancedResourceHints();
         }
 
-        if (carbon_get_theme_option('enable_optimize_images') === 'yes') {
+        if (carbon_get_theme_option('enable_optimize_images')) {
             $this->optimizeImageAttributes();
         }
 
-        if (carbon_get_theme_option('enable_optimize_content_images') === 'yes') {
+        if (carbon_get_theme_option('enable_optimize_content_images')) {
             $this->optimizeContentImages();
         }
 
-        if (carbon_get_theme_option('enable_register_service_worker') === 'yes') {
+        if (carbon_get_theme_option('enable_register_service_worker')) {
             $this->registerServiceWorker();
         }
     }

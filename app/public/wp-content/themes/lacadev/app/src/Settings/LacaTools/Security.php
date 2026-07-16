@@ -15,31 +15,34 @@ class Security
 
     public function applyOptions(): void
     {
-        if (carbon_get_theme_option('disable_rest_api') === 'yes') {
+        // Checkbox_Field::get_formatted_value() trả về boolean (true/false),
+        // KHÔNG phải chuỗi 'yes' — so sánh === 'yes' luôn false, khiến mọi
+        // toggle ở đây không bao giờ có hiệu lực. Dùng truthy check thay thế.
+        if (carbon_get_theme_option('disable_rest_api')) {
             $this->disableRestApi();
         }
 
-        if (carbon_get_theme_option('disable_xml_rpc') === 'yes') {
+        if (carbon_get_theme_option('disable_xml_rpc')) {
             $this->disableXmlRpc();
         }
 
-        if (carbon_get_theme_option('disable_wp_embed') === 'yes') {
+        if (carbon_get_theme_option('disable_wp_embed')) {
             $this->disableWpEmbed();
         }
 
-        if (carbon_get_theme_option('disable_x_pingback') === 'yes') {
+        if (carbon_get_theme_option('disable_x_pingback')) {
             $this->disableXPingback();
         }
 
-        if (carbon_get_theme_option('enable_remove_wordpress_bloat') === 'yes') {
+        if (carbon_get_theme_option('enable_remove_wordpress_bloat')) {
             $this->removeWordPressBloat();
         }
 
-        if (carbon_get_theme_option('enable_optimize_database_queries') === 'yes') {
+        if (carbon_get_theme_option('enable_optimize_database_queries')) {
             $this->optimizeDatabaseQueries();
         }
 
-        if (carbon_get_theme_option('enable_optimize_memory_usage') === 'yes') {
+        if (carbon_get_theme_option('enable_optimize_memory_usage')) {
             $this->optimizeMemoryUsage();
         }
     }
@@ -59,8 +62,11 @@ class Security
 
     public function disableXmlRpc()
     {
+        // Chỉ filter này là đủ và an toàn. KHÔNG thêm filter
+        // 'wp_xmlrpc_server_class' => false — xmlrpc.php core gọi thẳng
+        // `new $wp_xmlrpc_server_class()` (xem wp-includes/../xmlrpc.php),
+        // nên trả về false sẽ gây Fatal Error khi có request tới /xmlrpc.php.
         add_filter('xmlrpc_enabled', '__return_false');
-        add_filter('wp_xmlrpc_server_class', '__return_false');
     }
 
     public function disableWpEmbed()
@@ -94,7 +100,6 @@ class Security
             remove_action('wp_head', 'adjacent_posts_rel_link_wp_head', 10);
             remove_action('wp_head', 'rest_output_link_wp_head', 10);
             remove_action('template_redirect', 'rest_output_link_header', 11);
-            remove_action('wp_head', 'wp_oembed_add_discovery_links');
         });
     }
 
