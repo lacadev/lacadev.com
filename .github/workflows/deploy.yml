@@ -2,7 +2,7 @@ name: Deploy to cPanel (Theme & Plugins)
 
 on:
   push:
-    branches: [main, master]
+    branches: [master]
 
 jobs:
   deploy:
@@ -17,12 +17,16 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: /public_html/ # deploy thẳng vào public_html
+          server-dir: /public_html/ # deploy thẳng vào clients.lacadev.com
 
-          # Chỉ deploy 2 thư mục quan trọng
+          # local-dir làm gốc đồng bộ — bỏ hẳn tiền tố app/public/, server
+          # chỉ có wp-content/... ở gốc (không có thư mục app/ trên server).
+          local-dir: app/public/
+
+          # Chỉ deploy 2 thư mục quan trọng (đường dẫn tính từ local-dir ở trên)
           include: |
-            app/public/wp-content/themes/lacadev/**
-            app/public/wp-content/plugins/**
+            wp-content/themes/**
+            wp-content/plugins/**
 
           # Loại trừ những thứ không cần
           exclude: |
@@ -31,4 +35,4 @@ jobs:
             *.md
             .cpanel.yml
             .gitignore
-            app/public/wp-content/uploads/**
+            wp-content/uploads/**
