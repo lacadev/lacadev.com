@@ -79,10 +79,11 @@ class TrackerEndpointHandler
                 'plugin_install', 'plugin_activate', 'plugin_deactivate', 'plugin_delete',
                 'block_sync',
             ];
-            $securityTypes      = ['file_changed', 'code_edit', 'file_suspicious'];
-            $warningTypes       = ['update_pending'];
-            $clientRequestTypes = ['client_request'];
-            $maintenanceTypes   = ['maintenance_summary'];
+            $securityTypes         = ['file_changed', 'code_edit', 'file_suspicious'];
+            $warningTypes          = ['update_pending'];
+            $clientRequestTypes    = ['client_request'];
+            $maintenanceTypes      = ['maintenance_summary'];
+            $blockSyncRequestTypes = ['block_sync_request'];
 
             if (in_array($type, $deploymentTypes, true)) {
                 $logType = 'deployment';
@@ -122,6 +123,12 @@ class TrackerEndpointHandler
                 $this->createClientRequestAlert($projectId, $content, $alertLevel, $alertType);
             } elseif (in_array($type, $maintenanceTypes, true)) {
                 $logType = 'maintenance_summary';
+            } elseif (in_array($type, $blockSyncRequestTypes, true)) {
+                $logType = 'client_request';
+                $blockName = sanitize_key((string) ($meta['block_name'] ?? ''));
+                if (!empty($blockName)) {
+                    $this->handleBlockSyncRequest((int) $projectId, $blockName);
+                }
             } else {
                 $logType = 'note';
             }
@@ -219,6 +226,51 @@ class TrackerEndpointHandler
 
         if ($alertId !== false) {
             do_action('laca_project_alert_notify', (int) $projectId, $level, $msg);
+        }
+    }
+
+    /**
+     * Site khách yêu cầu đồng bộ 1 Gutenberg block từ client.lacadev.com.
+     *
+     * Nếu block ĐÃ được cài trên project này (`_block_sync_versions`) —
+     * coi đây là yêu cầu "cập nhật lên bản mới", tự động duyệt luôn (không
+     * cần admin thao tác) vì bản chất đã được duyệt từ lần đầu, chỉ là bump
+     * version. Nếu block CHƯA từng có — đây là yêu cầu block mới, phải vào
+     * hàng chờ để admin hub duyệt thủ công trong "Block Sync Manager".
+     */
+    private function handleBlockSyncRequest(int $projectId, string $blockName): void
+    {
+        $installedVersions = get_post_meta($projectId, '_block_sync_versions', true) ?: [];
+        $installedVersions = is_array($installedVersions) ? $installedVersions : [];
+        $alreadyInstalled  = isset($installedVersions[$blockName]);
+
+        $pending = get_post_meta($projectId, '_pending_block_sync_requests', true) ?: [];
+        $pending = is_array($pending) ? $pending : [];
+
+        // Chống spam: bỏ qua nếu đã có 1 request pending y hệt cho block này
+        foreach ($pending as $req) {
+            if (($req['block_name'] ?? '') === $blockName && ($req['status'] ?? '') === 'pending') {
+                return;
+            }
+        }
+
+        $pending[] = [
+            'block_name'   => $blockName,
+            'requested_at' => current_time('mysql'),
+            'status'       => $alreadyInstalled ? 'auto_approved' : 'pending',
+            'reason'       => '',
+        ];
+        update_post_meta($projectId, '_pending_block_sync_requests', $pending);
+
+        $msg = $alreadyInstalled
+            ? "🔄 Site khách yêu cầu cập nhật block đã cài: {$blockName}"
+            : "🧩 Site khách yêu cầu đồng bộ block mới: {$blockName}";
+
+        $this->createClientRequestAlert($projectId, $msg, 'info', 'other');
+
+        if ($alreadyInstalled) {
+            // Đẩy ngay — do App\PostTypes\Concerns\BlockSyncSender lắng nghe
+            do_action('laca_block_sync_auto_approved', $projectId, $blockName);
         }
     }
 

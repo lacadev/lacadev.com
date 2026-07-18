@@ -3,6 +3,7 @@
 namespace App\Features\ProjectManagement\Ajax;
 
 use App\Models\ProjectLog;
+use App\Settings\LacaTools\SiteHealthChecker;
 
 /**
  * AJAX Handler: Remote Update (Cập nhật plugin/theme/core từ xa)
@@ -78,6 +79,13 @@ class RemoteAjaxHandler
                 'log_by'      => wp_get_current_user()->display_name ?: 'Admin',
                 'is_auto'     => 1,
             ]);
+
+            // Post-deploy smoke test — kiểm tra ngay site khách còn sống
+            // không sau khi vừa update, thay vì đợi khách hàng tự báo lỗi.
+            if (class_exists(SiteHealthChecker::class)) {
+                (new SiteHealthChecker())->checkAfterDeploy($projectId, "remote update ({$action})");
+            }
+
             wp_send_json_success(['message' => $msg]);
         } else {
             ProjectLog::add([

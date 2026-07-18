@@ -206,6 +206,17 @@ add_action('init', function() {
         (new \App\Settings\LacaTools\ClientPortalEndpoint())->init();
     }
 
+    if (class_exists('\App\Settings\LacaTools\BlockCatalogHub')) {
+        (new \App\Settings\LacaTools\BlockCatalogHub())->init();
+    }
+
+    // Uptime monitoring chủ động — hub tự ping homepage từng site khách mỗi
+    // giờ, độc lập với tracker (site khách tự báo cáo). Nếu site sập hẳn nó
+    // không thể tự báo, nên hub phải tự đi hỏi.
+    if (class_exists('\App\Settings\LacaTools\SiteHealthChecker')) {
+        (new \App\Settings\LacaTools\SiteHealthChecker())->init();
+    }
+
     if (class_exists('\App\Features\ProjectManagement\Api\ClientWebhook')) {
         (new \App\Features\ProjectManagement\Api\ClientWebhook())->init();
     }
