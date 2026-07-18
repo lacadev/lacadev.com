@@ -83,6 +83,12 @@ class EmailLogManager
         ?>
         <div class="wrap">
             <h1>📨 Email Log <span class="title-count"><?php echo esc_html($total); ?></span></h1>
+
+            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0">
+                <p style="margin:0 0 8px;font-weight:600;color:#0369a1">🔧 Nhật ký Email</p>
+                <p style="margin:0;font-size:13px;color:#374151">Trang này ghi lại toàn bộ email hệ thống đã gửi đi (liên hệ, thông báo dự án, đơn hàng...), giúp bạn kiểm tra xem một email có thực sự được gửi hay không khi khách báo không nhận được. Dùng bộ lọc bên dưới để xem theo trạng thái.</p>
+            </div>
+
             <p style="color:#666">Log mọi email gửi đi trong 90 ngày gần nhất. Tự động xoá sau 90 ngày.</p>
 
             <!-- Filter -->

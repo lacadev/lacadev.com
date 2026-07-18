@@ -248,6 +248,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Laca Projects', 'Báo cáo nhanh về doanh thu, công nợ, lỗi và cập nhật từ website khách hàng.'); ?>
+            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Dashboard</p><p style="margin:0;font-size:13px;color:#374151">Nhìn nhanh sức khỏe toàn bộ dự án/website đang quản lý: doanh thu, công nợ, cảnh báo, tracker và log cập nhật mới nhất. Nhấn vào một dòng để xem chi tiết dự án.</p></div>
             <?php $this->renderChartDataScript($chartData); ?>
 
             <div class="laca-projects-overview">
@@ -429,6 +430,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Action center', 'Danh sách việc cần xử lý được gom theo mức ưu tiên từ cảnh báo, công nợ, gia hạn và cập nhật dự án.'); ?>
+            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Action center</p><p style="margin:0;font-size:13px;color:#374151">Việc cần xử lý ngay, tự động gom theo mức ưu tiên: issue nghiêm trọng, công nợ, gia hạn sắp đến hạn và dự án lâu chưa có cập nhật.</p></div>
             <div class="laca-projects-overview laca-projects-overview--compact">
                 <?php $this->renderMetric('Tổng việc cần xử lý', (string) $total, 'Tự tổng hợp từ CRM'); ?>
                 <?php $this->renderMetric('Cần xử lý ngay', (string) count($groups['urgent']), 'Critical/warning issues'); ?>
@@ -489,6 +491,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Notifications', 'Trung tâm thông báo gom yêu cầu khách hàng, cảnh báo, công nợ, gia hạn và dự án cần chăm sóc.'); ?>
+            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Notifications</p><p style="margin:0;font-size:13px;color:#374151">Tổng hợp yêu cầu gửi từ khách hàng qua Client Portal cùng issue, công nợ và gia hạn đang cần chăm sóc — nơi tổng hợp việc cần phản hồi khách, không phải log gửi Email/Zalo/Telegram/Slack.</p></div>
             <div class="laca-projects-overview laca-projects-overview--compact">
                 <?php $this->renderMetric('Tổng thông báo', (string) $total, 'Từ CRM và client portal'); ?>
                 <?php $this->renderMetric('Yêu cầu khách', (string) count($clientRequests), 'Client Portal'); ?>
@@ -544,6 +547,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Pipeline', 'Board theo trạng thái để nhìn nhanh project đang ở đâu, ai phụ trách thanh toán và có rủi ro gì.'); ?>
+            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Pipeline</p><p style="margin:0;font-size:13px;color:#374151">Bảng Kanban theo trạng thái dự án, giúp nhìn nhanh dự án nào đang ở giai đoạn nào, tình hình tài chính và cảnh báo. Bấm vào thẻ để xem chi tiết.</p></div>
             <div class="laca-projects-board">
                 <?php foreach ($columns as $column): ?>
                     <section class="laca-projects-column">
@@ -590,7 +594,8 @@ class LacaProjectsHub
             'Khách hàng',
             'CRM khách hàng tổng hợp theo tên/email, doanh thu, công nợ và danh sách website đang chăm sóc.',
             ['Khách hàng', 'Liên hệ', 'Dự án', 'Doanh thu', 'Công nợ', 'Cập nhật cuối'],
-            $clientRows
+            $clientRows,
+            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Khách hàng</p><p style="margin:0;font-size:13px;color:#374151">Danh bạ khách hàng tổng hợp theo tên/email: số dự án đang chăm sóc, doanh thu và công nợ của từng khách.</p></div>'
         );
     }
 
@@ -604,6 +609,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Issues', 'Tập trung các lỗi, cảnh báo bảo mật và cảnh báo vận hành chưa xử lý.'); ?>
+            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Issues</p><p style="margin:0;font-size:13px;color:#374151">Toàn bộ lỗi, cảnh báo bảo mật và cảnh báo vận hành đang active trên các website khách hàng, sắp xếp theo mức độ nghiêm trọng.</p></div>
             <div class="laca-projects-overview laca-projects-overview--compact">
                 <?php $this->renderMetric('Active issues', (string) $report['total'], 'Tổng cảnh báo chưa resolve'); ?>
                 <?php $this->renderMetric('Critical', (string) $report['critical'], 'Cần xử lý ngay'); ?>
@@ -643,6 +649,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Updates', 'Theo dõi cập nhật tự động, deploy, bảo mật và thay đổi từ website khách hàng.'); ?>
+            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Updates</p><p style="margin:0;font-size:13px;color:#374151">Danh sách report tự động (deploy, cập nhật plugin/core, bảo mật, sửa lỗi...) mà tracker/site khách gửi về, giúp biết website nào vừa có thay đổi.</p></div>
             <div class="laca-projects-overview laca-projects-overview--compact">
                 <?php $this->renderMetric('Tổng updates', (string) count($logs), '100 log mới nhất'); ?>
                 <?php $this->renderMetric('Report tự động', (string) $clientUpdates['auto_count'], 'Gửi từ tracker/client site'); ?>
@@ -664,7 +671,8 @@ class LacaProjectsHub
             'Renewals',
             'Theo dõi domain, hosting và phí bảo trì cần gia hạn trong 120 ngày.',
             ['Dự án', 'Khách hàng', 'Hạng mục', 'Ngày đến hạn', 'Còn lại', 'Giá trị'],
-            $rows
+            $rows,
+            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Renewals</p><p style="margin:0;font-size:13px;color:#374151">Danh sách domain, hosting và phí bảo trì sắp đến hạn trong 120 ngày tới — dùng để chủ động nhắc khách gia hạn trước khi hết hạn.</p></div>'
         );
     }
 
@@ -687,7 +695,8 @@ class LacaProjectsHub
             'Vận hành',
             'Theo dõi domain, hosting, tracker heartbeat, cảnh báo và trạng thái vận hành.',
             ['Dự án', 'Domain', 'Hết hạn domain', 'Hết hạn hosting', 'Heartbeat', 'Cảnh báo'],
-            $rows
+            $rows,
+            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Vận hành</p><p style="margin:0;font-size:13px;color:#374151">Theo dõi tình trạng vận hành từng website: domain/hosting còn hạn bao lâu, tracker heartbeat có còn hoạt động và số cảnh báo đang active.</p></div>'
         );
     }
 
@@ -711,7 +720,8 @@ class LacaProjectsHub
             'Thanh toán',
             'Theo dõi báo giá, số tiền đã thanh toán và trạng thái công nợ.',
             ['Dự án', 'Khách hàng', 'Giá build', 'Đã thanh toán', 'Trạng thái'],
-            $rows
+            $rows,
+            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Thanh toán</p><p style="margin:0;font-size:13px;color:#374151">Theo dõi giá trị hợp đồng, số tiền khách đã thanh toán và trạng thái công nợ của từng dự án.</p></div>'
         );
     }
 
@@ -723,7 +733,8 @@ class LacaProjectsHub
             'Health score',
             'Chấm điểm sức khoẻ dự án dựa trên cảnh báo, công nợ, hạn dịch vụ, cập nhật và heartbeat tracker.',
             ['Dự án', 'Khách hàng', 'Score', 'Trạng thái', 'Điểm trừ chính', 'Heartbeat', 'Cập nhật cuối'],
-            $rows
+            $rows,
+            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Health score</p><p style="margin:0;font-size:13px;color:#374151">Điểm sức khỏe từng dự án được tính tự động dựa trên cảnh báo, công nợ, hạn dịch vụ, cập nhật và heartbeat tracker — điểm càng thấp càng cần quan tâm.</p></div>'
         );
     }
 
@@ -741,6 +752,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Reports', 'Báo cáo tổng hợp doanh thu, công nợ, vận hành và cập nhật trong tháng.'); ?>
+            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Reports</p><p style="margin:0;font-size:13px;color:#374151">Báo cáo tổng hợp theo tháng: doanh thu đã thu, công nợ còn lại, số lượng cập nhật/bảo trì và cơ cấu trạng thái dự án — dùng để tổng kết định kỳ.</p></div>
             <div class="laca-projects-overview">
                 <?php $this->renderMetric('Đã thu tháng này', $this->formatMoney($monthlyPaid), date_i18n('m/Y')); ?>
                 <?php $this->renderMetric('Tổng đã thu', $this->formatMoney($finance['total_paid']), $finance['collection_rate'] . '% tổng giá trị'); ?>
@@ -818,7 +830,8 @@ class LacaProjectsHub
             'Portal links',
             'Link theo dõi tiến độ dành cho khách hàng.',
             ['Dự án', 'Khách hàng', 'Portal URL', ''],
-            $rows
+            $rows,
+            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Portal links</p><p style="margin:0;font-size:13px;color:#374151">Link Client Portal riêng cho từng dự án để gửi cho khách hàng theo dõi tiến độ, không cần đăng nhập vào wp-admin.</p></div>'
         );
     }
 
@@ -1533,7 +1546,7 @@ class LacaProjectsHub
      * @param string[] $headers
      * @param array<int,array<int,string>> $rows
      */
-    private function renderSimpleTablePage(string $title, string $description, array $headers, array $rows): void
+    private function renderSimpleTablePage(string $title, string $description, array $headers, array $rows, string $intro = ''): void
     {
         if (!current_user_can('edit_posts')) {
             wp_die(esc_html__('Bạn không có quyền xem trang này.', 'laca'));
@@ -1542,6 +1555,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader($title, $description); ?>
+            <?php echo $intro; ?>
             <section class="laca-projects-panel">
                 <?php if ($rows === []): ?>
                     <p class="laca-projects-empty">Chưa có dữ liệu.</p>

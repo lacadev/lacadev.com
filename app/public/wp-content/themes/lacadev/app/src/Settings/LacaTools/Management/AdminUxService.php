@@ -12,6 +12,7 @@ class AdminUxService
     public function register(): void
     {
         add_action('admin_menu', [$this, 'registerUnattachedMediaMenu']);
+        add_action('admin_notices', [$this, 'renderUnattachedMediaNotice']);
         $this->simplifyMerchantAdmin();
     }
 
@@ -27,6 +28,23 @@ class AdminUxService
             'manage_options',
             'upload.php?detached=1&mode=list'
         );
+    }
+
+    /**
+     * Hiển thị giải thích ngắn ở đầu trang "Media Không Dùng" (upload.php?detached=1).
+     */
+    public function renderUnattachedMediaNotice(): void
+    {
+        $screen = get_current_screen();
+        if (!$screen || $screen->id !== 'upload' || empty($_GET['detached'])) {
+            return;
+        }
+
+        echo '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0">'
+            . '<p style="margin:0 0 8px;font-weight:600;color:#0369a1">🔧 Media Không Dùng</p>'
+            . '<p style="margin:0;font-size:13px;color:#374151">Đây là danh sách các file (ảnh, tài liệu...) đã tải lên nhưng chưa được gắn vào bài viết/trang nào. '
+            . 'Bạn có thể xoá bớt để giải phóng dung lượng lưu trữ, nhưng nên kiểm tra kỹ trước khi xoá vì một số file có thể vẫn đang được dùng ở nơi khác trên site.</p>'
+            . '</div>';
     }
 
     /**

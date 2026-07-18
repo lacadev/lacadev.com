@@ -155,6 +155,8 @@ class Project extends \App\Abstracts\AbstractPostType
                 </span>
             </div>
 
+            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:12px 14px;margin:0 0 12px"><p style="margin:0;font-size:13px;color:#374151">Log, cảnh báo và tiến độ bên dưới được <strong>website khách hàng tự động gửi về</strong> qua Tracker — không cần nhập tay. Ô <strong>Tracker heartbeat</strong> cho biết lần cuối site khách hàng còn báo về, giúp phát hiện sớm khi site gặp sự cố hoặc mất kết nối.</p></div>
+
             <div class="laca-project-summary-grid" aria-label="<?php echo esc_attr__('Tổng quan nhanh dự án', 'laca'); ?>">
                 <div class="laca-project-summary-card">
                     <span class="laca-project-summary-card__label"><?php echo esc_html__('Cảnh báo', 'laca'); ?></span>

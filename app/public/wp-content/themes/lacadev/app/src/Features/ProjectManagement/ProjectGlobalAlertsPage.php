@@ -72,6 +72,11 @@ class ProjectGlobalAlertsPage
         $this->renderStyles();
         ?>
         <div class="wrap laca-global-alerts-wrap">
+            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0">
+                <p style="margin:0 0 8px;font-weight:600;color:#0369a1">🔧 Tất cả Cảnh báo</p>
+                <p style="margin:0;font-size:13px;color:#374151">Trang này gộp toàn bộ cảnh báo từ tất cả dự án khách hàng vào một nơi (site sập, SSL/domain/hosting sắp hết hạn, thanh toán trễ hạn, cần cập nhật plugin...), giúp bạn xử lý nhanh mà không cần vào từng dự án. Dùng bộ lọc bên dưới để thu hẹp theo dự án, mức độ hoặc loại cảnh báo, rồi bấm <strong>Xử lý</strong> khi đã giải quyết xong.</p>
+            </div>
+
             <h1 class="wp-heading-inline">Tất cả Cảnh báo</h1>
             <?php if ($total > 0) : ?>
                 <span class="laca-total-badge"><?php echo $total; ?> chưa xử lý</span>

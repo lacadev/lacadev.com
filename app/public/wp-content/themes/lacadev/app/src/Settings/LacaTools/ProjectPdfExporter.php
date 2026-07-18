@@ -34,7 +34,7 @@ class ProjectPdfExporter
 
         $exportUrl = home_url('/?laca_export_quote=' . $post->ID);
         echo '<a href="' . esc_url($exportUrl) . '" target="_blank" class="button button-primary button-large" style="width:100%; text-align:center; padding: 10px 0; font-size: 15px; height: auto;">Xuất PDF Báo Giá</a>';
-        echo '<p style="margin-top: 10px; font-size: 13px; color: #666;">Hệ thống sẽ tổng hợp bảng giá, checklist và thông tin khách hàng thành một trang A4. Bạn có thể in hoặc lưu dưới dạng PDF để gửi đối tác.</p>';
+        echo '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:12px 14px;margin:10px 0 0"><p style="margin:0;font-size:13px;color:#374151">PDF tạo ra là bản báo giá chính thức (bảng giá, checklist tính năng, thông tin khách hàng) — dùng để gửi cho khách hàng xem và ký duyệt trước khi triển khai.</p></div>';
     }
 
     public function handleExportRequest(): void

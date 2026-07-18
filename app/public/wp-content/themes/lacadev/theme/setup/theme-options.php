@@ -16,6 +16,8 @@ $optionsPage = Container::make('theme_options', __('Laca Theme', 'laca'))
 	->set_page_file('app-theme-options.php')
 	->set_page_menu_position(3)
 	->add_tab(__('Branding | Thương hiệu', 'laca'), [
+		Field::make('html', 'branding_intro', '')
+			->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">🔧 Thương hiệu</p><p style="margin:0;font-size:13px;color:#374151">Các trường ở đây thiết lập màu sắc và logo của website, được áp dụng đồng bộ trên toàn bộ theme (cả giao diện sáng và tối).</p></div>'),
 		Field::make('color', 'primary_color', __('Primary color', 'laca'))
 			->set_width(33.33),
 		Field::make('color', 'secondary_color', __('Secondary color', 'laca'))
@@ -39,6 +41,8 @@ $optionsPage = Container::make('theme_options', __('Laca Theme', 'laca'))
 	])
 
 	->add_tab(__('Contact | Liên hệ', 'laca'), [
+		Field::make('html', 'contact_intro', '')
+			->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">🔧 Liên hệ</p><p style="margin:0;font-size:13px;color:#374151">Đây là thông tin liên hệ của công ty (địa chỉ, số điện thoại, mạng xã hội...) hiển thị ở footer và các block liên hệ. Chỉnh sửa ở đây sẽ cập nhật trên toàn bộ website.</p></div>'),
 		Field::make('html', 'info', __('', 'laca'))
 			->set_html('----<i> Information | Thông tin </i>----'),
 		Field::make('text', 'company' . currentLanguage(), __('', 'laca'))->set_width(50)
@@ -70,6 +74,8 @@ $optionsPage = Container::make('theme_options', __('Laca Theme', 'laca'))
 	])
 
 	->add_tab(__('Archive pages | List bài viết CPT', 'laca'), [
+		Field::make('html', 'archive_intro', '')
+			->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">🔧 Trang danh sách (Archive)</p><p style="margin:0;font-size:13px;color:#374151">Các trường này quy định tiêu đề và mô tả hiển thị trên trang danh sách (archive) của từng loại nội dung, ví dụ trang liệt kê Dịch vụ hoặc Dự án.</p></div>'),
 		Field::make('html', 'service', __('', 'laca'))
 			->set_html('----<i> Service </i>----'),
 		Field::make('text', 'service_page_title' . currentLanguage(), __('', 'laca'))
@@ -86,6 +92,8 @@ $optionsPage = Container::make('theme_options', __('Laca Theme', 'laca'))
 	])
 
 	->add_tab(__('Scripts', 'laca'), [
+		Field::make('html', 'scripts_intro', '')
+			->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">🔧 Scripts (Header/Footer)</p><p style="margin:0;font-size:13px;color:#374151">Dùng để chèn các mã theo dõi như Google Analytics, Facebook Pixel... Lưu ý: mã không hợp lệ ở đây có thể làm hỏng toàn bộ website, chỉ nên dán script từ nguồn đáng tin cậy.</p></div>'),
 		Field::make('header_scripts', 'crb_header_script', __('Header Script', 'laca')),
 		Field::make('footer_scripts', 'crb_footer_script', __('Footer Script', 'laca')),
 	])

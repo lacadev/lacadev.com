@@ -1193,10 +1193,48 @@ class AdminSettings
 						->set_help_text('Nhập Webhook URL của kênh Slack để nhận cảnh báo.'),
 				]);
 
+			// Block Catalog Source — nơi hub lấy danh mục block để cho site
+			// khách hàng duyệt/yêu cầu đồng bộ (khác với sync_api_key/
+			// sync_endpoint_url theo từng Project — đây là 1 nguồn DUY NHẤT
+			// dùng chung cho toàn hub: client.lacadev.com).
+			Container::make('theme_options', __('🗂️ Block Catalog Source', 'laca'))
+				->set_page_parent($options)
+				->set_page_file(__('laca-block-catalog-source', 'laca'))
+				->add_fields([
+					Field::make('html', 'block_catalog_source_info', '')
+						->set_html(
+							'<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0">'
+							. '<p style="margin:0 0 8px;font-weight:600;color:#0369a1">🗂️ Nguồn danh mục Block</p>'
+							. '<p style="margin:0;font-size:13px;color:#374151">Cấu hình DUY NHẤT 1 lần để hub đọc danh mục Gutenberg block từ '
+							. '<strong>client.lacadev.com</strong>. Lấy Catalog Endpoint URL và Catalog Key từ trang '
+							. '<strong>Laca Theme → 🧩 LacaDev</strong> trên chính site client.lacadev.com.</p>'
+							. '</div>'
+						),
+
+					Field::make('text', 'laca_catalog_source_url', __('Catalog Endpoint URL', 'laca'))
+						->set_width(60)
+						->set_attribute('placeholder', 'https://client.lacadev.com/wp-json/lacadev/v1/blocks-catalog')
+						->set_help_text('URL gốc của endpoint blocks-catalog trên client.lacadev.com.'),
+
+					Field::make('text', 'laca_catalog_source_key', __('Catalog Key', 'laca'))
+						->set_width(40)
+						->set_attribute('type', 'password')
+						->set_help_text('Catalog Key hiển thị ở trang Laca Theme → 🧩 LacaDev trên client.lacadev.com.'),
+				]);
+
             Container::make('theme_options', __('Login Socials', 'laca'))
             ->set_page_parent($options)
             ->set_page_file(__('laca-login-socials', 'laca'))
             ->add_tab(__('Google', 'laca'), [
+                Field::make('html', 'login_socials_google_info', '')
+                    ->set_html(
+                        '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0">'
+                        . '<p style="margin:0 0 8px;font-weight:600;color:#0369a1">🔧 Đăng nhập bằng Google</p>'
+                        . '<p style="margin:0;font-size:13px;color:#374151">Cấu hình này cho phép người dùng đăng nhập vào site bằng tài khoản Google thay vì tài khoản WordPress. '
+                        . 'Bật công tắc bên dưới, sau đó điền <strong>Client ID</strong> và <strong>Client Secret</strong> lấy từ Google Cloud Console, '
+                        . 'và dán <strong>Redirect URI</strong> (đã điền sẵn) vào phần cấu hình OAuth của Google.</p>'
+                        . '</div>'
+                    ),
                 Field::make('checkbox', 'enable_login_google', __('Bật Login Google', 'laca')),
                 Field::make('text', 'google_client_id', __('Client ID', 'laca'))
                     ->set_width(50),

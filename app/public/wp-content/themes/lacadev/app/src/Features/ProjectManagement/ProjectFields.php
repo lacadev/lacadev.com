@@ -64,8 +64,11 @@ class ProjectFields
         $container = Container::make('post_meta', __('Báo giá', 'laca'))
             ->where('post_type', '=', $this->postType);
 
-        // Thông tin khách hàng 
+        // Thông tin khách hàng
         $container->add_tab(__('Khách hàng', 'laca'), [
+            Field::make('html', 'client_tab_info', '')
+                ->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">👤 Thông tin khách hàng</p><p style="margin:0;font-size:13px;color:#374151">Nhập thông tin liên hệ của khách hàng để hiển thị trên bản báo giá gửi cho khách.</p></div>'),
+
             Field::make('text', 'client_name', __('', 'laca'))
                 ->set_width(33.33)
                 ->set_required(true)
@@ -87,11 +90,17 @@ class ProjectFields
 
         // Tổng quan dự án
         $container->add_tab(__('Tổng quan dự án', 'laca'), [
+            Field::make('html', 'quotation_intro_tab_info', '')
+                ->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">📄 Tổng quan dự án</p><p style="margin:0;font-size:13px;color:#374151">Viết đoạn giới thiệu ngắn về dự án, sẽ hiển thị ở đầu bản báo giá gửi cho khách hàng.</p></div>'),
+
             Field::make('rich_text', 'quotation_intro', __('', 'laca')),
         ]);
 
         // Danh sách trang thiết kế
         $container->add_tab(__('Danh sách trang thiết kế', 'laca'), [
+            Field::make('html', 'design_pages_tab_info', '')
+                ->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">📑 Danh sách trang thiết kế</p><p style="margin:0;font-size:13px;color:#374151">Liệt kê các trang sẽ thiết kế cho dự án, sẽ hiển thị thành danh sách trong bản báo giá gửi khách.</p></div>'),
+
             Field::make('complex', 'design_pages', __('', 'laca'))
                 ->set_layout('tabbed-vertical')
                 ->setup_labels([
@@ -116,6 +125,9 @@ class ProjectFields
 
         // Thời gian thực hiện
         $container->add_tab(__('Giai đoạn thực hiện', 'laca'), [
+            Field::make('html', 'timeline_phases_tab_info', '')
+                ->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">🗂️ Giai đoạn thực hiện</p><p style="margin:0;font-size:13px;color:#374151">Mô tả các giai đoạn triển khai dự án kèm số ngày dự kiến, hiển thị trong bản báo giá gửi khách.</p></div>'),
+
             Field::make('complex', 'timeline_phases', __('', 'laca'))
                 ->set_layout('tabbed-vertical')
                 ->setup_labels([
@@ -134,6 +146,9 @@ class ProjectFields
 
         // Mốc thời gian
         $container->add_tab(__('Mốc thời gian', 'laca'), [
+            Field::make('html', 'timeline_tab_info', '')
+                ->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">📅 Mốc thời gian</p><p style="margin:0;font-size:13px;color:#374151">Nhập ngày bắt đầu, ngày bàn giao dự kiến và số ngày làm việc để tính tiến độ hiển thị trong báo giá.</p></div>'),
+
             Field::make('text', 'estimated_days', __('Thời gian làm (ngày)', 'laca'))
                 ->set_width(25)
                 ->set_attribute('placeholder', 'VD: 15'),
@@ -153,6 +168,9 @@ class ProjectFields
 
         // Chi phí thực hiện
         $container->add_tab(__('Chi phí thực hiện', 'laca'), [
+            Field::make('html', 'quotation_items_tab_info', '')
+                ->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">💵 Chi phí thực hiện</p><p style="margin:0;font-size:13px;color:#374151">Nhập bảng chi tiết các hạng mục và đơn giá, dùng để tính tổng chi phí hiển thị trong bản báo giá gửi khách.</p></div>'),
+
             Field::make('complex', 'quotation_items', __('Bảng chi phí chi tiết', 'laca'))
                 ->set_layout('tabbed-vertical')
                 ->setup_labels([
@@ -209,6 +227,9 @@ class ProjectFields
 
         // Quy trình thực hiện
         $container->add_tab(__('Quy trình', 'laca'), [
+            Field::make('html', 'process_steps_tab_info', '')
+                ->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">🔁 Quy trình thực hiện</p><p style="margin:0;font-size:13px;color:#374151">Mô tả các bước quy trình làm việc, hiển thị trong bản báo giá để khách hàng hiểu cách dự án được triển khai.</p></div>'),
+
             Field::make('complex', 'process_steps', __('', 'laca'))
                 ->set_layout('tabbed-vertical')
                 ->setup_labels([
@@ -308,6 +329,9 @@ class ProjectFields
 
         // Tab: Bảo trì & Bảo hành
         $container->add_tab(__('Bảo trì & Bảo hành', 'laca'), [
+            Field::make('html', 'warranty_tab_info', '')
+                ->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">🛡️ Bảo trì & Bảo hành</p><p style="margin:0;font-size:13px;color:#374151">Nhập chính sách bảo hành, bảo trì áp dụng cho dự án — nội dung này sẽ hiển thị trong bản báo giá gửi khách hàng.</p></div>'),
+
             Field::make('select', 'warranty_status', __('Trạng thái bảo hành', 'laca'))
                 ->set_width(30)
                 ->set_default_value('free')
@@ -363,6 +387,9 @@ class ProjectFields
     private function addTabStatus(Container $container): void
     {
         $container->add_tab(__('Trạng thái', 'laca'), [
+            Field::make('html', 'status_tab_info', '')
+                ->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">📌 Trạng thái dự án</p><p style="margin:0;font-size:13px;color:#374151">Theo dõi tiến độ và gắn nhãn phân loại cho dự án. Trạng thái này hiển thị trên danh sách và dashboard quản lý dự án.</p></div>'),
+
             Field::make('select', 'project_status', __('Trạng thái dự án', 'laca'))
                 ->set_width(50)
                 ->add_options([
@@ -395,6 +422,9 @@ class ProjectFields
     private function addTabFinance(Container $container): void
     {
         $container->add_tab(__('Tài chính', 'laca'), [
+            Field::make('html', 'finance_tab_info', '')
+                ->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">💰 Tài chính dự án</p><p style="margin:0;font-size:13px;color:#374151">Quản lý giá trị hợp đồng, phí bảo trì hàng năm và lịch sử thanh toán. Trạng thái thanh toán sẽ tự động cập nhật dựa theo lịch sử nhập bên dưới.</p></div>'),
+
             Field::make('text', 'price_build', __('Giá build', 'laca'))
                 ->set_width(33.33)
                 ->set_attribute('data-type', 'currency')
@@ -453,6 +483,9 @@ class ProjectFields
     private function addTabHostingDomain(Container $container): void
     {
         $container->add_tab(__('Hosting & Domain', 'laca'), [
+            Field::make('html', 'hosting_domain_tab_info', '')
+                ->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">🌐 Hosting & Domain</p><p style="margin:0;font-size:13px;color:#374151">Lưu thông tin domain, hosting, SSL và FTP của dự án để tiện tra cứu và tự động nhận cảnh báo khi sắp hết hạn.</p></div>'),
+
             // DOMAIN
             Field::make('separator', 'sep_domain', __('Thông tin Domain', 'laca')),
 
@@ -571,6 +604,9 @@ class ProjectFields
     private function addTabTechSpecs(Container $container): void
     {
         $container->add_tab(__('Tech Specs', 'laca'), [
+            Field::make('html', 'tech_specs_tab_info', '')
+                ->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">⚙️ Tech Specs</p><p style="margin:0;font-size:13px;color:#374151">Thông tin kỹ thuật và bảng màu thương hiệu của dự án, dùng để tham chiếu nhanh khi bàn giao hoặc tra cứu.</p></div>'),
+
             Field::make('text', 'demo_design_url', __('URL web mẫu / Link Figma', 'laca'))
                 ->set_width(50)
                 ->set_attribute('placeholder', 'https://'),
@@ -605,6 +641,9 @@ class ProjectFields
     private function addTabBlockSync(Container $container): void
     {
         $container->add_tab(__('Block Sync', 'laca'), [
+            Field::make('html', 'block_sync_tab_info', '')
+                ->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">🔄 Block Sync</p><p style="margin:0;font-size:13px;color:#374151">Kết nối tới site khách để đẩy (push) các Gutenberg blocks từ hub sang site client qua REST API.</p></div>'),
+
             Field::make('separator', 'sep_block_sync_info', __('Cấu hình REST API cho client site', 'laca')),
 
             Field::make('text', 'sync_api_key', __('API Key của client', 'laca'))

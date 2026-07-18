@@ -68,6 +68,11 @@ class DynamicCptAdminPage
         ?>
         <div class="wrap laca-cpt-wrap">
 
+            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0">
+                <p style="margin:0 0 8px;font-weight:600;color:#0369a1">🔧 Custom Post Types</p>
+                <p style="margin:0;font-size:13px;color:#374151">Trang này giúp bạn tạo thêm loại nội dung riêng (ví dụ: Dự án, Sản phẩm, Dịch vụ...) mà không cần viết code. Điền form bên phải để tạo mới, hoặc bấm biểu tượng sửa/xoá trên từng thẻ để chỉnh sửa. Khi tạo xong, hệ thống sẽ tự sinh template hiển thị (archive/single) cho loại nội dung đó.</p>
+            </div>
+
             <div class="laca-cpt-header">
                 <div>
                     <h1><?php esc_html_e('Custom Post Types', 'laca'); ?></h1>

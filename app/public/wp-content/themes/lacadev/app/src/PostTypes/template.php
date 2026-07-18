@@ -34,6 +34,9 @@ class template extends \App\Abstracts\AbstractPostType
         Container::make('post_meta', __('Project Settings | Cài đặt dự án', 'laca'))
             ->where('post_type', '=', $this->post_type)
             ->add_tab(__('Visuals', 'laca'), [
+                Field::make('html', 'template_visuals_tab_info', '')
+                    ->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">🖼️ Visuals</p><p style="margin:0;font-size:13px;color:#374151">Đây là mẫu (template) dùng để tạo nhanh dự án mới. Ảnh và link demo nhập ở đây sẽ hiển thị trong thư viện mẫu để tham khảo.</p></div>'),
+
                 Field::make('select', 'is_real', __('Đã làm thực tế', 'laca'))
                     ->add_options([
                         'yes' => 'Có',
@@ -86,6 +89,9 @@ class template extends \App\Abstracts\AbstractPostType
                     ->set_header_template('<% if (name) { %><%- name %><% } %>'),
             ])
             ->add_tab(__('Conversion', 'laca'), [
+                Field::make('html', 'template_conversion_tab_info', '')
+                    ->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#0369a1">🎯 Conversion</p><p style="margin:0;font-size:13px;color:#374151">Thiết lập giá đề xuất, thời gian và gói dịch vụ đi kèm — các giá trị này sẽ được dùng để điền sẵn khi tạo dự án mới từ mẫu này.</p></div>'),
+
                 Field::make('text', 'price_label', __('Giá ước tính (Price Tag)', 'laca'))
                     ->set_width(50)
                     ->set_attribute('placeholder', __('Chỉ từ 5.000.000đ', 'laca')),
