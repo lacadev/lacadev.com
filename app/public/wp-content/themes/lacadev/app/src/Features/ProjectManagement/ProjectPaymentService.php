@@ -57,14 +57,16 @@ class ProjectPaymentService
     }
 
     /**
-     * Tổng tiền đã thanh toán — CF lưu sub-field theo format PIPE:
-     *   _payment_history|pay_amount|0, _payment_history|pay_amount|1, ...
+     * Tổng tiền đã thanh toán — CF lưu sub-field theo format PIPE đầy đủ:
+     *   _payment_history|pay_amount|0|0|value, _payment_history|pay_amount|1|0|value, ...
+     * (root|field|hàng thứ mấy|value_index|property — thiếu "|0|value" ở
+     * cuối sẽ không bao giờ khớp key thật, khiến hàm này luôn trả về 0).
      */
     public function readTotalPaid(int $postId): int
     {
         $total = 0;
         for ($i = 0; $i < 100; $i++) {
-            $metaKey = "_payment_history|pay_amount|{$i}";
+            $metaKey = "_payment_history|pay_amount|{$i}|0|value";
             if (!metadata_exists('post', $postId, $metaKey)) {
                 break;
             }
