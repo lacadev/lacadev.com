@@ -10,7 +10,7 @@ namespace App\Databases;
 class ProjectAlertTable
 {
     const TABLE_NAME    = 'laca_project_alerts';
-    const TABLE_VERSION = '1.0.0';
+    const TABLE_VERSION = '1.1.0';
     const VERSION_KEY   = 'laca_project_alert_table_version';
 
     public static function getTableName(): string
@@ -47,7 +47,8 @@ class ProjectAlertTable
             KEY project_id  (project_id),
             KEY alert_type  (alert_type),
             KEY alert_level (alert_level),
-            KEY is_resolved (is_resolved)
+            KEY is_resolved (is_resolved),
+            KEY project_active_created (project_id, is_resolved, created_at)
         ) {$charsetCollate};";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';

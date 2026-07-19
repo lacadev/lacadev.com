@@ -77,9 +77,25 @@ class ClientPortalEndpoint
             return new \WP_REST_Response(['success' => false, 'message' => 'Thiếu secret key.'], 400);
         }
 
+        // Chặn dò key hàng loạt (brute-force) — _portal_alias là chuỗi ngắn
+        // con người tự đặt (vd "acme-corp"), không phải secret ngẫu nhiên,
+        // nên endpoint đọc PHẢI giới hạn tần suất giống endpoint gửi request.
+        // Chỉ đếm những lần tra SAI key (khách hàng hợp lệ tải lại trang bao
+        // nhiêu lần cũng không bị chặn) — khoá IP sau 20 lần sai trong 15 phút.
+        $ip      = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+        $rateKey = 'laca_portal_fail_' . md5($ip);
+        $failCount = (int) get_transient($rateKey);
+        if ($failCount >= 20) {
+            return new \WP_REST_Response([
+                'success' => false,
+                'message' => 'Quá nhiều lần thử với secret key không đúng. Vui lòng thử lại sau ít phút.',
+            ], 429);
+        }
+
         // Tìm project có secret key tương ứng
         $projectId = $this->findProjectByKey($secretKey);
         if (!$projectId) {
+            set_transient($rateKey, $failCount + 1, 15 * MINUTE_IN_SECONDS);
             return new \WP_REST_Response(['success' => false, 'message' => 'Secret key không hợp lệ.'], 401);
         }
 

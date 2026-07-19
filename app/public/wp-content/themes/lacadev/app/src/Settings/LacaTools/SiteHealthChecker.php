@@ -2,6 +2,8 @@
 
 namespace App\Settings\LacaTools;
 
+use App\Models\ProjectAlert;
+
 /**
  * SiteHealthChecker
  *
@@ -53,15 +55,15 @@ class SiteHealthChecker
                 continue;
             }
 
-            $this->checkAndAlertOnChange((int) $projectId, $url);
+            $this->evaluateAndRecord((int) $projectId, $url);
         }
     }
 
     /**
      * Kiểm tra ngay sau 1 hành động vừa thực hiện trên site khách (push
      * block, remote update...) — mục đích là bắt lỗi NGAY nếu hành động vừa
-     * làm vô tình làm site vỡ, nên LUÔN cảnh báo nếu fail, không so trạng
-     * thái trước đó như kiểm tra định kỳ.
+     * làm vô tình làm site vỡ, nên LUÔN cảnh báo nếu đang down, không chỉ khi
+     * trạng thái vừa chuyển (khác với kiểm tra định kỳ).
      */
     public function checkAfterDeploy(int $projectId, string $context): void
     {
@@ -70,43 +72,39 @@ class SiteHealthChecker
             return;
         }
 
-        $result = $this->pingSite($url);
-
-        if (!$result['up']) {
-            do_action(
-                'laca_project_alert_notify',
-                $projectId,
-                'critical',
-                "🔥 Site có dấu hiệu bị lỗi ngay sau {$context}: {$result['message']}. Kiểm tra lại: {$url}"
-            );
-        }
-
-        update_post_meta($projectId, self::OPT_LAST_STATUS, $result['up'] ? 'up' : 'down');
-        update_post_meta($projectId, self::OPT_LAST_CHECKED, current_time('mysql'));
+        $this->evaluateAndRecord($projectId, $url, $context);
     }
 
-    private function checkAndAlertOnChange(int $projectId, string $url): void
+    /**
+     * Logic dùng chung cho cả 2 luồng (cron định kỳ + kiểm tra sau deploy) —
+     * trước đây 2 luồng có state machine khác nhau, khiến 1 site được phát
+     * hiện "down" bởi cron, rồi được phát hiện "up trở lại" bởi post-deploy
+     * check lại không hề bắn thông báo phục hồi (vì post-deploy chỉ cảnh báo
+     * khi fail, không có nhánh xử lý transition down→up) — khách/admin cứ
+     * tưởng site vẫn đang down dù đã tự khỏi.
+     */
+    private function evaluateAndRecord(int $projectId, string $url, ?string $deployContext = null): void
     {
         $result   = $this->pingSite($url);
         $newState = $result['up'] ? 'up' : 'down';
         $oldState = get_post_meta($projectId, self::OPT_LAST_STATUS, true) ?: 'up';
 
-        if ($newState !== $oldState) {
-            if ($newState === 'down') {
-                do_action(
-                    'laca_project_alert_notify',
-                    $projectId,
-                    'critical',
-                    "🔴 Site khách có vẻ đang KHÔNG TRUY CẬP ĐƯỢC: {$result['message']} ({$url})"
-                );
-            } else {
-                do_action(
-                    'laca_project_alert_notify',
-                    $projectId,
-                    'info',
-                    "✅ Site khách đã hoạt động trở lại: {$url}"
-                );
-            }
+        // Cảnh báo "down" khi: (a) vừa chuyển từ up→down (áp dụng cho cả 2
+        // luồng), hoặc (b) đang kiểm tra sau deploy và site đang down — admin
+        // cần biết NGAY sau hành động vừa làm dù site đã down từ trước đó.
+        if ($newState === 'down' && ($deployContext !== null || $oldState === 'up')) {
+            $suffix = $deployContext !== null ? " ngay sau {$deployContext}" : '';
+            $this->recordAlert(
+                $projectId,
+                "🔴 Site khách có vẻ đang KHÔNG TRUY CẬP ĐƯỢC{$suffix}: {$result['message']} ({$url})",
+                'critical'
+            );
+        } elseif ($newState === 'up' && $oldState === 'down') {
+            $this->recordAlert(
+                $projectId,
+                "✅ Site khách đã hoạt động trở lại: {$url}",
+                'warning'
+            );
         }
 
         update_post_meta($projectId, self::OPT_LAST_STATUS, $newState);
@@ -114,9 +112,57 @@ class SiteHealthChecker
     }
 
     /**
+     * Ghi alert vào bảng wp_laca_project_alerts TRƯỚC KHI bắn thông báo —
+     * trước đây chỉ gọi do_action('laca_project_alert_notify', ...) suông,
+     * không lưu DB, nên sự cố site-down không hề xuất hiện trong danh sách
+     * "Cảnh báo"/badge của hub, không resolve/theo dõi được, và nếu tất cả
+     * kênh Email/Zalo/Telegram/Slack đều tắt hoặc lỗi tại đúng thời điểm đó
+     * thì sự cố sẽ không để lại dấu vết nào trong wp-admin.
+     */
+    private function recordAlert(int $projectId, string $msg, string $level): void
+    {
+        if (!class_exists(ProjectAlert::class)) {
+            return;
+        }
+
+        if (ProjectAlert::existsActiveByMsg($projectId, $msg)) {
+            return;
+        }
+
+        $alertId = ProjectAlert::add([
+            'project_id'  => $projectId,
+            'alert_type'  => 'other',
+            'alert_level' => $level,
+            'alert_msg'   => $msg,
+        ]);
+
+        if ($alertId !== false) {
+            do_action('laca_project_alert_notify', $projectId, $level, $msg);
+        }
+    }
+
+    /**
      * @return array{up:bool, code:?int, message:string}
      */
     public function pingSite(string $url): array
+    {
+        $result = $this->doPing($url);
+        if ($result['up']) {
+            return $result;
+        }
+
+        // Thử lại 1 lần sau vài giây trước khi kết luận "down" — tránh báo
+        // nhầm do mạng chập chờn nhất thời phía hub (không phải site khách
+        // thật sự lỗi). Chạy trong cron/AJAX nền, không chặn người dùng thật.
+        sleep(3);
+
+        return $this->doPing($url);
+    }
+
+    /**
+     * @return array{up:bool, code:?int, message:string}
+     */
+    private function doPing(string $url): array
     {
         $response = wp_remote_get($url, [
             'timeout'     => 15,
@@ -133,7 +179,10 @@ class SiteHealthChecker
 
         $code = wp_remote_retrieve_response_code($response);
 
-        if ($code >= 500) {
+        // >=500 (lỗi server), 401/403 (site chặn bot/htaccess, WAF), 404
+        // (live_url cấu hình sai, domain hết hạn về trang parking) đều là
+        // dấu hiệu site không truy cập được bình thường.
+        if ($code >= 500 || in_array($code, [401, 403, 404], true)) {
             return ['up' => false, 'code' => $code, 'message' => "HTTP {$code}"];
         }
 

@@ -1220,6 +1220,31 @@ class AdminSettings
 						->set_width(40)
 						->set_attribute('type', 'password')
 						->set_help_text('Catalog Key hiển thị ở trang Laca Theme → 🧩 LacaDev trên client.lacadev.com.'),
+
+					Field::make('html', 'block_catalog_refresh', '')
+						->set_html(static function () {
+							$nonce = wp_create_nonce('laca_refresh_block_catalog');
+							return '<button type="button" id="laca-refresh-catalog-btn" class="button" data-nonce="' . esc_attr($nonce) . '">🔄 Làm mới danh mục ngay</button>'
+								. ' <span id="laca-refresh-catalog-status" style="font-size:12px;color:#888;margin-left:8px"></span>'
+								. '<p style="margin:8px 0 0;font-size:12px;color:#6b7280">Danh mục được cache 6 tiếng để đỡ tải client.lacadev.com — bấm nút này nếu vừa thêm block mới bên đó và muốn site khách thấy ngay, không cần chờ.</p>'
+								. '<script>
+									document.getElementById("laca-refresh-catalog-btn")?.addEventListener("click", function () {
+										var btn = this, statusEl = document.getElementById("laca-refresh-catalog-status");
+										btn.disabled = true;
+										statusEl.textContent = "⏳ Đang làm mới...";
+										var fd = new FormData();
+										fd.append("action", "laca_refresh_block_catalog");
+										fd.append("nonce", btn.dataset.nonce);
+										fetch(ajaxurl, { method: "POST", body: fd })
+											.then(function (res) { return res.json(); })
+											.then(function (data) {
+												statusEl.textContent = data.success ? ("✅ " + data.data.message) : ("❌ " + (data.data?.message || "Lỗi"));
+											})
+											.catch(function (e) { statusEl.textContent = "❌ Lỗi mạng: " + e.message; })
+											.finally(function () { btn.disabled = false; });
+									});
+								</script>';
+						}),
 				]);
 
             Container::make('theme_options', __('Login Socials', 'laca'))

@@ -32,10 +32,16 @@ class TrackerEndpointHandler
             return new \WP_REST_Response(['success' => false, 'message' => 'Dữ liệu không hợp lệ.'], 400);
         }
 
-        // Tìm Project có secret_key tương ứng
+        // Tìm Project có secret_key tương ứng — lọc post_status = 'publish'
+        // để 1 project đã xoá/lưu trữ (postmeta không tự bị xoá khi vào
+        // thùng rác) không thể tiếp tục xác thực và ghi log/bắn cảnh báo vô
+        // thời hạn sau khi đã ngừng hợp tác với khách hàng đó.
         global $wpdb;
         $projectId = $wpdb->get_var($wpdb->prepare(
-            "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value = %s LIMIT 1",
+            "SELECT pm.post_id FROM {$wpdb->postmeta} pm
+             INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+             WHERE pm.meta_key = %s AND pm.meta_value = %s AND p.post_status = 'publish'
+             LIMIT 1",
             '_tracker_secret_key',
             $secretKey
         ));
@@ -212,8 +218,13 @@ class TrackerEndpointHandler
             return;
         }
 
-        // Dedup: không tạo nếu đã có alert cùng type + project chưa resolve
-        if (ProjectAlert::existsActive($projectId, $alertType)) {
+        // Dedup theo NỘI DUNG cụ thể — KHÔNG theo alert_type chung chung.
+        // Trước đây dùng existsActive($projectId, $alertType): nếu project đã
+        // có 1 alert 'plugin_update' chưa resolve (vd "Plugin A cần update"),
+        // MỌI cảnh báo plugin_update khác sau đó (vd "Plugin B cần update")
+        // bị chặn luôn cho tới khi alert cũ được resolve — admin không bao
+        // giờ biết có thêm plugin khác cần cập nhật.
+        if (ProjectAlert::existsActiveByMsg($projectId, $msg)) {
             return;
         }
 
@@ -240,6 +251,18 @@ class TrackerEndpointHandler
      */
     private function handleBlockSyncRequest(int $projectId, string $blockName): void
     {
+        // Rate-limit theo project + block, ĐỘC LẬP với trạng thái request —
+        // endpoint /tracker/log chỉ xác thực bằng secret_key, không đi qua
+        // giới hạn 5 phút/lần ở UI Block Marketplace, nên ai có secret_key
+        // (hoặc 1 client bị lỗi) có thể gửi lặp lại liên tục để ép hub tự
+        // động push block nhiều lần / phình to _pending_block_sync_requests
+        // vô hạn. Chặn ngay tại đây, không phụ thuộc trạng thái request.
+        $rateLimitKey = 'laca_block_sync_req_' . md5($projectId . '|' . $blockName);
+        if (get_transient($rateLimitKey)) {
+            return;
+        }
+        set_transient($rateLimitKey, 1, 5 * MINUTE_IN_SECONDS);
+
         $installedVersions = get_post_meta($projectId, '_block_sync_versions', true) ?: [];
         $installedVersions = is_array($installedVersions) ? $installedVersions : [];
         $alreadyInstalled  = isset($installedVersions[$blockName]);
@@ -247,9 +270,11 @@ class TrackerEndpointHandler
         $pending = get_post_meta($projectId, '_pending_block_sync_requests', true) ?: [];
         $pending = is_array($pending) ? $pending : [];
 
-        // Chống spam: bỏ qua nếu đã có 1 request pending y hệt cho block này
+        // Chống trùng: bỏ qua nếu đã có request CHƯA xử lý xong cho đúng
+        // block này (kể cả 'auto_approved' — không chỉ 'pending', vì request
+        // có thể đang được BlockSyncSender xử lý ngay lúc này).
         foreach ($pending as $req) {
-            if (($req['block_name'] ?? '') === $blockName && ($req['status'] ?? '') === 'pending') {
+            if (($req['block_name'] ?? '') === $blockName && in_array($req['status'] ?? '', ['pending', 'auto_approved'], true)) {
                 return;
             }
         }

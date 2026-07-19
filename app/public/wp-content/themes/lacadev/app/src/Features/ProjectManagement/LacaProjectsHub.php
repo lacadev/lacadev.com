@@ -1668,6 +1668,7 @@ class LacaProjectsHub
         $totalPaid = 0;
         $maintenanceYearly = 0;
         $unpaidCount = 0;
+        $outstanding = 0;
 
         foreach ($projects as $project) {
             $id = (int) $project->ID;
@@ -1678,12 +1679,15 @@ class LacaProjectsHub
             $totalPaid += $paid;
             $maintenanceYearly += $this->moneyToInt($this->meta($id, 'price_maintenance_yearly'));
 
+            // Cộng dồn nợ CỦA TỪNG DỰ ÁN — không được trừ tổng aggregate
+            // (totalBuild - totalPaid), vì 1 dự án trả dư (paid > build, vd
+            // phát sinh thêm scope chưa cập nhật lại price_build) sẽ âm thầm
+            // triệt tiêu công nợ thật của 1 dự án KHÁC đang thiếu tiền.
             if ($build > 0 && $paid < $build) {
                 $unpaidCount++;
+                $outstanding += $build - $paid;
             }
         }
-
-        $outstanding = max(0, $totalBuild - $totalPaid);
 
         return [
             'total_build' => $totalBuild,
@@ -1712,19 +1716,17 @@ class LacaProjectsHub
             return $report;
         }
 
-        $result = ProjectAlert::getAllActiveFiltered([], 200, 1);
-        $report['total'] = (int) ($result['total'] ?? 0);
-
-        foreach (($result['items'] ?? []) as $alert) {
-            $level = (string) ($alert['alert_level'] ?? 'info');
-            if (isset($report[$level])) {
-                $report[$level]++;
-            }
-
-            if (in_array((string) ($alert['alert_type'] ?? ''), ['bug', 'security'], true)) {
-                $report['website_issues']++;
-            }
-        }
+        // Đếm bằng SQL GROUP BY (ProjectAlert::getActiveLevelCounts()) chứ
+        // không suy ra từ 1 trang kết quả giới hạn — trước đây dùng
+        // getAllActiveFiltered([], 200, 1) rồi đếm thủ công qua $result['items'],
+        // nên nếu tổng alert đang hoạt động vượt quá 200, breakdown
+        // critical/warning/info không còn cộng khớp với 'total' hiển thị.
+        $counts = ProjectAlert::getActiveLevelCounts();
+        $report['critical']       = $counts['critical'];
+        $report['warning']        = $counts['warning'];
+        $report['info']           = $counts['info'];
+        $report['website_issues'] = $counts['website_issues'];
+        $report['total']          = $counts['critical'] + $counts['warning'] + $counts['info'];
 
         return $report;
     }
@@ -2225,15 +2227,35 @@ class LacaProjectsHub
      */
     private function getLastActivityMap(): array
     {
-        $map = [];
+        global $wpdb;
 
-        foreach ($this->getProjectLogs(500) as $log) {
-            $projectId = (int) ($log['project_id'] ?? 0);
-            if ($projectId <= 0 || isset($map[$projectId])) {
+        if (!class_exists('\App\Databases\ProjectLogTable')) {
+            return [];
+        }
+
+        // Lấy log MỚI NHẤT CỦA TỪNG PROJECT bằng GROUP BY thay vì lấy 500
+        // dòng log mới nhất TOÀN HỆ THỐNG rồi giữ dòng đầu tiên gặp mỗi
+        // project — cách cũ khiến 1 vài project ồn ào (tracker heartbeat,
+        // deploy liên tục) chiếm hết 500 dòng đó, làm project khác ÍT ồn ào
+        // hơn nhưng vẫn có log thật bị coi nhầm là "chưa có log", kéo theo
+        // health score và Action Center báo sai cho đúng project đó.
+        $table = \App\Databases\ProjectLogTable::getTableName();
+
+        $rows = $wpdb->get_results(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            "SELECT project_id, COALESCE(MAX(created_at), MAX(log_date)) AS last_activity
+             FROM {$table}
+             GROUP BY project_id",
+            ARRAY_A
+        );
+
+        $map = [];
+        foreach ((array) $rows as $row) {
+            $projectId = (int) ($row['project_id'] ?? 0);
+            if ($projectId <= 0) {
                 continue;
             }
-
-            $map[$projectId] = (string) ($log['created_at'] ?? $log['log_date'] ?? '');
+            $map[$projectId] = (string) ($row['last_activity'] ?? '');
         }
 
         return $map;
@@ -2476,7 +2498,8 @@ class LacaProjectsHub
     {
         $total = 0;
         for ($i = 0; $i < 100; $i++) {
-            $metaKey = "_payment_history|pay_amount|{$i}";
+            // Carbon Fields lưu key đầy đủ dạng root|field|hàng|value_index|property
+            $metaKey = "_payment_history|pay_amount|{$i}|0|value";
             if (!metadata_exists('post', $projectId, $metaKey)) {
                 break;
             }
@@ -2496,8 +2519,8 @@ class LacaProjectsHub
         foreach ($projects as $project) {
             $projectId = (int) $project->ID;
             for ($i = 0; $i < 100; $i++) {
-                $amountKey = "_payment_history|pay_amount|{$i}";
-                $dateKey = "_payment_history|pay_date|{$i}";
+                $amountKey = "_payment_history|pay_amount|{$i}|0|value";
+                $dateKey = "_payment_history|pay_date|{$i}|0|value";
                 if (!metadata_exists('post', $projectId, $amountKey)) {
                     break;
                 }

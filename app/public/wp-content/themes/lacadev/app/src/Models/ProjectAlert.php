@@ -211,7 +211,11 @@ class ProjectAlert
                 "SELECT COUNT(*) FROM {$table}
                  WHERE project_id = %d AND alert_msg = %s AND is_resolved = 0",
                 $projectId,
-                sanitize_textarea_field($msg)
+                // Phải strip emoji GIỐNG HỆT add() (dòng ~46) — add() lưu
+                // alert_msg đã strip emoji, nên so sánh ở đây thiếu bước này
+                // sẽ không bao giờ khớp với message gốc còn emoji, khiến
+                // dedup luôn thất bại và tạo alert trùng lặp vô hạn.
+                self::stripEmoji(sanitize_textarea_field($msg))
             )
         );
 
@@ -275,6 +279,44 @@ class ProjectAlert
     public static function countAllActive(): int
     {
         return self::countActive(0);
+    }
+
+    /**
+     * Đếm CHÍNH XÁC số alert đang hoạt động theo từng level + website_issues
+     * bằng SQL COUNT/GROUP BY — không suy ra bằng cách đếm thủ công qua 1
+     * trang kết quả giới hạn (getAllActiveFiltered() chỉ trả về tối đa
+     * $perPage dòng), vì làm vậy breakdown sẽ không khớp với tổng thật khi
+     * số alert đang hoạt động vượt quá page size.
+     *
+     * @return array{critical:int,warning:int,info:int,website_issues:int}
+     */
+    public static function getActiveLevelCounts(): array
+    {
+        global $wpdb;
+        $table = ProjectAlertTable::getTableName();
+
+        $counts = ['critical' => 0, 'warning' => 0, 'info' => 0];
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $rows = $wpdb->get_results(
+            "SELECT alert_level, COUNT(*) AS cnt FROM {$table} WHERE is_resolved = 0 GROUP BY alert_level",
+            ARRAY_A
+        );
+        foreach ((array) $rows as $row) {
+            $level = (string) ($row['alert_level'] ?? '');
+            if (isset($counts[$level])) {
+                $counts[$level] = (int) $row['cnt'];
+            }
+        }
+
+        $counts['website_issues'] = (int) $wpdb->get_var($wpdb->prepare(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            "SELECT COUNT(*) FROM {$table} WHERE is_resolved = 0 AND alert_type IN (%s, %s)",
+            'bug',
+            'security'
+        ));
+
+        return $counts;
     }
 
     /**

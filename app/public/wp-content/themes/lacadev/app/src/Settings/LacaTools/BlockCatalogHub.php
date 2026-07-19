@@ -22,6 +22,32 @@ class BlockCatalogHub
     public function init(): void
     {
         add_action('rest_api_init', [$this, 'registerRoutes']);
+        add_action('wp_ajax_laca_refresh_block_catalog', [$this, 'ajaxRefreshCatalog']);
+    }
+
+    /**
+     * Cho phép admin bấm "Làm mới ngay" thay vì chờ cache 6h tự hết hạn —
+     * trước đây không có cách nào bust cache thủ công, nên block mới thêm ở
+     * client.lacadev.com có thể vô hình với mọi site khách tới 6 tiếng.
+     */
+    public function ajaxRefreshCatalog(): void
+    {
+        check_ajax_referer('laca_refresh_block_catalog', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Không có quyền'], 403);
+        }
+
+        delete_transient(self::CACHE_KEY);
+        $fresh = $this->fetchFromSource();
+
+        if ($fresh === null) {
+            wp_send_json_error(['message' => 'Không lấy được danh mục — kiểm tra lại Catalog Endpoint URL/Key.']);
+        }
+
+        set_transient(self::CACHE_KEY, $fresh, self::CACHE_TTL);
+
+        wp_send_json_success(['message' => 'Đã làm mới — tìm thấy ' . count($fresh) . ' block.', 'count' => count($fresh)]);
     }
 
     public function registerRoutes(): void
