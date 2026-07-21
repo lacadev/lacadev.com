@@ -1196,7 +1196,7 @@ class AdminSettings
 			// Block Catalog Source — nơi hub lấy danh mục block để cho site
 			// khách hàng duyệt/yêu cầu đồng bộ (khác với sync_api_key/
 			// sync_endpoint_url theo từng Project — đây là 1 nguồn DUY NHẤT
-			// dùng chung cho toàn hub: client.lacadev.com).
+			// dùng chung cho toàn hub: clients.lacadev.com).
 			Container::make('theme_options', __('🗂️ Block Catalog Source', 'laca'))
 				->set_page_parent($options)
 				->set_page_file(__('laca-block-catalog-source', 'laca'))
@@ -1206,27 +1206,27 @@ class AdminSettings
 							'<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0">'
 							. '<p style="margin:0 0 8px;font-weight:600;color:#0369a1">🗂️ Nguồn danh mục Block</p>'
 							. '<p style="margin:0;font-size:13px;color:#374151">Cấu hình DUY NHẤT 1 lần để hub đọc danh mục Gutenberg block từ '
-							. '<strong>client.lacadev.com</strong>. Lấy Catalog Endpoint URL và Catalog Key từ trang '
-							. '<strong>Laca Theme → 🧩 LacaDev</strong> trên chính site client.lacadev.com.</p>'
+							. '<strong>clients.lacadev.com</strong>. Lấy Catalog Endpoint URL và Catalog Key từ trang '
+							. '<strong>Laca Theme → 🧩 LacaDev</strong> trên chính site clients.lacadev.com.</p>'
 							. '</div>'
 						),
 
 					Field::make('text', 'laca_catalog_source_url', __('Catalog Endpoint URL', 'laca'))
 						->set_width(60)
-						->set_attribute('placeholder', 'https://client.lacadev.com/wp-json/lacadev/v1/blocks-catalog')
-						->set_help_text('URL gốc của endpoint blocks-catalog trên client.lacadev.com.'),
+						->set_attribute('placeholder', 'https://clients.lacadev.com/wp-json/lacadev/v1/blocks-catalog')
+						->set_help_text('URL gốc của endpoint blocks-catalog trên clients.lacadev.com.'),
 
 					Field::make('text', 'laca_catalog_source_key', __('Catalog Key', 'laca'))
 						->set_width(40)
 						->set_attribute('type', 'password')
-						->set_help_text('Catalog Key hiển thị ở trang Laca Theme → 🧩 LacaDev trên client.lacadev.com.'),
+						->set_help_text('Catalog Key hiển thị ở trang Laca Theme → 🧩 LacaDev trên clients.lacadev.com.'),
 
 					Field::make('html', 'block_catalog_refresh', '')
 						->set_html(static function () {
 							$nonce = wp_create_nonce('laca_refresh_block_catalog');
 							return '<button type="button" id="laca-refresh-catalog-btn" class="button" data-nonce="' . esc_attr($nonce) . '">🔄 Làm mới danh mục ngay</button>'
 								. ' <span id="laca-refresh-catalog-status" style="font-size:12px;color:#888;margin-left:8px"></span>'
-								. '<p style="margin:8px 0 0;font-size:12px;color:#6b7280">Danh mục được cache 6 tiếng để đỡ tải client.lacadev.com — bấm nút này nếu vừa thêm block mới bên đó và muốn site khách thấy ngay, không cần chờ.</p>'
+								. '<p style="margin:8px 0 0;font-size:12px;color:#6b7280">Danh mục được cache 6 tiếng để đỡ tải clients.lacadev.com — bấm nút này nếu vừa thêm block mới bên đó và muốn site khách thấy ngay, không cần chờ.</p>'
 								. '<script>
 									document.getElementById("laca-refresh-catalog-btn")?.addEventListener("click", function () {
 										var btn = this, statusEl = document.getElementById("laca-refresh-catalog-status");

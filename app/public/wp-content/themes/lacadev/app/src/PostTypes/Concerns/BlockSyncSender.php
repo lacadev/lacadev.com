@@ -81,7 +81,7 @@ trait BlockSyncSender
         <div id="laca-block-sync-wrap" style="margin:-6px -12px -12px">
 
             <div style="padding:12px 16px 0">
-                <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:12px 14px;margin:0 0 12px"><p style="margin:0;font-size:13px;color:#374151">Khu vực này để đẩy từng block Gutenberg riêng lẻ từ <strong>client.lacadev.com</strong> xuống site của khách hàng này. Nếu bảng bên dưới xuất hiện <strong>yêu cầu đang chờ duyệt</strong> — tức khách hàng đã tự chọn block trên trang Block Marketplace của họ — bấm <strong>Duyệt &amp; Đẩy</strong> để đẩy ngay xuống site khách, hoặc <strong>Từ chối</strong> kèm lý do để khách hàng nhìn thấy vì sao yêu cầu không được duyệt. Hệ thống sẽ tự cảnh báo nếu phát hiện site khách đã tự sửa block trước khi ghi đè, và sau khi đẩy thành công sẽ tự kiểm tra site khách còn hoạt động bình thường không. Nếu bản mới có vấn đề, mỗi block đã đẩy đều có nút <strong>⏪ Rollback</strong> để quay lại phiên bản trước đó.</p></div>
+                <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:12px 14px;margin:0 0 12px"><p style="margin:0;font-size:13px;color:#374151">Khu vực này để đẩy từng block Gutenberg riêng lẻ từ <strong>clients.lacadev.com</strong> xuống site của khách hàng này. Nếu bảng bên dưới xuất hiện <strong>yêu cầu đang chờ duyệt</strong> — tức khách hàng đã tự chọn block trên trang Block Marketplace của họ — bấm <strong>Duyệt &amp; Đẩy</strong> để đẩy ngay xuống site khách, hoặc <strong>Từ chối</strong> kèm lý do để khách hàng nhìn thấy vì sao yêu cầu không được duyệt. Hệ thống sẽ tự cảnh báo nếu phát hiện site khách đã tự sửa block trước khi ghi đè, và sau khi đẩy thành công sẽ tự kiểm tra site khách còn hoạt động bình thường không. Nếu bản mới có vấn đề, mỗi block đã đẩy đều có nút <strong>⏪ Rollback</strong> để quay lại phiên bản trước đó.</p></div>
             </div>
 
             <?php if (!empty($pendingRequests)): ?>
@@ -543,7 +543,7 @@ trait BlockSyncSender
     }
 
     /**
-     * Lấy file block từ client.lacadev.com (qua BlockCatalogHub đã cấu hình
+     * Lấy file block từ clients.lacadev.com (qua BlockCatalogHub đã cấu hình
      * global — xem Laca Admin → 🗂️ Block Catalog Source), rồi đẩy xuống
      * đúng site khách của project này bằng pushBlockFiles() có sẵn. Dùng
      * chung cho cả duyệt thủ công (ajaxApproveBlockRequest) lẫn tự động
@@ -564,7 +564,7 @@ trait BlockSyncSender
         if ($remote === null) {
             return [
                 'success' => false,
-                'message' => 'Không lấy được block từ client.lacadev.com — kiểm tra cấu hình tại Laca Admin → 🗂️ Block Catalog Source.',
+                'message' => 'Không lấy được block từ clients.lacadev.com — kiểm tra cấu hình tại Laca Admin → 🗂️ Block Catalog Source.',
                 'version' => null,
             ];
         }
@@ -599,7 +599,7 @@ trait BlockSyncSender
 
     /**
      * Gọi BlockCatalogHub (global, xem app/src/Settings/LacaTools/BlockCatalogHub.php)
-     * để lấy toàn bộ file nguồn của 1 block từ client.lacadev.com.
+     * để lấy toàn bộ file nguồn của 1 block từ clients.lacadev.com.
      *
      * @return array{version:string,files:array<string,string>}|null
      */
@@ -781,7 +781,7 @@ trait BlockSyncSender
      * Gửi $files (đã encode base64 sẵn) tới client endpoint — retry với
      * exponential backoff (max 3 lần). Tách riêng khỏi pushSingleBlock() để
      * dùng chung được cho cả block đọc từ local disk (hub) lẫn block lấy từ
-     * xa qua BlockCatalogHub (client.lacadev.com) — xem approveAndPushBlock().
+     * xa qua BlockCatalogHub (clients.lacadev.com) — xem approveAndPushBlock().
      *
      * @param array<string,string> $files
      */
@@ -1177,7 +1177,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 icon: 'question',
                 title: `Duyệt &amp; đẩy "${block}"?`,
                 html: isUpdate
-                    ? 'Block này <strong>đã được cài</strong> ở site khách — duyệt sẽ <strong>ghi đè</strong> bản đang chạy bằng bản mới nhất từ client.lacadev.com.'
+                    ? 'Block này <strong>đã được cài</strong> ở site khách — duyệt sẽ <strong>ghi đè</strong> bản đang chạy bằng bản mới nhất từ clients.lacadev.com.'
                     : 'Block sẽ được đẩy xuống site khách ngay sau khi duyệt.',
                 showCancelButton: true,
                 confirmButtonText: 'Duyệt & Đẩy',

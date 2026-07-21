@@ -241,7 +241,7 @@ class TrackerEndpointHandler
     }
 
     /**
-     * Site khách yêu cầu đồng bộ 1 Gutenberg block từ client.lacadev.com.
+     * Site khách yêu cầu đồng bộ 1 Gutenberg block từ clients.lacadev.com.
      *
      * Nếu block ĐÃ được cài trên project này (`_block_sync_versions`) —
      * coi đây là yêu cầu "cập nhật lên bản mới", tự động duyệt luôn (không

@@ -5,12 +5,12 @@ namespace App\Settings\LacaTools;
 /**
  * BlockCatalogHub
  *
- * Hub đọc + cache (transient) danh mục Gutenberg block từ client.lacadev.com
+ * Hub đọc + cache (transient) danh mục Gutenberg block từ clients.lacadev.com
  * (nguồn duy nhất, cấu hình tại Laca Admin → 🗂️ Block Catalog Source), rồi
  * phục vụ lại cho site khách hàng qua REST API — xác thực bằng
  * `_tracker_secret_key` của project (giống hệt kênh tracker log), để site
  * khách tự browse danh mục + biết block nào đã cài / có bản mới / đang chờ
- * duyệt, mà không cần biết gì về client.lacadev.com.
+ * duyệt, mà không cần biết gì về clients.lacadev.com.
  *
  * Endpoint: GET /wp-json/laca/v1/blocks-catalog?secret_key=...
  */
@@ -28,7 +28,7 @@ class BlockCatalogHub
     /**
      * Cho phép admin bấm "Làm mới ngay" thay vì chờ cache 6h tự hết hạn —
      * trước đây không có cách nào bust cache thủ công, nên block mới thêm ở
-     * client.lacadev.com có thể vô hình với mọi site khách tới 6 tiếng.
+     * clients.lacadev.com có thể vô hình với mọi site khách tới 6 tiếng.
      */
     public function ajaxRefreshCatalog(): void
     {
@@ -81,7 +81,7 @@ class BlockCatalogHub
         if ($catalog === null) {
             return new \WP_REST_Response([
                 'success' => false,
-                'message' => 'Chưa lấy được danh mục từ client.lacadev.com. Kiểm tra cấu hình tại Laca Admin → 🗂️ Block Catalog Source.',
+                'message' => 'Chưa lấy được danh mục từ clients.lacadev.com. Kiểm tra cấu hình tại Laca Admin → 🗂️ Block Catalog Source.',
             ], 503);
         }
 
