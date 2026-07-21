@@ -7,7 +7,6 @@ import './ajax-search.js';
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import barba from '@barba/core';
 
 import Swal from 'sweetalert2';
 window.Swal = Swal; // Expose globally for shortcode inline JS
@@ -18,8 +17,8 @@ import {
 	setupGsap404,
 } from './components/animations.js';
 import { initToggleDarkMode } from './components/dark-mode.js';
-import { initHeaderScroll, resetHeaderState } from './components/header.js';
-import { initMobileMenu, closeMobileMenu } from './components/mobile-menu.js';
+import { initHeaderScroll } from './components/header.js';
+import { initMobileMenu } from './components/mobile-menu.js';
 import { initPageLoader, shouldShowLoader } from './components/loader.js';
 import { initAboutLacaHero } from './pages/about-laca.js';
 import { initContactPage } from './pages/contact.js';
@@ -94,41 +93,6 @@ document.addEventListener( 'DOMContentLoaded', () => {
 	initRippleEffect(); // document-level delegation — must only run once
 	initBackToTop(); // single fixed button — must only run once
 
-	// Init Barba.js page transitions
-	barba.init( {
-		transitions: [
-			{
-				name: 'default-transition',
-				leave( { current } ) {
-					return gsap.to( current.container, {
-						opacity: 0,
-						duration: 0.3,
-						ease: 'power2.inOut',
-					} );
-				},
-				enter( { next } ) {
-					return gsap.from( next.container, {
-						opacity: 0,
-						duration: 0.3,
-						ease: 'power2.inOut',
-					} );
-				},
-			},
-		],
-	} );
-
-	window.barba = barba; // Expose for register.js → barba.go()
-
 	initPageFeatures();
 	initPageLoader( isMobile );
-
-	// Re-init page-specific features after each Barba navigation
-	barba.hooks.after( () => {
-		// 1. Reset header về đúng trạng thái — tránh header--hidden/scrolled kẹt từ trang cũ
-		resetHeaderState();
-		// 2. Đóng mobile menu nếu đang mở (navigate programmatic hoặc browser back/forward)
-		closeMobileMenu();
-		// 3. Re-init page features
-		initPageFeatures();
-	} );
 } );

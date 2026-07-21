@@ -260,5 +260,4 @@ if (!defined('ABSPATH')) {
 		</header>
         <?php endif; ?>
 
-        <div data-barba="wrapper">
-        <main data-barba="container" data-barba-namespace="default" class="transition-fade">
+        <main>

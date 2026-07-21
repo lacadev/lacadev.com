@@ -62,7 +62,7 @@ Important WPEmerge config:
 WordPress-facing theme files.
 
 - `functions.php`: bootstrap only. Avoid adding feature logic here unless it is truly theme bootstrap.
-- `header.php`, `footer.php`: global layout, loader, cursor, nav, dark mode, Barba wrapper, footer CTA.
+- `header.php`, `footer.php`: global layout, loader, cursor, nav, dark mode, footer CTA.
 - `single.php`, `page.php`, `archive.php`, `search.php`, `404.php`: standard templates.
 - `single-project.php`, `single-service.php`, `single-template.php`: CPT templates.
 - `page_templates/template-contact.php`: contact page template.
@@ -115,7 +115,7 @@ Important groups:
 
 Source assets. Edit here, not in `dist/`.
 
-- `resources/scripts/theme/index.js`: frontend entry, imports Tailwind, SCSS, Barba, GSAP, SweetAlert, page/component modules.
+- `resources/scripts/theme/index.js`: frontend entry, imports Tailwind, SCSS, GSAP, SweetAlert, page/component modules.
 - `resources/scripts/admin/index.js`: admin entry.
 - `resources/scripts/login/index.js`: login page entry.
 - `resources/scripts/editor/index.js`: editor entry.
@@ -202,7 +202,7 @@ The visual system is a branded portfolio/service theme with a playful but techni
   - `lg: 1200px`
   - `xl: 1440px`
 - Max container: `90rem`.
-- Global layout includes page loader, custom cursor, dark mode switch, desktop/mobile menus, Barba transitions.
+- Global layout includes page loader, custom cursor, dark mode switch, desktop/mobile menus.
 
 When updating UI:
 
@@ -281,7 +281,7 @@ Permission/role separation for project/client access is intentionally deferred; 
 ## 9. Performance Rules
 
 - Do not edit `dist/` directly; change source and build.
-- Keep new frontend dependencies rare. Existing heavy libraries include GSAP, Barba, Swiper, SweetAlert2, Chart.js.
+- Keep new frontend dependencies rare. Existing heavy libraries include GSAP, Swiper, SweetAlert2, Chart.js.
 - Use `no_found_rows => true` on `WP_Query` when no pagination is needed.
 - Avoid repeated `get_post_meta()` inside large loops; preload/cache or batch where practical.
 - Keep above-the-fold CSS changes in mind; regenerate critical CSS after header/hero changes.

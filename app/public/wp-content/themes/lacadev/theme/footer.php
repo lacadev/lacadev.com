@@ -9,8 +9,7 @@
  */
 ?>
 
-        </main><!-- barba container end -->
-        </div><!-- barba wrapper end -->
+        </main>
 
 <!-- footer -->
 <footer class="site-footer">
