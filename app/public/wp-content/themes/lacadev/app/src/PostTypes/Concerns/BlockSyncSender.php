@@ -178,7 +178,10 @@ trait BlockSyncSender
                 <tbody id="laca-blocks-table-body">
                     <?php foreach ($availableBlocks as $block): ?>
                     <?php
-                        $name          = $block['name'];
+                        // Định danh dùng cho checkbox/data-block/key lookup là
+                        // "path" (đầy đủ, có thể chứa bucket theo site) — không
+                        // phải "name" (tên lá, có thể trùng giữa 2 bucket).
+                        $name          = $block['path'];
                         $localVersion  = $block['version'];
                         $clientVersion = $installedMeta[$name] ?? null;
                         $badge         = $this->getVersionBadge($localVersion, $clientVersion);
@@ -247,7 +250,7 @@ trait BlockSyncSender
         }
 
         $postId     = absint($_POST['post_id'] ?? 0);
-        $blockNames = array_map('sanitize_key', (array) ($_POST['blocks'] ?? []));
+        $blockNames = array_map(fn ($b) => self::sanitizeBlockRelativePath((string) $b), (array) ($_POST['blocks'] ?? []));
 
         if (!$postId || get_post_type($postId) !== 'project') {
             wp_send_json_error(['message' => 'Project không hợp lệ'], 400);
@@ -372,7 +375,7 @@ trait BlockSyncSender
         }
 
         $postId    = absint($_POST['post_id'] ?? 0);
-        $blockName = sanitize_key($_POST['block'] ?? '');
+        $blockName = self::sanitizeBlockRelativePath((string) ($_POST['block'] ?? ''));
         $force     = !empty($_POST['force']);
 
         if (!$postId || get_post_type($postId) !== 'project' || empty($blockName)) {
@@ -400,7 +403,7 @@ trait BlockSyncSender
         }
 
         $postId    = absint($_POST['post_id'] ?? 0);
-        $blockName = sanitize_key($_POST['block'] ?? '');
+        $blockName = self::sanitizeBlockRelativePath((string) ($_POST['block'] ?? ''));
         $reason    = sanitize_text_field($_POST['reason'] ?? '');
 
         if (!$postId || get_post_type($postId) !== 'project' || empty($blockName)) {
@@ -427,7 +430,7 @@ trait BlockSyncSender
         }
 
         $postId    = absint($_POST['post_id'] ?? 0);
-        $blockName = sanitize_key($_POST['block'] ?? '');
+        $blockName = self::sanitizeBlockRelativePath((string) ($_POST['block'] ?? ''));
 
         if (!$postId || get_post_type($postId) !== 'project' || empty($blockName)) {
             wp_send_json_error(['message' => 'Dữ liệu không hợp lệ'], 400);
@@ -613,7 +616,10 @@ trait BlockSyncSender
             return null;
         }
 
-        $filesUrl = rtrim($catalogUrl, '/') . '/' . rawurlencode($blockName) . '/files';
+        // Định danh block gửi qua QUERY PARAM (không phải URL path segment) —
+        // tránh rủi ro web server/router xử lý sai dấu "/" đã encode (%2F)
+        // khi $blockName là 1 path có bucket (vd "site-a/block-x").
+        $filesUrl = rtrim($catalogUrl, '/') . '/files?' . http_build_query(['block' => $blockName]);
 
         $response = wp_remote_get($filesUrl, [
             'headers'   => [
@@ -934,26 +940,85 @@ trait BlockSyncSender
         $blocks   = [];
         $blockDir = $this->resolveBlockDir();
 
-        $files = glob("{$blockDir}/*/block.json");
-        if (empty($files)) {
-            return $blocks;
-        }
-
-        foreach ($files as $file) {
-            $data = json_decode(file_get_contents($file), true);
+        foreach ($this->scanBlockDirsForPush($blockDir) as $dir) {
+            $file = "{$dir}/block.json";
+            $data = json_decode((string) file_get_contents($file), true);
             if (!is_array($data)) {
                 continue;
             }
+
+            $path = ltrim(substr($dir, strlen($blockDir)), '/');
+
             $blocks[] = [
-                'name'    => basename(dirname($file)),
-                'title'   => $data['title'] ?? basename(dirname($file)),
+                'name'    => basename($dir),
+                'path'    => $path,
+                'title'   => $data['title'] ?? basename($dir),
                 'version' => $data['version'] ?? '1.0.0',
             ];
         }
 
-        usort($blocks, fn($a, $b) => strcmp($a['name'], $b['name']));
+        usort($blocks, fn($a, $b) => strcmp($a['path'], $b['path']));
 
         return $blocks;
+    }
+
+    /**
+     * Quét 1 thư mục block-gutenberg, trả về absolute path của từng block
+     * tìm được — hỗ trợ song song 2 dạng: block nằm phẳng ngay dưới root
+     * (chưa phân loại site) VÀ block nằm trong 1 thư mục "bucket" theo site,
+     * lồng đúng 1 cấp (không hỗ trợ lồng sâu hơn).
+     *
+     * @return string[]
+     */
+    private function scanBlockDirsForPush(string $root): array
+    {
+        $blockDirs = [];
+        $entries   = @scandir($root) ?: [];
+
+        foreach ($entries as $entry) {
+            if ($entry === '.' || $entry === '..') {
+                continue;
+            }
+
+            $entryPath = "{$root}/{$entry}";
+            if (!is_dir($entryPath)) {
+                continue;
+            }
+
+            if (file_exists("{$entryPath}/block.json")) {
+                $blockDirs[] = $entryPath;
+                continue;
+            }
+
+            foreach ((@scandir($entryPath) ?: []) as $subEntry) {
+                if ($subEntry === '.' || $subEntry === '..') {
+                    continue;
+                }
+
+                $subEntryPath = "{$entryPath}/{$subEntry}";
+                if (is_dir($subEntryPath) && file_exists("{$subEntryPath}/block.json")) {
+                    $blockDirs[] = $subEntryPath;
+                }
+            }
+        }
+
+        return $blockDirs;
+    }
+
+    /**
+     * Làm sạch "block relative path" — tên block phẳng (không "/") hoặc
+     * "{bucket}/{block}" (đúng 1 dấu "/"). Dùng thay cho sanitize_key() vì
+     * sanitize_key() xoá sạch dấu "/" và sẽ phá path có bucket.
+     */
+    private static function sanitizeBlockRelativePath(string $raw): string
+    {
+        $raw = strtolower(trim($raw));
+        $segments = array_filter(explode('/', $raw), static fn ($s) => $s !== '');
+        $segments = array_map(static fn ($s) => preg_replace('/[^a-z0-9_-]/', '', $s), $segments);
+        $segments = array_filter($segments, static fn ($s) => $s !== '' && $s !== '.' && $s !== '..');
+        $segments = array_slice($segments, 0, 2);
+
+        return implode('/', $segments);
     }
 
     private function getVersionBadge(string $localVersion, ?string $clientVersion): string

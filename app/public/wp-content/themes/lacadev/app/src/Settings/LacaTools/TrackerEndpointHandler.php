@@ -131,7 +131,7 @@ class TrackerEndpointHandler
                 $logType = 'maintenance_summary';
             } elseif (in_array($type, $blockSyncRequestTypes, true)) {
                 $logType = 'client_request';
-                $blockName = sanitize_key((string) ($meta['block_name'] ?? ''));
+                $blockName = self::sanitizeBlockRelativePath((string) ($meta['block_name'] ?? ''));
                 if (!empty($blockName)) {
                     $this->handleBlockSyncRequest((int) $projectId, $blockName);
                 }
@@ -297,6 +297,22 @@ class TrackerEndpointHandler
             // Đẩy ngay — do App\PostTypes\Concerns\BlockSyncSender lắng nghe
             do_action('laca_block_sync_auto_approved', $projectId, $blockName);
         }
+    }
+
+    /**
+     * Làm sạch "block relative path" — tên block phẳng (không "/") hoặc
+     * "{bucket}/{block}" (đúng 1 dấu "/"). Dùng thay cho sanitize_key() vì
+     * sanitize_key() xoá sạch dấu "/" và sẽ phá path có bucket.
+     */
+    private static function sanitizeBlockRelativePath(string $raw): string
+    {
+        $raw = strtolower(trim($raw));
+        $segments = array_filter(explode('/', $raw), static fn ($s) => $s !== '');
+        $segments = array_map(static fn ($s) => preg_replace('/[^a-z0-9_-]/', '', $s), $segments);
+        $segments = array_filter($segments, static fn ($s) => $s !== '' && $s !== '.' && $s !== '..');
+        $segments = array_slice($segments, 0, 2);
+
+        return implode('/', $segments);
     }
 
     private function createClientRequestAlert(int $projectId, string $msg, string $level, string $alertType): void
