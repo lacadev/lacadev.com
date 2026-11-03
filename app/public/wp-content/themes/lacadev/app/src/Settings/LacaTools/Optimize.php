@@ -59,10 +59,6 @@ class Optimize
         if (carbon_get_theme_option('enable_optimize_content_images')) {
             $this->optimizeContentImages();
         }
-
-        if (carbon_get_theme_option('enable_register_service_worker')) {
-            $this->registerServiceWorker();
-        }
     }
 
     public function disableUseJqueryMigrate()
@@ -174,34 +170,6 @@ class Optimize
                 fn($m) => str_replace('<img', '<img loading="lazy"', $m[0]),
                 $content
             ) ?: $content;
-        });
-    }
-
-    /**
-     * Đăng ký Service Worker (file sw.js phải tồn tại ở root theme).
-     */
-    public function registerServiceWorker()
-    {
-        add_action('wp_enqueue_scripts', function () {
-            if (!file_exists(\lacaDistDir('sw.js'))) {
-                return;
-            }
-
-            if (wp_script_is('laca-sw-register', 'enqueued')) {
-                return;
-            }
-
-            wp_enqueue_script(
-                'laca-sw-register',
-                \lacaResourceUrl('scripts/theme/service-worker-register.js'),
-                [],
-                wp_get_theme()->get('Version'),
-                true
-            );
-            wp_localize_script('laca-sw-register', 'swConfig', [
-                'swUrl' => \lacaDistUrl('sw.js'),
-                'debug' => defined('WP_DEBUG') && WP_DEBUG ? 'true' : 'false',
-            ]);
         });
     }
 }

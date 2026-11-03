@@ -51,16 +51,6 @@ add_action('send_headers', function() {
 });
 
 /**
- * Remove WordPress version from head
- */
-remove_action('wp_head', 'wp_generator');
-
-/**
- * Disable XML-RPC if not needed
- */
-add_filter('xmlrpc_enabled', '__return_false');
-
-/**
  * Remove WP version from RSS feeds
  */
 add_filter('the_generator', '__return_empty_string');
@@ -74,6 +64,7 @@ if (get_option('_hide_theme_editor') === 'yes' && !defined('DISALLOW_FILE_EDIT')
 
 /**
  * Limit login attempts (basic implementation)
+ * TODO (Phase 4B): Bỏ khi Phase 4B tích hợp LoginGuard
  */
 add_filter('authenticate', function($user, $username, $password) {
     if (empty($username) || empty($password)) {
