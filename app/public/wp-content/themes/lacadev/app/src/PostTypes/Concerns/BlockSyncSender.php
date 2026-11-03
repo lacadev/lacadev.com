@@ -616,10 +616,8 @@ trait BlockSyncSender
             return null;
         }
 
-        // Định danh block gửi qua QUERY PARAM (không phải URL path segment) —
-        // tránh rủi ro web server/router xử lý sai dấu "/" đã encode (%2F)
-        // khi $blockName là 1 path có bucket (vd "site-a/block-x").
-        $filesUrl = rtrim($catalogUrl, '/') . '/files?' . http_build_query(['block' => $blockName]);
+        // Định danh block được truyền qua path segment: {catalogUrl}/{rawurlencode($blockName)}/files
+        $filesUrl = rtrim($catalogUrl, '/') . '/' . rawurlencode($blockName) . '/files';
 
         $response = wp_remote_get($filesUrl, [
             'headers'   => [

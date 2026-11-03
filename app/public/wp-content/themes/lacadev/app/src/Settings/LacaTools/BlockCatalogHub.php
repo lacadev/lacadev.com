@@ -61,14 +61,22 @@ class BlockCatalogHub
 
     public function handleGetCatalog(\WP_REST_Request $request): \WP_REST_Response
     {
-        $secretKey = sanitize_text_field((string) ($request->get_param('secret_key') ?? ''));
+        $secretKey = $request->get_header('X-Laca-Key');
+        if (empty($secretKey)) {
+            $secretKey = (string) ($request->get_param('secret_key') ?? '');
+        }
+        $secretKey = sanitize_text_field($secretKey);
+
         if (empty($secretKey)) {
             return new \WP_REST_Response(['success' => false, 'message' => 'Thiếu secret_key.'], 400);
         }
 
         global $wpdb;
         $projectId = $wpdb->get_var($wpdb->prepare(
-            "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value = %s LIMIT 1",
+            "SELECT pm.post_id FROM {$wpdb->postmeta} pm
+             INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+             WHERE pm.meta_key = %s AND pm.meta_value = %s AND p.post_status = 'publish'
+             LIMIT 1",
             '_tracker_secret_key',
             $secretKey
         ));

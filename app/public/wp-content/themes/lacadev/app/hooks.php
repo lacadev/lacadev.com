@@ -251,10 +251,6 @@ function laca_auto_generate_tracker_key(int $postId, \WP_Post $post): void
         $secretKey = bin2hex(random_bytes(32)); // 64-char hex, cryptographically secure
         update_post_meta($postId, '_tracker_secret_key', $secretKey);
     }
-
-    // Cập nhật tracker endpoint URL (readonly, hiển thị cho dev copy)
-    $endpoint = rest_url('laca/v1/projects/' . $postId . '/log');
-    update_post_meta($postId, '_tracker_endpoint', esc_url_raw($endpoint));
 }
 
 /**

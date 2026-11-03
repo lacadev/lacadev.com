@@ -52,8 +52,7 @@ class RemoteAjaxHandler
         }
 
         $endpoint = trailingslashit($siteUrl) . 'wp-json/laca/v1/remote-update';
-
-        $response = wp_remote_post($endpoint, [
+        $postArgs = [
             'body'    => wp_json_encode([
                 'secret_key' => $secretKey,
                 'action'     => $action,
@@ -61,7 +60,15 @@ class RemoteAjaxHandler
             ]),
             'headers' => ['Content-Type' => 'application/json'],
             'timeout' => 30,
-        ]);
+        ];
+
+        $response = wp_remote_post($endpoint, $postArgs);
+
+        // Dự phòng khi site client dùng plain permalink hoặc route 404
+        if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 404) {
+            $fallbackEndpoint = trailingslashit($siteUrl) . '?rest_route=/laca/v1/remote-update';
+            $response = wp_remote_post($fallbackEndpoint, $postArgs);
+        }
 
         if (is_wp_error($response)) {
             wp_send_json_error(['message' => 'Lỗi kết nối: ' . $response->get_error_message()]);
