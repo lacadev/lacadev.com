@@ -13,6 +13,28 @@ if (!defined('ABSPATH')) {
 
 
 /**
+ * Hardening mặc định: luôn tắt XML-RPC và xoá wp_generator
+ */
+add_filter('xmlrpc_enabled', '__return_false');
+remove_action('wp_head', 'wp_generator');
+
+add_filter('wp_xmlrpc_server_class', function ($class) {
+    if (!apply_filters('xmlrpc_enabled', true)) {
+        if (!class_exists('Laca_XmlRpc_Disabled_Server', false)) {
+            class Laca_XmlRpc_Disabled_Server extends \wp_xmlrpc_server
+            {
+                public function serve_request()
+                {
+                    $this->error(new \IXR_Error(405, 'XML-RPC services are disabled on this site.'));
+                }
+            }
+        }
+        return 'Laca_XmlRpc_Disabled_Server';
+    }
+    return $class;
+});
+
+/**
  * Add HTTP Security Headers
  */
 add_action('send_headers', function() {
