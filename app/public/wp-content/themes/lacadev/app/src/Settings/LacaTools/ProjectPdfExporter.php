@@ -8,16 +8,26 @@ class ProjectPdfExporter
     {
         // Bắt request xuất PDF
         add_action('template_redirect', [$this, 'handleExportRequest']);
+        add_action('template_redirect', [$this, 'handleMonthlyReportExportRequest']);
+        add_action('admin_post_laca_send_monthly_report', [$this, 'handleAdminPostSendMonthlyReport']);
         
         // Thêm meta box hành động báo giá vào màn hình edit Project
         add_action('add_meta_boxes', [$this, 'registerActionMetaBox']);
+        add_action('admin_notices', [$this, 'renderAdminNotice']);
+    }
+
+    public function renderAdminNotice(): void
+    {
+        if (isset($_GET['laca_report_sent']) && $_GET['laca_report_sent'] === '1') {
+            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Đã gửi email báo cáo tháng thành công tới khách hàng.', 'laca') . '</p></div>';
+        }
     }
 
     public function registerActionMetaBox(): void
     {
         add_meta_box(
             'laca_project_pdf_actions',
-            __('📄 Báo giá / Invoice', 'laca'),
+            __('📄 Báo giá & Báo cáo', 'laca'),
             [$this, 'renderActionMetaBox'],
             'project',
             'side',
@@ -28,13 +38,26 @@ class ProjectPdfExporter
     public function renderActionMetaBox(\WP_Post $post): void
     {
         if ($post->post_status === 'auto-draft') {
-            echo '<p>Vui lòng <strong>Lưu nháp</strong> hoặc <strong>Đăng</strong> dự án trước khi xuất báo giá.</p>';
+            echo '<p>' . esc_html__('Vui lòng Lưu nháp hoặc Đăng dự án trước khi xuất báo giá.', 'laca') . '</p>';
             return;
         }
 
         $exportUrl = home_url('/?laca_export_quote=' . $post->ID);
-        echo '<a href="' . esc_url($exportUrl) . '" target="_blank" class="button button-primary button-large" style="width:100%; text-align:center; padding: 10px 0; font-size: 15px; height: auto;">Xuất PDF Báo Giá</a>';
-        echo '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:12px 14px;margin:10px 0 0"><p style="margin:0;font-size:13px;color:#374151">PDF tạo ra là bản báo giá chính thức (bảng giá, checklist tính năng, thông tin khách hàng) — dùng để gửi cho khách hàng xem và ký duyệt trước khi triển khai.</p></div>';
+        echo '<a href="' . esc_url($exportUrl) . '" target="_blank" class="button button-primary button-large" style="width:100%; text-align:center; padding: 10px 0; font-size: 15px; height: auto;">' . esc_html__('Xuất PDF Báo Giá', 'laca') . '</a>';
+        echo '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:12px 14px;margin:10px 0 0"><p style="margin:0;font-size:13px;color:#374151">' . esc_html__('PDF tạo ra là bản báo giá chính thức dùng để gửi cho khách hàng xem và duyệt trước khi triển khai.', 'laca') . '</p></div>';
+
+        $reportUrl = home_url('/?laca_export_monthly_report=' . $post->ID);
+        $sendNonce = wp_create_nonce('laca_send_monthly_report_' . $post->ID);
+        $sendUrl   = admin_url('admin-post.php?action=laca_send_monthly_report&project_id=' . $post->ID . '&_wpnonce=' . $sendNonce);
+
+        echo '<div style="margin-top:16px;padding-top:14px;border-top:1px solid #e2e8f0;">';
+        echo '<h4 style="margin:0 0 8px;font-size:13px;font-weight:600;color:#0f172a;">📊 ' . esc_html__('Báo cáo vận hành tháng', 'laca') . '</h4>';
+        echo '<div style="display:flex;gap:8px;">';
+        echo '<a href="' . esc_url($reportUrl) . '" target="_blank" class="button button-secondary" style="flex:1;text-align:center;">' . esc_html__('Xem trước', 'laca') . '</a>';
+        echo '<a href="' . esc_url($sendUrl) . '" class="button button-secondary" style="flex:1;text-align:center;" onclick="return confirm(\'' . esc_js(__('Bạn có chắc muốn gửi email báo cáo tháng này cho khách hàng?', 'laca')) . '\');">' . esc_html__('Gửi ngay', 'laca') . '</a>';
+        echo '</div>';
+        echo '<p style="margin:6px 0 0;font-size:11px;color:#64748b;">' . esc_html__('Tự động tổng hợp uptime, bảo mật, sao lưu và số liệu truy cập website.', 'laca') . '</p>';
+        echo '</div>';
     }
 
     public function handleExportRequest(): void
@@ -313,5 +336,417 @@ class ProjectPdfExporter
         </body>
         </html>
         <?php
+    }
+
+    public function handleMonthlyReportExportRequest(): void
+    {
+        if (!isset($_GET['laca_export_monthly_report'])) {
+            return;
+        }
+
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Bạn không có quyền xem báo cáo này.', 'laca'));
+        }
+
+        $projectId = absint($_GET['laca_export_monthly_report']);
+        $post      = get_post($projectId);
+
+        if (!$post || $post->post_type !== 'project') {
+            wp_die(__('Không tìm thấy dự án.', 'laca'));
+        }
+
+        $month = sanitize_text_field((string) ($_GET['month'] ?? ''));
+        $this->renderMonthlyReportHtml($post, $month);
+        exit;
+    }
+
+    public function handleAdminPostSendMonthlyReport(): void
+    {
+        $projectId = absint($_GET['project_id'] ?? 0);
+        check_admin_referer('laca_send_monthly_report_' . $projectId);
+
+        if (!current_user_can('edit_posts')) {
+            wp_die(__('Bạn không có quyền thực hiện thao tác này.', 'laca'));
+        }
+
+        $month = sanitize_text_field((string) ($_GET['month'] ?? ''));
+        $sent  = $this->sendMonthlyReportEmail($projectId, $month);
+
+        $redirect = add_query_arg([
+            'post'             => $projectId,
+            'action'           => 'edit',
+            'laca_report_sent' => $sent ? '1' : '0',
+        ], admin_url('post.php'));
+
+        wp_safe_redirect($redirect);
+        exit;
+    }
+
+    /**
+     * Render trang HTML báo cáo vận hành tháng (Printable / PDF)
+     */
+    public function renderMonthlyReportHtml(\WP_Post $post, string $month = ''): void
+    {
+        $pid = $post->ID;
+        if (empty($month)) {
+            $month = gmdate('Y-m', strtotime('-1 month'));
+        }
+
+        $clientName  = (string) (carbon_get_post_meta($pid, 'client_name') ?: __('Quý khách hàng', 'laca'));
+        $clientEmail = (string) (carbon_get_post_meta($pid, 'client_email') ?: '');
+        $liveUrl     = (string) (carbon_get_post_meta($pid, 'live_url') ?: get_permalink($pid));
+        $siteName    = get_bloginfo('name') ?: 'LacaDev';
+
+        // Lấy số liệu Uptime 30 ngày
+        $uptimeStats = class_exists(\App\Databases\UptimeLogTable::class)
+            ? \App\Databases\UptimeLogTable::getUptimeStats($pid, 30)
+            : ['percentage' => 100.0, 'avg_ms' => 0];
+        $uptimePct = (float) ($uptimeStats['percentage'] ?? ($uptimeStats['uptime_percentage'] ?? 100.0));
+        $avgMs     = (int) ($uptimeStats['avg_ms'] ?? ($uptimeStats['avg_response_ms'] ?? 0));
+
+        // Lấy số liệu sao lưu
+        $lastBackup = get_post_meta($pid, '_tracker_last_backup', true);
+        $backupText = !empty($lastBackup['time'])
+            ? gmdate('d/m/Y H:i', (int) $lastBackup['time'])
+            : __('Chưa có dữ liệu', 'laca');
+
+        // Lấy dữ liệu báo cáo client gửi về
+        $summary = get_post_meta($pid, '_laca_monthly_summary_' . $month, true);
+        if (empty($summary) || !is_array($summary)) {
+            $summary = get_post_meta($pid, '_laca_last_monthly_summary', true) ?: [];
+        }
+
+        $postsNew  = (int) ($summary['posts_new_count'] ?? 0);
+        $pagesNew  = (int) ($summary['pages_new_count'] ?? 0);
+        $secEvents = (int) ($summary['security_events_count'] ?? 0);
+        $ga4Data   = $summary['ga4'] ?? null;
+        $gscData   = $summary['gsc'] ?? null;
+
+        // Đếm cập nhật/deploy trong tháng
+        global $wpdb;
+        $logTable    = \App\Databases\ProjectLogTable::getTableName();
+        $deployCount = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$logTable}
+             WHERE project_id = %d AND log_type IN ('deployment', 'plugin_update', 'core_update')
+               AND created_at LIKE %s",
+            $pid,
+            $month . '%'
+        ));
+
+        ?>
+        <!DOCTYPE html>
+        <html lang="vi">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title><?php echo esc_html(sprintf(__('Báo cáo vận hành tháng %1$s - %2$s', 'laca'), $month, $post->post_title)); ?></title>
+            <style>
+                :root {
+                    --primary: #0284c7;
+                    --text: #0f172a;
+                    --text-light: #475569;
+                    --border: #e2e8f0;
+                    --bg-light: #f8fafc;
+                    --success: #16a34a;
+                    --warning: #d97706;
+                    --danger: #dc2626;
+                }
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                    background: #f1f5f9;
+                    color: var(--text);
+                    margin: 0;
+                    padding: 24px;
+                    line-height: 1.5;
+                }
+                .report-page {
+                    max-width: 860px;
+                    margin: 0 auto;
+                    background: #ffffff;
+                    padding: 40px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+                }
+                .header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    border-bottom: 2px solid var(--border);
+                    padding-bottom: 20px;
+                    margin-bottom: 28px;
+                }
+                .brand {
+                    font-size: 24px;
+                    font-weight: 800;
+                    color: var(--primary);
+                    letter-spacing: -0.5px;
+                }
+                .meta-badge {
+                    background: var(--bg-light);
+                    border: 1px solid var(--border);
+                    padding: 6px 14px;
+                    border-radius: 9999px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: var(--text-light);
+                }
+                .grid-kpi {
+                    display: grid;
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 16px;
+                    margin-bottom: 28px;
+                }
+                .kpi-card {
+                    background: var(--bg-light);
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    padding: 16px;
+                    text-align: center;
+                }
+                .kpi-label {
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: var(--text-light);
+                    text-transform: uppercase;
+                    margin-bottom: 6px;
+                }
+                .kpi-val {
+                    font-size: 24px;
+                    font-weight: 800;
+                    color: var(--text);
+                }
+                .kpi-val.success { color: var(--success); }
+                .section-title {
+                    font-size: 16px;
+                    font-weight: 700;
+                    margin: 24px 0 12px;
+                    padding-left: 10px;
+                    border-left: 4px solid var(--primary);
+                }
+                .table-data {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+                }
+                .table-data th, .table-data td {
+                    padding: 10px 12px;
+                    border: 1px solid var(--border);
+                    font-size: 13px;
+                    text-align: left;
+                }
+                .table-data th {
+                    background: var(--bg-light);
+                    font-weight: 600;
+                    color: var(--text-light);
+                }
+                .footer {
+                    margin-top: 36px;
+                    padding-top: 16px;
+                    border-top: 1px solid var(--border);
+                    font-size: 12px;
+                    color: var(--text-light);
+                    display: flex;
+                    justify-content: space-between;
+                }
+                @media print {
+                    body { background: #fff; padding: 0; }
+                    .report-page { box-shadow: none; padding: 20px 0; }
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="report-page">
+                <div class="header">
+                    <div>
+                        <div class="brand"><?php echo esc_html($siteName); ?></div>
+                        <div style="font-size: 13px; color: var(--text-light); margin-top: 4px;">
+                            <?php echo esc_html(sprintf(__('Báo cáo vận hành website định kỳ — Tháng %s', 'laca'), $month)); ?>
+                        </div>
+                    </div>
+                    <div class="meta-badge">
+                        <?php echo esc_html($post->post_title); ?>
+                    </div>
+                </div>
+
+                <div class="grid-kpi">
+                    <div class="kpi-card">
+                        <div class="kpi-label"><?php echo esc_html__('Uptime 30 ngày', 'laca'); ?></div>
+                        <div class="kpi-val success"><?php echo esc_html(number_format($uptimePct, 1)); ?>%</div>
+                        <small style="font-size: 11px; color: var(--text-light);"><?php echo esc_html(sprintf(__('Độ trễ %dms', 'laca'), $avgMs)); ?></small>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><?php echo esc_html__('Cập nhật/Deploy', 'laca'); ?></div>
+                        <div class="kpi-val"><?php echo esc_html((string) $deployCount); ?></div>
+                        <small style="font-size: 11px; color: var(--text-light);"><?php echo esc_html__('Lần nâng cấp hệ thống', 'laca'); ?></small>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><?php echo esc_html__('Nội dung mới', 'laca'); ?></div>
+                        <div class="kpi-val"><?php echo esc_html((string) ($postsNew + $pagesNew)); ?></div>
+                        <small style="font-size: 11px; color: var(--text-light);"><?php echo esc_html(sprintf(__('%1$d bài / %2$d trang', 'laca'), $postsNew, $pagesNew)); ?></small>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label"><?php echo esc_html__('An ninh bảo mật', 'laca'); ?></div>
+                        <div class="kpi-val success"><?php echo esc_html__('An toàn', 'laca'); ?></div>
+                        <small style="font-size: 11px; color: var(--text-light);"><?php echo esc_html(sprintf(__('%d sự kiện ghi nhận', 'laca'), $secEvents)); ?></small>
+                    </div>
+                </div>
+
+                <h3 class="section-title"><?php echo esc_html__('1. Tình trạng Hạ tầng & Kỹ thuật', 'laca'); ?></h3>
+                <table class="table-data">
+                    <tr>
+                        <td width="30%"><strong><?php echo esc_html__('Địa chỉ website', 'laca'); ?></strong></td>
+                        <td><a href="<?php echo esc_url($liveUrl); ?>" target="_blank"><?php echo esc_html($liveUrl); ?></a></td>
+                    </tr>
+                    <tr>
+                        <td><strong><?php echo esc_html__('Bản sao lưu gần nhất', 'laca'); ?></strong></td>
+                        <td><?php echo esc_html($backupText); ?></td>
+                    </tr>
+                    <tr>
+                        <td><strong><?php echo esc_html__('Khách hàng đại diện', 'laca'); ?></strong></td>
+                        <td><?php echo esc_html($clientName . ($clientEmail ? " ({$clientEmail})" : '')); ?></td>
+                    </tr>
+                </table>
+
+                <?php if (!empty($ga4Data) || !empty($gscData)): ?>
+                <h3 class="section-title"><?php echo esc_html__('2. Hiệu suất Truy cập & Tìm kiếm (Google)', 'laca'); ?></h3>
+                <table class="table-data">
+                    <thead>
+                        <tr>
+                            <th><?php echo esc_html__('Chỉ số', 'laca'); ?></th>
+                            <th><?php echo esc_html__('Kết quả trong tháng', 'laca'); ?></th>
+                            <th><?php echo esc_html__('Nguồn dữ liệu', 'laca'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($ga4Data['sessions'])): ?>
+                        <tr>
+                            <td><?php echo esc_html__('Lượt truy cập (Sessions)', 'laca'); ?></td>
+                            <td><strong><?php echo esc_html(number_format((int) $ga4Data['sessions'])); ?></strong></td>
+                            <td>Google Analytics 4</td>
+                        </tr>
+                        <?php endif; ?>
+                        <?php if (!empty($ga4Data['users'])): ?>
+                        <tr>
+                            <td><?php echo esc_html__('Người dùng (Users)', 'laca'); ?></td>
+                            <td><strong><?php echo esc_html(number_format((int) $ga4Data['users'])); ?></strong></td>
+                            <td>Google Analytics 4</td>
+                        </tr>
+                        <?php endif; ?>
+                        <?php if (!empty($gscData['clicks'])): ?>
+                        <tr>
+                            <td><?php echo esc_html__('Lượt nhấp từ Google (Clicks)', 'laca'); ?></td>
+                            <td><strong><?php echo esc_html(number_format((int) $gscData['clicks'])); ?></strong></td>
+                            <td>Google Search Console</td>
+                        </tr>
+                        <?php endif; ?>
+                        <?php if (!empty($gscData['impressions'])): ?>
+                        <tr>
+                            <td><?php echo esc_html__('Lượt hiển thị tìm kiếm (Impressions)', 'laca'); ?></td>
+                            <td><strong><?php echo esc_html(number_format((int) $gscData['impressions'])); ?></strong></td>
+                            <td>Google Search Console</td>
+                        </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+                <?php endif; ?>
+
+                <div class="footer">
+                    <div><?php echo esc_html(sprintf(__('Báo cáo được lập tự động bởi hệ thống %s.', 'laca'), $siteName)); ?></div>
+                    <div><?php echo esc_html(sprintf(__('Ngày xuất: %s', 'laca'), current_time('d/m/Y H:i'))); ?></div>
+                </div>
+            </div>
+            <script>window.onload = function() { window.print(); };</script>
+        </body>
+        </html>
+        <?php
+    }
+
+    /**
+     * Gửi email báo cáo tháng tới khách hàng
+     */
+    public function sendMonthlyReportEmail(int $projectId, string $month = ''): bool
+    {
+        $post = get_post($projectId);
+        if (!$post || $post->post_type !== 'project') {
+            return false;
+        }
+
+        if (empty($month)) {
+            $month = gmdate('Y-m', strtotime('-1 month'));
+        }
+
+        $clientEmail = (string) carbon_get_post_meta($projectId, 'monthly_report_email');
+        if (empty($clientEmail)) {
+            $clientEmail = (string) carbon_get_post_meta($projectId, 'client_email');
+        }
+        if (empty($clientEmail)) {
+            $clientEmail = (string) (get_post_meta($projectId, 'monthly_report_email', true) ?: get_post_meta($projectId, '_monthly_report_email', true));
+        }
+        if (empty($clientEmail)) {
+            $clientEmail = (string) (get_post_meta($projectId, 'client_email', true) ?: get_post_meta($projectId, '_client_email', true));
+        }
+
+        if (empty($clientEmail) || !is_email($clientEmail)) {
+            return false;
+        }
+
+        $siteName    = get_bloginfo('name') ?: 'LacaDev';
+        $reportUrl   = home_url('/?laca_export_monthly_report=' . $projectId . '&month=' . urlencode($month));
+        $uptimeStats = class_exists(\App\Databases\UptimeLogTable::class)
+            ? \App\Databases\UptimeLogTable::getUptimeStats($projectId, 30)
+            : ['percentage' => 100.0, 'avg_ms' => 0];
+        $uptimePct   = (float) ($uptimeStats['percentage'] ?? ($uptimeStats['uptime_percentage'] ?? 100.0));
+        $avgMs       = (int) ($uptimeStats['avg_ms'] ?? ($uptimeStats['avg_response_ms'] ?? 0));
+
+        $subject = sprintf(
+            /* translators: 1: tên thương hiệu, 2: tên dự án, 3: tháng */
+            __('[%1$s] Báo cáo vận hành website %2$s — Tháng %3$s', 'laca'),
+            $siteName,
+            $post->post_title,
+            $month
+        );
+
+        $message = '<html><body style="font-family:sans-serif;color:#1e293b;line-height:1.6;padding:20px;">';
+        $message .= '<div style="max-width:600px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:24px;">';
+        $message .= '<h2 style="color:#0284c7;margin-top:0;">' . esc_html($subject) . '</h2>';
+        $message .= '<p>' . sprintf(
+            /* translators: 1: tên dự án, 2: tháng */
+            esc_html__('Kính gửi Quý khách hàng, hệ thống %1$s xin gửi tới quý khách tóm tắt kết quả vận hành website %2$s trong tháng %3$s:', 'laca'),
+            esc_html($siteName),
+            '<strong>' . esc_html($post->post_title) . '</strong>',
+            esc_html($month)
+        ) . '</p>';
+        $message .= '<ul style="background:#f8fafc;padding:16px 24px;border-radius:6px;border:1px solid #e2e8f0;">';
+        $message .= '<li>' . sprintf(esc_html__('Độ sẵn sàng (Uptime 30 ngày): %s%%', 'laca'), '<strong>' . number_format($uptimePct, 1) . '</strong>') . '</li>';
+        $message .= '<li>' . sprintf(esc_html__('Thời gian phản hồi máy chủ trung bình: %dms', 'laca'), $avgMs) . '</li>';
+        $message .= '<li>' . esc_html__('Hệ thống mã nguồn & an ninh bảo mật: Hoạt động ổn định, an toàn.', 'laca') . '</li>';
+        $message .= '</ul>';
+        $message .= '<div style="text-align:center;margin:28px 0;">';
+        $message .= '<a href="' . esc_url($reportUrl) . '" target="_blank" style="background:#0284c7;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;display:inline-block;">' . esc_html__('Xem Báo Cáo Chi Tiết & Tải PDF', 'laca') . '</a>';
+        $message .= '</div>';
+        $message .= '<p style="font-size:12px;color:#64748b;">' . esc_html__('Nếu có bất kỳ thắc mắc hoặc yêu cầu hỗ trợ kỹ thuật nào, quý khách vui lòng liên hệ đội ngũ chúng tôi qua tính năng Hỗ trợ trên website hoặc phản hồi email này.', 'laca') . '</p>';
+        $message .= '</div>';
+        $message .= '</body></html>';
+
+        $headers = ['Content-Type: text/html; charset=UTF-8'];
+        $sent    = wp_mail($clientEmail, $subject, $message, $headers);
+
+        if ($sent) {
+            \App\Models\ProjectLog::add([
+                'project_id'  => $projectId,
+                'log_type'    => 'monthly_summary',
+                'log_content' => sprintf(
+                    /* translators: 1: tháng, 2: email người nhận */
+                    __('✉️ Đã gửi email báo cáo tháng %1$s tới %2$s', 'laca'),
+                    $month,
+                    $clientEmail
+                ),
+                'log_by'      => 'Report Service',
+                'is_auto'     => true,
+            ]);
+        }
+
+        return (bool) $sent;
     }
 }

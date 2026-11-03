@@ -249,6 +249,10 @@ add_action('init', function() {
         (new \App\Settings\LacaTools\ClientPortalEndpoint())->init();
     }
 
+    if (class_exists('\App\Settings\LacaTools\ClientRequestHandler')) {
+        (new \App\Settings\LacaTools\ClientRequestHandler())->init();
+    }
+
     if (class_exists('\App\Settings\LacaTools\BlockCatalogHub')) {
         (new \App\Settings\LacaTools\BlockCatalogHub())->init();
     }

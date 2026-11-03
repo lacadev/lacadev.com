@@ -1378,6 +1378,16 @@ class AdminSettings
 							'discord'  => 'Discord',
 						])
 						->set_default_value(['slack', 'discord']),
+
+					Field::make('set', 'notify_route_client_request', __('Yêu cầu hỗ trợ từ khách hàng (client_request)', 'laca'))
+						->set_options([
+							'email'    => 'Email',
+							'zalo'     => 'Zalo OA',
+							'telegram' => 'Telegram',
+							'slack'    => 'Slack',
+							'discord'  => 'Discord',
+						])
+						->set_default_value(['email', 'zalo', 'telegram', 'slack', 'discord']),
 				]);
 
 			// Block Catalog Source — nơi hub lấy danh mục block để cho site

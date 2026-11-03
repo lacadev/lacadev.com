@@ -646,6 +646,75 @@ class LacaProjectsHub
                     </table>
                 <?php endif; ?>
             </section>
+
+            <?php
+            global $wpdb;
+            $logTable = \App\Databases\ProjectLogTable::getTableName();
+            $clientRequests = $wpdb->get_results($wpdb->prepare(
+                "SELECT l.*, p.post_title as project_name
+                 FROM {$logTable} l
+                 INNER JOIN {$wpdb->posts} p ON p.ID = l.project_id
+                 WHERE l.log_type = %s
+                 ORDER BY l.id DESC
+                 LIMIT 20",
+                'client_request'
+            ));
+            ?>
+            <section class="laca-projects-panel" style="margin-top:24px;">
+                <div class="laca-projects-panel__head">
+                    <h2><?php echo esc_html__('Yêu cầu hỗ trợ từ khách hàng', 'laca'); ?></h2>
+                    <span class="laca-projects-meta"><?php echo esc_html(sprintf(__('%d yêu cầu gần nhất', 'laca'), count($clientRequests))); ?></span>
+                </div>
+                <?php if (empty($clientRequests)): ?>
+                    <p class="laca-projects-empty"><?php echo esc_html__('Chưa có yêu cầu hỗ trợ nào từ site khách.', 'laca'); ?></p>
+                <?php else: ?>
+                    <table class="widefat striped laca-projects-table">
+                        <thead>
+                            <tr>
+                                <th><?php echo esc_html__('Dự án', 'laca'); ?></th>
+                                <th><?php echo esc_html__('Loại', 'laca'); ?></th>
+                                <th><?php echo esc_html__('Mức độ', 'laca'); ?></th>
+                                <th><?php echo esc_html__('Tiêu đề & Nội dung', 'laca'); ?></th>
+                                <th><?php echo esc_html__('Trạng thái', 'laca'); ?></th>
+                                <th><?php echo esc_html__('Ngày gửi', 'laca'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($clientRequests as $req):
+                                $meta = !empty($req->meta) ? json_decode($req->meta, true) : [];
+                                $reqStatus = $meta['status'] ?? 'pending';
+                                $statusLabels = [
+                                    'pending'    => __('Chờ xử lý', 'laca'),
+                                    'processing' => __('Đang xử lý', 'laca'),
+                                    'resolved'   => __('Đã xử lý', 'laca'),
+                                ];
+                            ?>
+                                <tr>
+                                    <td><a href="<?php echo esc_url(get_edit_post_link((int) $req->project_id, '')); ?>"><strong><?php echo esc_html($req->project_name ?: '#' . $req->project_id); ?></strong></a></td>
+                                    <td><?php echo esc_html($meta['category_label'] ?? __('Hỗ trợ', 'laca')); ?></td>
+                                    <td><span class="laca-projects-badge"><?php echo esc_html($meta['priority_label'] ?? __('Bình thường', 'laca')); ?></span></td>
+                                    <td>
+                                        <strong><?php echo esc_html($meta['title'] ?? wp_trim_words($req->log_content, 8)); ?></strong>
+                                        <div style="font-size:12px;color:#64748b;margin-top:4px;"><?php echo esc_html(wp_trim_words($meta['description'] ?? $req->log_content, 20)); ?></div>
+                                        <?php if (!empty($meta['attachment_url'])): ?>
+                                            <div style="margin-top:4px;"><a href="<?php echo esc_url($meta['attachment_url']); ?>" target="_blank" style="font-size:11px;color:#0284c7;">📎 <?php echo esc_html__('Xem ảnh đính kèm', 'laca'); ?></a></div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($meta['admin_reply'])): ?>
+                                            <div style="margin-top:4px;font-size:11px;background:#f0fdf4;color:#166534;padding:4px 8px;border-radius:4px;">💬 <?php echo esc_html($meta['admin_reply']); ?></div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <span class="laca-projects-badge" style="<?php echo $reqStatus === 'resolved' ? 'background:#dcfce7;color:#166534;' : ($reqStatus === 'processing' ? 'background:#fef3c7;color:#92400e;' : 'background:#fee2e2;color:#991b1b;'); ?>">
+                                            <?php echo esc_html($statusLabels[$reqStatus] ?? $reqStatus); ?>
+                                        </span>
+                                    </td>
+                                    <td><?php echo esc_html($this->formatDateTime((string) $req->created_at)); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+            </section>
         </div>
         <?php
     }

@@ -351,6 +351,18 @@ class ProjectFields
                     <li><strong>Hỗ trợ vận hành:</strong> Miễn phí hướng dẫn sử dụng và hỗ trợ kỹ thuật qua Hotline/Zalo trong suốt quá trình vận hành website.</li>
                     </ul>
                     '),
+
+            Field::make('separator', 'sep_monthly_report', __('Báo cáo vận hành hàng tháng', 'laca')),
+
+            Field::make('checkbox', 'auto_send_monthly_report', __('Tự gửi báo cáo tháng cho khách hàng', 'laca'))
+                ->set_width(50)
+                ->set_default_value(false)
+                ->set_help_text(__('Mặc định TẮT. Khi bật, hệ thống sẽ tự động tổng hợp số liệu và gửi email báo cáo tháng vào ngày 1 hàng tháng.', 'laca')),
+
+            Field::make('text', 'monthly_report_email', __('Email nhận báo cáo', 'laca'))
+                ->set_width(50)
+                ->set_attribute('placeholder', 'client@example.com')
+                ->set_help_text(__('Để trống sẽ tự động sử dụng email trong tab Khách hàng.', 'laca')),
         ]);
 
         $container->add_tab(__('Thanh toán', 'laca'), [

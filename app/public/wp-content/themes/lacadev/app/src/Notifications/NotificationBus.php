@@ -24,6 +24,7 @@ class NotificationBus
     public const EVENT_UPTIME_DOWN     = 'uptime_down';
     public const EVENT_UPTIME_UP       = 'uptime_up';
     public const EVENT_DEPLOYMENT      = 'deployment';
+    public const EVENT_CLIENT_REQUEST  = 'client_request';
 
     public const DEFAULT_ROUTES = [
         self::EVENT_PROJECT_ALERT   => ['email', 'zalo', 'telegram', 'slack', 'discord'],
@@ -32,6 +33,7 @@ class NotificationBus
         self::EVENT_UPTIME_DOWN     => ['email', 'zalo', 'telegram', 'slack', 'discord'],
         self::EVENT_UPTIME_UP       => ['email', 'zalo', 'telegram', 'slack', 'discord'],
         self::EVENT_DEPLOYMENT      => ['slack', 'discord'],
+        self::EVENT_CLIENT_REQUEST  => ['email', 'zalo', 'telegram', 'slack', 'discord'],
     ];
 
     private const COOLDOWNS = [
@@ -41,6 +43,7 @@ class NotificationBus
         self::EVENT_UPTIME_DOWN     => 1800,  // 30 phút
         self::EVENT_UPTIME_UP       => 1800,  // 30 phút
         self::EVENT_DEPLOYMENT      => 300,   // 5 phút
+        self::EVENT_CLIENT_REQUEST  => 60,    // 1 phút
     ];
 
     /**
@@ -176,6 +179,13 @@ class NotificationBus
                 $projectName,
                 (string) ($payload['message'] ?? ($payload['action'] ?? 'deploy'))
             ),
+            self::EVENT_CLIENT_REQUEST  => sprintf(
+                /* translators: 1: tên dự án, 2: loại yêu cầu, 3: tiêu đề yêu cầu */
+                __('🎫 %1$sYêu cầu hỗ trợ [%2$s]: %3$s', 'laca'),
+                $projectName,
+                (string) ($payload['category_label'] ?? ($payload['category'] ?? 'Hỗ trợ')),
+                (string) ($payload['title'] ?? ($payload['message'] ?? ''))
+            ),
             default => $projectName . ($payload['message'] ?? __('Thông báo hệ thống LacaDev.', 'laca'))
         };
     }
@@ -188,6 +198,7 @@ class NotificationBus
             self::EVENT_UPTIME_DOWN, self::EVENT_CRON_LATE => Embed::COLOR_DANGER,
             self::EVENT_BACKUP_OUTDATED, self::EVENT_PROJECT_ALERT => Embed::COLOR_WARNING,
             self::EVENT_UPTIME_UP, self::EVENT_DEPLOYMENT => Embed::COLOR_SUCCESS,
+            self::EVENT_CLIENT_REQUEST => Embed::COLOR_INFO,
             default => Embed::COLOR_INFO,
         };
 
@@ -197,6 +208,7 @@ class NotificationBus
             self::EVENT_CRON_LATE       => '⏰ Cron Delay Warning',
             self::EVENT_BACKUP_OUTDATED => '⚠️ Backup Outdated Warning',
             self::EVENT_DEPLOYMENT      => '🚀 Remote Deployment',
+            self::EVENT_CLIENT_REQUEST  => '🎫 Client Support Request',
             default                     => '🔔 Laca System Alert',
         };
 
@@ -212,6 +224,14 @@ class NotificationBus
 
         if (isset($payload['response_ms']) && (int) $payload['response_ms'] > 0) {
             $embed->field('Response Time', $payload['response_ms'] . 'ms');
+        }
+
+        if (!empty($payload['priority'])) {
+            $embed->field('Mức ưu tiên', strtoupper((string) $payload['priority']));
+        }
+
+        if (!empty($payload['attachment_url'])) {
+            $embed->field('Ảnh đính kèm', (string) $payload['attachment_url']);
         }
 
         Notifier::send($discordChannel, 'bus.' . $event, $embed);
