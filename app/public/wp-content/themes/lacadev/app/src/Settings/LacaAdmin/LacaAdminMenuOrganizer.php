@@ -40,6 +40,7 @@ class LacaAdminMenuOrganizer
             'label' => 'Bảo mật',
             'items' => [
                 'laca-security',
+                'laca-login-log',
             ],
         ],
         'google' => [

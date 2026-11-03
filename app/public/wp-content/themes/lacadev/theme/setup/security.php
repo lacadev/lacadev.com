@@ -85,44 +85,6 @@ if (get_option('_hide_theme_editor') === 'yes' && !defined('DISALLOW_FILE_EDIT')
 }
 
 /**
- * Limit login attempts (basic implementation)
- * TODO (Phase 4B): Bỏ khi Phase 4B tích hợp LoginGuard
- */
-add_filter('authenticate', function($user, $username, $password) {
-    if (empty($username) || empty($password)) {
-        return $user;
-    }
-    
-    $ip = $_SERVER['REMOTE_ADDR'];
-    $transient_key = 'login_attempts_' . md5($ip);
-    $attempts = get_transient($transient_key);
-    
-    if ($attempts && $attempts >= 5) {
-        return new WP_Error(
-            'too_many_attempts',
-            __('Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau 15 phút.', 'laca')
-        );
-    }
-    
-    // If login fails, increment counter
-    if (is_wp_error($user)) {
-        $attempts = $attempts ? $attempts + 1 : 1;
-        set_transient($transient_key, $attempts, 15 * MINUTE_IN_SECONDS);
-    }
-    
-    return $user;
-}, 30, 3);
-
-/**
- * Clear login attempts on successful login
- */
-add_action('wp_login', function($username) {
-    $ip = $_SERVER['REMOTE_ADDR'];
-    $transient_key = 'login_attempts_' . md5($ip);
-    delete_transient($transient_key);
-});
-
-/**
  * Sanitize Uploaded Filenames
  * Prevent special characters and ensure safe filenames
  */

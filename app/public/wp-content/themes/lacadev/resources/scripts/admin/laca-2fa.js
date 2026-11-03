@@ -1,142 +1,193 @@
-( function ( $ ) {
-	'use strict';
-
-	const cfg = window.laca2faConfig;
-	if ( ! cfg ) {
+/**
+ * 2FA setup trong trang Profile (profile.php/user-edit.php) — gắn sự kiện
+ * cho các nút render bởi TwoFactorAuth::renderProfileSection() (PHP),
+ * dùng window.laca2faConfig (ajaxUrl/nonce) đã localize sẵn và thư viện
+ * QRCode (handle "laca-qrcode", enqueue cùng lúc) để vẽ mã QR.
+ *
+ * File này trước đây CHƯA TỪNG TỒN TẠI — enqueueAssets() trỏ sai đường dẫn
+ * (thiếu dirname()) nên dù có viết cũng không tải được; đã sửa path ở PHP,
+ * file JS thật sự viết ở đây.
+ */
+( function () {
+	if ( typeof window.laca2faConfig === 'undefined' ) {
 		return;
 	}
 
-	// ── Setup flow ──────────────────────────────────────────────────────────────
-	$( '#laca-2fa-setup-btn' ).on( 'click', function () {
-		const panel = $( '#laca-2fa-setup-panel' );
-		panel.show();
-		$( this ).hide();
+	var cfg = window.laca2faConfig;
 
-		$.post(
-			cfg.ajaxUrl,
-			{ action: 'laca_2fa_get_secret', nonce: cfg.nonce },
-			function ( res ) {
-				if ( ! res.success ) {
-					panel.html(
-						'<p style="color:red;">Lỗi: ' + res.data + '</p>'
-					);
+	function post( action, data ) {
+		var params = { action: action, nonce: cfg.nonce };
+		if ( data ) {
+			for ( var k in data ) {
+				if ( Object.prototype.hasOwnProperty.call( data, k ) ) {
+					params[ k ] = data[ k ];
+				}
+			}
+		}
+		return fetch( cfg.ajaxUrl, {
+			method: 'POST',
+			credentials: 'same-origin',
+			body: new URLSearchParams( params ),
+		} ).then( function ( r ) {
+			return r.json();
+		} );
+	}
+
+	function renderCodes( container, codes ) {
+		if ( ! container ) {
+			return;
+		}
+		container.innerHTML = '';
+		( codes || [] ).forEach( function ( code ) {
+			var el = document.createElement( 'code' );
+			el.style.cssText =
+				'background:#fff;border:1px solid #fde047;padding:4px 10px;border-radius:4px;' +
+				'font-size:13px;letter-spacing:1px;';
+			el.textContent = code;
+			container.appendChild( el );
+		} );
+	}
+
+	function renderQr( elId, otpauthText ) {
+		var el = document.getElementById( elId );
+		if ( ! el || typeof QRCode === 'undefined' ) {
+			return;
+		}
+		el.innerHTML = '';
+		// eslint-disable-next-line no-undef
+		new QRCode( el, { text: otpauthText, width: 144, height: 144 } );
+	}
+
+	function errorText( res, fallback ) {
+		if ( ! res || ! res.data ) {
+			return fallback;
+		}
+		return typeof res.data === 'string' ? res.data : ( res.data.message || fallback );
+	}
+
+	document.addEventListener( 'DOMContentLoaded', function () {
+		var setupBtn       = document.getElementById( 'laca-2fa-setup-btn' );
+		var setupPanel     = document.getElementById( 'laca-2fa-setup-panel' );
+		var secretDisplay  = document.getElementById( 'laca-secret-display' );
+		var secretVal      = document.getElementById( 'laca-2fa-secret-val' );
+		var confirmBtn     = document.getElementById( 'laca-2fa-confirm-btn' );
+		var verifyCodeEl   = document.getElementById( 'laca-2fa-verify-code' );
+		var verifyMsg      = document.getElementById( 'laca-2fa-verify-msg' );
+		var backupFirstWrap = document.getElementById( 'laca-2fa-backup-first' );
+		var backupCodesEl  = document.getElementById( 'laca-2fa-backup-codes' );
+
+		var regenBtn       = document.getElementById( 'laca-2fa-regen-backup' );
+		var disableBtn     = document.getElementById( 'laca-2fa-disable-btn' );
+		var backupDisplay  = document.getElementById( 'laca-2fa-backup-display' );
+		var codesListEl    = document.getElementById( 'laca-2fa-codes-list' );
+
+		// ── Bật 2FA / hoàn tất cài đặt ──────────────────────────────────────
+		if ( setupBtn && setupPanel ) {
+			setupBtn.addEventListener( 'click', function () {
+				var isOpen = setupPanel.style.display !== 'none';
+				if ( isOpen ) {
+					setupPanel.style.display = 'none';
 					return;
 				}
-				const secret = res.data.secret;
-				const otpauth = res.data.otpauth;
+				setupPanel.style.display = 'block';
 
-				$( '#laca-secret-display' ).text( secret );
-				$( '#laca-2fa-secret-val' ).val( secret );
-
-				try {
-					new QRCode( document.getElementById( 'laca-qrcode' ), {
-						text: otpauth,
-						width: 144,
-						height: 144,
-						correctLevel: QRCode.CorrectLevel.M,
+				setupBtn.disabled = true;
+				post( 'laca_2fa_get_secret' )
+					.then( function ( res ) {
+						if ( ! res.success ) {
+							return;
+						}
+						if ( secretDisplay ) secretDisplay.textContent = res.data.secret;
+						if ( secretVal ) secretVal.value = res.data.secret;
+						renderQr( 'laca-qrcode', res.data.otpauth );
+					} )
+					.finally( function () {
+						setupBtn.disabled = false;
 					} );
-				} catch ( e ) {
-					$( '#laca-qrcode' ).html(
-						'<p style="font-size:11px;color:#666;">Không thể tạo QR.<br>Nhập secret thủ công.</p>'
-					);
-				}
-			}
-		);
-	} );
-
-	// Xác nhận mã OTP sau khi quét QR
-	$( '#laca-2fa-confirm-btn' ).on( 'click', function () {
-		const code = $( '#laca-2fa-verify-code' ).val().trim();
-		const $msg = $( '#laca-2fa-verify-msg' );
-		if ( ! /^\d{6}$/.test( code ) ) {
-			$msg.css( 'color', 'red' ).text( 'Nhập đúng 6 chữ số.' );
-			return;
+			} );
 		}
 
-		$( this ).prop( 'disabled', true ).text( 'Đang xác nhận...' );
-		$.post(
-			cfg.ajaxUrl,
-			{ action: 'laca_2fa_verify_setup', nonce: cfg.nonce, code },
-			function ( res ) {
-				$( '#laca-2fa-confirm-btn' )
-					.prop( 'disabled', false )
-					.text( 'Xác nhận' );
-				if ( ! res.success ) {
-					$msg.css( 'color', 'red' ).text( 'Lỗi: ' + res.data );
+		// ── Xác nhận mã 6 số để hoàn tất bật 2FA ────────────────────────────
+		if ( confirmBtn && verifyCodeEl ) {
+			confirmBtn.addEventListener( 'click', function () {
+				var code = ( verifyCodeEl.value || '' ).trim();
+				if ( ! /^\d{6}$/.test( code ) ) {
+					if ( verifyMsg ) {
+						verifyMsg.textContent = 'Nhập đúng 6 chữ số từ ứng dụng Authenticator.';
+						verifyMsg.style.color = '#dc2626';
+					}
 					return;
 				}
-				$msg.css( 'color', 'green' ).text( 'Kích hoạt thành công!' );
 
-				// Show backup codes
-				const $wrap = $( '#laca-2fa-backup-first' );
-				const $list = $( '#laca-2fa-backup-codes' ).empty();
-				( res.data.backup_codes || [] ).forEach( function ( c ) {
-					$list.append(
-						'<code style="font-size:14px;background:#fff;padding:4px 8px;border:1px solid #fde047;border-radius:4px;">' +
-							c +
-							'</code>'
-					);
-				} );
-				$wrap.show();
+				confirmBtn.disabled = true;
+				post( 'laca_2fa_verify_setup', { code: code } )
+					.then( function ( res ) {
+						if ( ! res.success ) {
+							if ( verifyMsg ) {
+								verifyMsg.textContent = errorText( res, 'Mã không đúng. Vui lòng thử lại.' );
+								verifyMsg.style.color = '#dc2626';
+							}
+							return;
+						}
 
-				// Reload after 8s
-				setTimeout( function () {
-					location.reload();
-				}, 8000 );
-			}
-		);
-	} );
-
-	// ── Active state ─────────────────────────────────────────────────────────────
-	$( '#laca-2fa-disable-btn' ).on( 'click', function () {
-		if (
-			! confirm( 'Tắt 2FA sẽ giảm bảo mật tài khoản. Bạn chắc chắn?' )
-		) {
-			return;
+						if ( verifyMsg ) {
+							verifyMsg.textContent = '✓ Xác nhận thành công! Đang tải lại trang…';
+							verifyMsg.style.color = '#16a34a';
+						}
+						if ( backupFirstWrap && backupCodesEl ) {
+							renderCodes( backupCodesEl, res.data.backup_codes );
+							backupFirstWrap.style.display = 'block';
+						}
+						setTimeout( function () {
+							window.location.reload();
+						}, 4000 );
+					} )
+					.finally( function () {
+						confirmBtn.disabled = false;
+					} );
+			} );
 		}
-		$( this ).prop( 'disabled', true ).text( 'Đang tắt...' );
-		$.post(
-			cfg.ajaxUrl,
-			{ action: 'laca_2fa_disable', nonce: cfg.nonce },
-			function ( res ) {
-				if ( ! res.success ) {
-					alert( 'Lỗi: ' + res.data );
-					$( '#laca-2fa-disable-btn' )
-						.prop( 'disabled', false )
-						.text( 'Tắt 2FA' );
-					return;
-				}
-				location.reload();
-			}
-		);
-	} );
 
-	$( '#laca-2fa-regen-backup' ).on( 'click', function () {
-		if ( ! confirm( 'Tạo mã dự phòng mới sẽ xoá mã cũ. Tiếp tục?' ) ) {
-			return;
-		}
-		$( this ).prop( 'disabled', true ).text( 'Đang tạo...' );
-		$.post(
-			cfg.ajaxUrl,
-			{ action: 'laca_2fa_regen_backup', nonce: cfg.nonce },
-			function ( res ) {
-				$( '#laca-2fa-regen-backup' )
-					.prop( 'disabled', false )
-					.text( 'Tạo lại mã dự phòng' );
-				if ( ! res.success ) {
-					alert( 'Lỗi: ' + res.data );
+		// ── Tạo lại mã dự phòng ──────────────────────────────────────────────
+		if ( regenBtn ) {
+			regenBtn.addEventListener( 'click', function () {
+				if ( ! window.confirm( 'Các mã dự phòng cũ sẽ không còn dùng được. Tiếp tục?' ) ) {
 					return;
 				}
-				const $list = $( '#laca-2fa-codes-list' ).empty();
-				( res.data.backup_codes || [] ).forEach( function ( c ) {
-					$list.append(
-						'<code style="font-size:14px;background:#fff;padding:4px 8px;border:1px solid #fde047;border-radius:4px;">' +
-							c +
-							'</code>'
-					);
-				} );
-				$( '#laca-2fa-backup-display' ).show();
-			}
-		);
+				regenBtn.disabled = true;
+				post( 'laca_2fa_regen_backup' )
+					.then( function ( res ) {
+						if ( ! res.success ) {
+							return;
+						}
+						renderCodes( codesListEl, res.data.backup_codes );
+						if ( backupDisplay ) backupDisplay.style.display = 'block';
+					} )
+					.finally( function () {
+						regenBtn.disabled = false;
+					} );
+			} );
+		}
+
+		// ── Tắt 2FA ──────────────────────────────────────────────────────────
+		if ( disableBtn ) {
+			disableBtn.addEventListener( 'click', function () {
+				if ( ! window.confirm( 'Tắt xác thực 2 bước cho tài khoản này?' ) ) {
+					return;
+				}
+				disableBtn.disabled = true;
+				post( 'laca_2fa_disable' )
+					.then( function ( res ) {
+						if ( res.success ) {
+							window.location.reload();
+						} else {
+							disableBtn.disabled = false;
+						}
+					} )
+					.catch( function () {
+						disableBtn.disabled = false;
+					} );
+			} );
+		}
 	} );
-} )( jQuery );
+} )();

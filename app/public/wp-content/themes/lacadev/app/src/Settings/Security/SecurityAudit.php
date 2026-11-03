@@ -124,8 +124,8 @@ class SecurityAudit
             7);
 
         // Author enumeration
-        $authorEnumBlocked = has_filter('author_request', function () {}) === false
-            && get_option('laca_block_author_enum', 0);
+        $authorEnumBlocked = class_exists(\App\Settings\Security\UserEnumerationGuard::class)
+            || (has_filter('author_request', function () {}) === false && get_option('laca_block_author_enum', 0));
         $add($cat, 'user_enum', 'Chặn liệt kê username (?author=)',
             $authorEnumBlocked ? 'pass' : 'warn',
             $authorEnumBlocked ? '?author=N đã bị chặn.'

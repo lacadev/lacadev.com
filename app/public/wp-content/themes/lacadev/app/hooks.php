@@ -163,7 +163,7 @@ add_action('manage_post_posts_custom_column', 'app_render_featured_image_column'
  * Tạo custom DB tables — chỉ chạy dbDelta() khi schema version thay đổi.
  * Tăng SCHEMA_VERSION khi thêm/sửa cấu trúc bảng.
  */
-define('LACADEV_HUB_SCHEMA_VERSION', '1.0.0');
+define('LACADEV_HUB_SCHEMA_VERSION', '1.1.0');
 
 function laca_install_project_manager_tables(): void
 {
@@ -175,6 +175,7 @@ function laca_install_project_manager_tables(): void
             fn() => \App\Databases\ProjectAlertTable::install(),
             fn() => \App\Databases\ContactFormTable::install(),
             fn() => \App\Settings\EmailLog\EmailLogTable::install(),
+            fn() => \App\Settings\LoginLog\LoginLogTable::install(),
         ]
     );
 }
@@ -417,5 +418,30 @@ add_action('init', function () {
 add_action('init', function () {
     if (class_exists('\App\Settings\Security\SecurityManager')) {
         (new \App\Settings\Security\SecurityManager())->init();
+    }
+});
+
+/**
+ * Chống brute-force (khoá IP sau nhiều lần đăng nhập sai) + chặn dò username + dọn file core info.
+ * Đăng ký vô điều kiện, sớm (trước khi wp-login.php/XML-RPC xác thực), độc lập với Discord Hub.
+ */
+add_action('after_setup_theme', function () {
+    if (class_exists('\App\Settings\Security\LoginGuard')) {
+        (new \App\Settings\Security\LoginGuard())->register();
+    }
+    if (class_exists('\App\Settings\Security\UserEnumerationGuard')) {
+        (new \App\Settings\Security\UserEnumerationGuard())->register();
+    }
+    if (class_exists('\App\Settings\Security\CoreInfoFileCleanup')) {
+        (new \App\Settings\Security\CoreInfoFileCleanup())->register();
+    }
+}, 15);
+
+/**
+ * Login Log — ghi lại lý do thật của đăng nhập thất bại.
+ */
+add_action('init', function () {
+    if (class_exists('\App\Settings\LoginLog\LoginLogManager')) {
+        (new \App\Settings\LoginLog\LoginLogManager())->init();
     }
 });
