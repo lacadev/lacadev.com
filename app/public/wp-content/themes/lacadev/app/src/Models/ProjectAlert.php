@@ -31,7 +31,7 @@ class ProjectAlert
             return false;
         }
 
-        $allowedTypes  = ['plugin_update', 'ssl_expiry', 'domain_expiry', 'hosting_expiry', 'bug', 'security', 'other'];
+        $allowedTypes  = ['plugin_update', 'ssl_expiry', 'domain_expiry', 'hosting_expiry', 'bug', 'security', 'backup', 'other'];
         $allowedLevels = ['info', 'warning', 'critical'];
 
         $type  = in_array($data['alert_type'] ?? '', $allowedTypes, true) ? $data['alert_type'] : 'other';
@@ -361,6 +361,7 @@ class ProjectAlert
             'hosting_expiry'  => 'Hosting sắp hết hạn',
             'bug'             => 'Lỗi website',
             'security'        => 'Bảo mật',
+            'backup'          => __('Sao lưu', 'laca'),
             'other'           => 'Khác',
         ];
         return $labels[$type] ?? ucfirst($type);

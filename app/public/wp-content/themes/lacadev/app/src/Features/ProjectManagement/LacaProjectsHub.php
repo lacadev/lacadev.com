@@ -48,6 +48,7 @@ class LacaProjectsHub
             'items' => [
                 ['key' => 'issues', 'label' => 'Issues', 'url' => 'admin.php?page=laca-project-issues'],
                 ['key' => 'updates', 'label' => 'Updates', 'url' => 'admin.php?page=laca-project-updates'],
+                ['key' => 'fleet', 'label' => 'Fleet', 'url' => 'admin.php?page=laca-project-fleet'],
                 ['key' => 'renewals', 'label' => 'Renewals', 'url' => 'admin.php?page=laca-project-renewals'],
                 ['key' => 'alerts', 'label' => 'Cảnh báo', 'url' => 'admin.php?page=laca-global-alerts'],
                 ['key' => 'operations', 'label' => 'Vận hành', 'url' => 'admin.php?page=laca-project-operations'],
@@ -159,6 +160,15 @@ class LacaProjectsHub
             'edit_posts',
             'laca-project-updates',
             [$this, 'renderUpdates']
+        );
+
+        add_submenu_page(
+            self::MENU_SLUG,
+            __('Fleet', 'laca'),
+            __('Fleet', 'laca'),
+            'edit_posts',
+            'laca-project-fleet',
+            [$this, 'renderFleet']
         );
 
         add_submenu_page(
@@ -661,6 +671,11 @@ class LacaProjectsHub
             </section>
         </div>
         <?php
+    }
+
+    public function renderFleet(): void
+    {
+        (new FleetPage())->render();
     }
 
     public function renderRenewals(): void
@@ -2601,6 +2616,7 @@ class LacaProjectsHub
             'laca-project-clients',
             'laca-project-issues',
             'laca-project-updates',
+            'laca-project-fleet',
             'laca-project-renewals',
             'laca-project-operations',
             'laca-project-health',
@@ -2629,6 +2645,7 @@ class LacaProjectsHub
             'laca-project-clients' => 'clients',
             'laca-project-issues' => 'issues',
             'laca-project-updates' => 'updates',
+            'laca-project-fleet' => 'fleet',
             'laca-project-renewals' => 'renewals',
             'laca-project-operations' => 'operations',
             'laca-project-health' => 'health',

@@ -1124,6 +1124,19 @@ class AdminSettings
 						<b>' . esc_html__('Khuyến nghị:', 'laca') . '</b> ' . esc_html__('Giữ bật trong giai đoạn nâng cấp theme client, sau đó tắt đi để kích hoạt bảo mật tuyệt đối chống giả mạo và replay attack.', 'laca') . '
 					</div>'),
 
+				Field::make('text', 'laca_backup_max_age_days', __('Số ngày tối đa trước khi cảnh báo backup quá hạn', 'laca'))
+					->set_attribute('type', 'number')
+					->set_attribute('min', '1')
+					->set_attribute('max', '90')
+					->set_default_value('7')
+					->set_width(30),
+				Field::make('html', 'laca_backup_max_age_days_desc')
+					->set_width(70)
+					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>' . esc_html__('Mặc định: 7 ngày', 'laca') . '</strong><br>
+						<b>' . esc_html__('Tác dụng:', 'laca') . '</b> ' . esc_html__('Nếu website khách có thời điểm backup gần nhất cách hiện tại vượt quá số ngày này, hoặc trạng thái backup là chưa rõ (unknown) quá 7 ngày, hệ thống sẽ tự động tạo cảnh báo và gửi thông báo (tối đa 1 lần/ngày/site).', 'laca') . '
+					</div>'),
+
 				Field::make('separator', 'title_enhance_website_security', __('Tắt tính năng có nguy cơ bảo mật', 'laca')),
 
 				Field::make('checkbox', 'disable_rest_api', __('Disable REST API (cho khách)', 'laca'))
