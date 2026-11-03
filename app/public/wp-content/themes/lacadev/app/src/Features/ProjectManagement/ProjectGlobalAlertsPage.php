@@ -72,9 +72,9 @@ class ProjectGlobalAlertsPage
         $this->renderStyles();
         ?>
         <div class="wrap laca-global-alerts-wrap">
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0">
-                <p style="margin:0 0 8px;font-weight:600;color:#0369a1">🔧 Tất cả Cảnh báo</p>
-                <p style="margin:0;font-size:13px;color:#374151">Trang này gộp toàn bộ cảnh báo từ tất cả dự án khách hàng vào một nơi (site sập, SSL/domain/hosting sắp hết hạn, thanh toán trễ hạn, cần cập nhật plugin...), giúp bạn xử lý nhanh mà không cần vào từng dự án. Dùng bộ lọc bên dưới để thu hẹp theo dự án, mức độ hoặc loại cảnh báo, rồi bấm <strong>Xử lý</strong> khi đã giải quyết xong.</p>
+            <div class="laca-alert laca-alert--info laca-mb-3">
+                <div class="laca-alert__title">🔧 Tất cả Cảnh báo</div>
+                <div class="laca-alert__desc">Trang này gộp toàn bộ cảnh báo từ tất cả dự án khách hàng vào một nơi (site sập, SSL/domain/hosting sắp hết hạn, thanh toán trễ hạn, cần cập nhật plugin...), giúp bạn xử lý nhanh mà không cần vào từng dự án. Dùng bộ lọc bên dưới để thu hẹp theo dự án, mức độ hoặc loại cảnh báo, rồi bấm <strong>Xử lý</strong> khi đã giải quyết xong.</div>
             </div>
 
             <h1 class="wp-heading-inline">Tất cả Cảnh báo</h1>
@@ -236,22 +236,22 @@ class ProjectGlobalAlertsPage
     {
         echo '<style>
         .laca-global-alerts-wrap { max-width: 1200px; }
-        .laca-total-badge { margin-left: 8px; background: #f29b9b; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 12px; vertical-align: middle; }
+        .laca-total-badge { margin-left: 8px; background: var(--laca-danger, #f29b9b); color: var(--laca-bg, #fff); padding: 2px 8px; border-radius: 10px; font-size: 12px; vertical-align: middle; }
         .laca-filter-bar { display: flex; gap: 8px; align-items: center; margin: 16px 0; flex-wrap: wrap; }
         .laca-filter-bar select { min-width: 160px; }
-        .laca-empty-state { padding: 32px; text-align: center; color: #8b95a5; background: #fafbfc; border: 1px solid #e8ecf0; border-radius: 6px; }
+        .laca-empty-state { padding: 32px; text-align: center; color: var(--laca-fg-subtle, #8b95a5); background: var(--laca-bg-subtle, #fafbfc); border: 1px solid var(--laca-border, #e8ecf0); border-radius: 6px; }
         .laca-bulk-bar { display: flex; gap: 12px; align-items: center; padding: 8px 0; margin-bottom: 8px; }
         .laca-alerts-table .laca-col-check { width: 32px; }
         .laca-alerts-table .laca-col-type  { width: 140px; }
         .laca-alerts-table .laca-col-level { width: 90px; }
-        .laca-alerts-table .laca-col-time  { width: 110px; color: #8b95a5; }
+        .laca-alerts-table .laca-col-time  { width: 110px; color: var(--laca-fg-subtle, #8b95a5); }
         .laca-alerts-table .laca-col-action { width: 80px; }
         .laca-alert-msg { white-space: pre-wrap; font-size: 13px; }
-        .laca-type-badge { display: inline-block; background: #eef3fe; color: #5a6577; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .laca-type-badge { display: inline-block; background: var(--laca-accent-subtle, #eef3fe); color: var(--laca-fg-muted, #5a6577); padding: 2px 8px; border-radius: 4px; font-size: 12px; }
         .laca-level-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
-        .laca-alert--critical { background: #fef0f0; color: #c0392b; }
-        .laca-alert--warning  { background: #fef7ea; color: #b7770d; }
-        .laca-alert--info     { background: #eef3fe; color: #2c5282; }
+        .laca-alert--critical { background: var(--laca-danger-bg, #fef0f0); color: var(--laca-danger, #c0392b); }
+        .laca-alert--warning  { background: var(--laca-warning-bg, #fef7ea); color: var(--laca-warning, #b7770d); }
+        .laca-alert--info     { background: var(--laca-accent-subtle, #eef3fe); color: var(--laca-accent, #2c5282); }
         .laca-pagination { margin-top: 16px; display: flex; gap: 4px; }
         </style>';
     }

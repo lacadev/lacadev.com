@@ -3,51 +3,6 @@
 // Extracted from DashboardWidgets.php – do NOT add inline
 // ============================================================
 
-// ─── CSS Custom Properties ───────────────────────────────────
-
-:root {
-    // Neutral
-    --laca-gray-50:    #fafbfc;
-    --laca-gray-100:   #f4f6f8;
-    --laca-gray-200:   #e8ecf0;
-    --laca-gray-300:   #dde1e6;
-    --laca-gray-400:   #b8c0cc;
-    --laca-gray-500:   #8b95a5;
-    --laca-gray-600:   #5a6577;
-    --laca-gray-700:   #3d4654;
-    --laca-gray-800:   #2b3240;
-
-    // Pastel Accent
-    --laca-blue:       #8aadf7;
-    --laca-blue-soft:  #eef3fe;
-    --laca-green:      #7dd3a8;
-    --laca-green-soft: #edf9f2;
-    --laca-amber:      #f5c97a;
-    --laca-amber-soft: #fef7ea;
-    --laca-red:        #f29b9b;
-    --laca-red-soft:   #fef0f0;
-    --laca-purple:     #b8a9e8;
-    --laca-purple-soft:#f3f0fb;
-
-    // Surface
-    --laca-surface:    #ffffff;
-    --laca-bg:         #fafbfc;
-    --laca-border:     #e8ecf0;
-
-    // Text
-    --laca-text:       #3d4654;
-    --laca-text-muted: #8b95a5;
-    --laca-text-light: #b8c0cc;
-
-    // Aliases (compat)
-    --laca-primary:    #8aadf7;
-    --laca-primary-lt: #eef3fe;
-    --laca-text-main:  #3d4654;
-    --laca-bg-soft:    #fafbfc;
-    --laca-radius:     6px;
-    --laca-shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.06);
-}
-
 // ─── Reusable status dot ─────────────────────────────────────
 .laca-dot {
     display: inline-block;
@@ -62,7 +17,7 @@
     &--warning { background: var(--laca-amber); }
     &--danger  { background: var(--laca-red); }
     &--info    { background: var(--laca-blue); }
-    &--muted   { background: var(--laca-gray-400); }
+    &--muted   { background: var(--laca-fg-subtle); }
 }
 
 // ─── Shared Widget Layout ────────────────────────────────────
@@ -78,7 +33,7 @@
 }
 
 .lacadev-stat-box {
-    background: #fff;
+    background: var(--laca-bg);
     border-radius: var(--laca-radius);
     padding: 1rem;
     border: 1px solid var(--laca-border);
@@ -190,18 +145,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #fff;
+    background: var(--laca-bg);
     border: 1px solid var(--laca-border);
     padding: 0.625rem;
     border-radius: var(--laca-radius);
     text-decoration: none;
-    color: #2c3338;
+    color: var(--laca-fg);
     font-weight: 600;
     transition: all 0.2s;
     font-size: 0.8125rem;
 
     &:hover {
-        background: #f0f6fb;
+        background: var(--laca-accent-subtle);
         border-color: var(--laca-primary);
         color: var(--laca-primary);
     }
@@ -217,14 +172,14 @@
     font-weight: 700;
     margin: 0.9375rem 0 0.625rem;
     color: var(--laca-text-main);
-    border-bottom: 2px solid #f1f1f1;
+    border-bottom: 2px solid var(--laca-border);
     padding-bottom: 0.3125rem;
 }
 
 // ─── Maintenance / Health ────────────────────────────────────
 
-.stat-maintenance--on  { color: var(--laca-red); }
-.stat-maintenance--off { color: var(--laca-green); }
+.stat-maintenance--on  { color: var(--laca-danger); }
+.stat-maintenance--off { color: var(--laca-success); }
 
 .laca-health-list {
     margin: 0;
@@ -236,7 +191,7 @@
         align-items: center;
         justify-content: space-between;
         padding: 0.625rem 0;
-        border-bottom: 1px solid #f0f0f1;
+        border-bottom: 1px solid var(--laca-border);
         font-size: 0.8125rem;
 
         &:last-child { border-bottom: none; }
@@ -244,8 +199,8 @@
 
     .health-label { color: var(--laca-text-muted); }
     .health-value { font-weight: 600; color: var(--laca-text-main); }
-    .health-ok    { color: var(--laca-green); }
-    .health-warn  { color: var(--laca-amber); }
+    .health-ok    { color: var(--laca-success); }
+    .health-warn  { color: var(--laca-warning); }
     .health-link  { margin-left: 0.5rem; font-size: 0.6875rem; }
 }
 
@@ -274,7 +229,7 @@
     transition: all 0.2s;
 
     &:hover {
-        background: #fff;
+        background: var(--laca-bg);
         border-color: var(--laca-primary);
         color: var(--laca-primary);
     }
@@ -287,8 +242,8 @@
 }
 
 .laca-todo-badge {
-    background: var(--laca-blue-soft);
-    color: var(--laca-gray-700);
+    background: var(--laca-primary);
+    color: var(--laca-bg);
     font-size: 0.6875rem;
     padding: 0.125rem 0.5rem;
     border-radius: var(--laca-radius);
@@ -330,7 +285,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.625rem 0.75rem;
-    border-bottom: 1px solid #f0f0f1;
+    border-bottom: 1px solid var(--laca-border);
     text-decoration: none;
     color: var(--laca-text-main);
     font-size: 0.8125rem;
@@ -369,15 +324,15 @@
 .laca-widget-header-row {
     padding: 0.625rem 0.75rem;
     border-bottom: 1px solid var(--laca-border);
-    background: #fff;
+    background: var(--laca-bg);
     display: flex;
     align-items: center;
 }
 
 .laca-report-select {
     border: 1px solid var(--laca-border);
-    background: #fff;
-    color: #2c3338;
+    background: var(--laca-bg);
+    color: var(--laca-fg);
     padding: 0.25rem 1.5rem 0.25rem 0.5rem;
     border-radius: 0.25rem;
     font-size: 0.8125rem;
@@ -411,7 +366,7 @@
 
     li {
         padding: 0.625rem 0;
-        border-bottom: 1px solid #f0f0f1;
+        border-bottom: 1px solid var(--laca-border);
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
@@ -437,7 +392,7 @@
     font-size: 0.8125rem;
     margin-bottom: 0.1875rem;
 
-    &:hover { color: #135e96; }
+    &:hover { color: var(--laca-accent-hover); }
 }
 
 .laca-post-meta {
@@ -452,22 +407,23 @@
     font-size: 0.625rem;
     padding: 0.125rem 0.375rem;
     border-radius: 0.25rem;
-    font-weight: 500;
+    font-weight: 700;
+    color: inherit;
 
-    &.badge-views { background: var(--laca-blue-soft); color: var(--laca-gray-700); }
-    &.badge-seo   { background: var(--laca-red-soft);  color: var(--laca-gray-700); }
-    &.badge-date  { background: var(--laca-gray-100);  color: var(--laca-text-muted); }
+    &.badge-views { background: var(--laca-accent); color: var(--laca-bg); }
+    &.badge-seo   { background: var(--laca-danger); color: var(--laca-bg); }
+    &.badge-date  { background: var(--laca-bg-muted); color: var(--laca-fg-muted); }
 }
 
 .laca-issue-tag {
     display: inline-block;
-    background: #fff2f2;
-    color: #d63638;
+    background: var(--laca-danger-bg);
+    color: var(--laca-danger);
     padding: 0.0625rem 0.375rem;
     border-radius: 0.25rem;
     font-size: 0.625rem;
     font-weight: 700;
-    border: 1px solid #ffccca;
+    border: 1px solid var(--laca-danger-border);
     margin-right: 0.3125rem;
     vertical-align: middle;
 }
@@ -484,17 +440,17 @@
 }
 
 .laca-page-btn {
-    background: #fff;
+    background: var(--laca-bg);
     border: 1px solid var(--laca-border);
     padding: 0.25rem 0.625rem;
     border-radius: 0.25rem;
     cursor: pointer;
     font-size: 0.6875rem;
     font-weight: 600;
-    color: #2c3338;
+    color: var(--laca-fg);
 
     &:hover:not(:disabled) {
-        background: #f0f6fb;
+        background: var(--laca-accent-subtle);
         border-color: var(--laca-primary);
         color: var(--laca-primary);
     }
@@ -519,13 +475,13 @@
     display: flex;
     align-items: center;
     gap: 0.3125rem;
-    color: #50575e;
+    color: var(--laca-fg-muted);
 
     .dashicons {
         font-size: 1.0625rem;
         width: 1.0625rem;
         height: 1.0625rem;
-        color: #999;
+        color: var(--laca-fg-subtle);
     }
 
     strong {

@@ -6,6 +6,8 @@ import './project-charts.js';
 import './contact-form.js';
 import './global-alerts.js';
 import './media-library-infinite-scroll.js';
+import { initCarbonFieldsAutoSave } from './carbon-autosave.js';
+import { initListTableInlineEditor } from './list-table-inline.js';
 
 import Swal from 'sweetalert2';
 window.Swal = Swal;
@@ -458,11 +460,15 @@ document.addEventListener( 'DOMContentLoaded', function () {
 
 	// Initialize on DOM ready
 	if ( document.readyState === 'loading' ) {
-		document.addEventListener( 'DOMContentLoaded', () =>
-			LacaDashboard.init()
-		);
+		document.addEventListener( 'DOMContentLoaded', () => {
+			LacaDashboard.init();
+			initCarbonFieldsAutoSave();
+			initListTableInlineEditor();
+		} );
 	} else {
 		LacaDashboard.init();
+		initCarbonFieldsAutoSave();
+		initListTableInlineEditor();
 	}
 
 	window.LacaDashboard = LacaDashboard;

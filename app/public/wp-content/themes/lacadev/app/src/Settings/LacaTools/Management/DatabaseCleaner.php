@@ -5,7 +5,7 @@ namespace App\Settings\LacaTools\Management;
 /**
  * DatabaseCleaner
  *
- * Admin tool: Laca Admin > Dọn dẹp DB
+ * Admin tool: Appearance > Dọn dẹp Database
  * Giúp admin dọn dẹp dữ liệu rác WordPress 1 click.
  *
  * Các mục dọn:
@@ -30,8 +30,6 @@ class DatabaseCleaner
         add_action('wp_ajax_laca_db_analyze',   [$this, 'handleAnalyze']);
     }
 
-    // ── Menu ──────────────────────────────────────────────────────────────────
-
     public function registerMenu(): void
     {
         add_submenu_page(
@@ -44,8 +42,6 @@ class DatabaseCleaner
         );
     }
 
-    // ── Page UI ───────────────────────────────────────────────────────────────
-
     public function renderPage(): void
     {
         if (!current_user_can(self::CAP)) {
@@ -54,25 +50,23 @@ class DatabaseCleaner
         ?>
         <div class="wrap">
             <h1>🧹 Dọn dẹp Database</h1>
-
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0">
-                <p style="margin:0 0 8px;font-weight:600;color:#0369a1">🔧 Dọn dẹp Database</p>
-                <p style="margin:0;font-size:13px;color:#374151">Công cụ này xoá dữ liệu rác (bản nháp cũ, thùng rác, bình luận spam, cache hết hạn...) để website chạy nhanh hơn. <strong>Đây là thao tác dọn dẹp không thể hoàn tác</strong> — hãy đọc kỹ từng mục và backup dữ liệu trước khi bấm nút dọn dẹp.</p>
+            <div class="laca-alert laca-alert--info laca-mb-3">
+                <div class="laca-alert__title">🔧 Dọn dẹp Database</div>
+                <div class="laca-alert__desc">Xoá bớt dữ liệu rác (bản nháp, thùng rác, bình luận spam, bản chỉnh sửa cũ...) tích tụ theo thời gian để website chạy nhanh hơn. Đây là thao tác dọn dẹp và <strong>không thể hoàn tác</strong> — hãy đọc kỹ từng mục trước khi bấm "Dọn dẹp".</div>
             </div>
+            <p class="laca-fg-muted">Xoá dữ liệu rác để database gọn nhẹ hơn. Mỗi thao tác không thể hoàn tác — hãy backup trước nếu cần.</p>
 
-            <p style="color:#666">Xoá dữ liệu rác để database gọn nhẹ hơn. Mỗi thao tác không thể hoàn tác — hãy backup trước nếu cần.</p>
-
-            <div id="laca-db-analyzer" style="margin:15px 0;padding:12px 16px;background:#fff;border:1px solid #c3c4c7;border-radius:4px;display:none">
+            <div id="laca-db-analyzer" class="laca-db-analyzer" style="display:none; /* động */">
                 <strong>📊 Phân tích hiện tại:</strong>
-                <span id="laca-db-stats" style="margin-left:10px;color:#666">Đang tải...</span>
+                <span id="laca-db-stats" class="laca-db-stats">Đang tải...</span>
             </div>
 
-            <table class="wp-list-table widefat fixed striped" style="max-width:800px">
+            <table class="wp-list-table widefat fixed striped laca-table-800">
                 <thead>
                     <tr>
                         <th>Loại dữ liệu rác</th>
-                        <th style="width:160px">Số lượng ước tính</th>
-                        <th style="width:140px">Thao tác</th>
+                        <th class="laca-col-count">Số lượng ước tính</th>
+                        <th class="laca-col-action">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody id="laca-db-rows">
@@ -90,10 +84,10 @@ class DatabaseCleaner
                     <tr>
                         <td>
                             <strong><?php echo esc_html($item['label']); ?></strong>
-                            <br><small style="color:#999"><?php echo esc_html($item['desc']); ?></small>
+                            <br><small class="laca-status-muted"><?php echo esc_html($item['desc']); ?></small>
                         </td>
                         <td>
-                            <span class="laca-count-badge" data-key="<?php echo esc_attr($item['key']); ?>" style="color:#999">—</span>
+                            <span class="laca-count-badge laca-status-muted" data-key="<?php echo esc_attr($item['key']); ?>">—</span>
                         </td>
                         <td>
                             <button class="button button-secondary laca-clean-btn"
@@ -107,18 +101,17 @@ class DatabaseCleaner
                 </tbody>
             </table>
 
-            <p style="margin-top:16px">
+            <p class="laca-mt-3">
                 <button class="button button-primary" id="laca-clean-all-btn"
                     data-nonce="<?php echo esc_attr(wp_create_nonce(self::NONCE)); ?>">
                     🧹 Dọn tất cả 1 lần
                 </button>
-                <button class="button" id="laca-analyze-btn"
-                    data-nonce="<?php echo esc_attr(wp_create_nonce(self::NONCE)); ?>"
-                    style="margin-left:8px">
+                <button class="button laca-ml-2" id="laca-analyze-btn"
+                    data-nonce="<?php echo esc_attr(wp_create_nonce(self::NONCE)); ?>">
                     📊 Phân tích ngay
                 </button>
             </p>
-            <p id="laca-clean-msg" style="display:none;margin-top:10px;font-weight:600;color:#155724;background:#d4edda;padding:10px 14px;border-radius:4px;border-left:4px solid #28a745"></p>
+            <p id="laca-clean-msg" class="laca-alert laca-alert--success laca-mt-2" style="display:none; /* động */"></p>
         </div>
 
         <script>
@@ -143,7 +136,6 @@ class DatabaseCleaner
                 el.style.borderColor = isError ? '#dc3545' : '#28a745';
             }
 
-            // Analyze all counts
             function analyze(nonce) {
                 document.getElementById('laca-db-analyzer').style.display = '';
                 document.getElementById('laca-db-stats').textContent = 'Đang phân tích...';
@@ -167,7 +159,6 @@ class DatabaseCleaner
                 analyze(this.dataset.nonce);
             });
 
-            // Single clean
             document.querySelectorAll('.laca-clean-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const key   = this.dataset.key;
@@ -180,9 +171,12 @@ class DatabaseCleaner
                         this.textContent = orig;
                         if (res.success) {
                             showMsg('✓ ' + res.data.message);
-                            // refresh count badge
                             const badge = document.querySelector('.laca-count-badge[data-key="' + key + '"]');
-                            if (badge) { badge.textContent = '✓ Sạch'; badge.style.color = '#28a745'; badge.style.fontWeight = '400'; }
+                            if (badge) {
+                                badge.textContent = '✓ Sạch';
+                                badge.style.color = '#28a745';
+                                badge.style.fontWeight = '400';
+                            }
                         } else {
                             showMsg(res.data || 'Lỗi.', true);
                         }
@@ -190,7 +184,6 @@ class DatabaseCleaner
                 });
             });
 
-            // Clean all
             document.getElementById('laca-clean-all-btn').addEventListener('click', function() {
                 if (!confirm('Dọn tất cả mục rác? Thao tác không hoàn tác được.')) return;
                 const nonce = this.dataset.nonce;
@@ -208,14 +201,11 @@ class DatabaseCleaner
                 });
             });
 
-            // Auto-analyze on load
             analyze('<?php echo esc_js(wp_create_nonce(self::NONCE)); ?>');
         })();
         </script>
         <?php
     }
-
-    // ── AJAX: Analyze ─────────────────────────────────────────────────────────
 
     public function handleAnalyze(): void
     {
@@ -246,8 +236,6 @@ class DatabaseCleaner
         ]);
     }
 
-    // ── AJAX: Clean ───────────────────────────────────────────────────────────
-
     public function handleClean(): void
     {
         if (!current_user_can(self::CAP) || !check_ajax_referer(self::NONCE, '_nonce', false)) {
@@ -270,12 +258,9 @@ class DatabaseCleaner
         wp_send_json_success(['message' => "{$label} {$total} mục thành công.", 'count' => $total]);
     }
 
-    // ── Cleaner methods ───────────────────────────────────────────────────────
-
     private function cleanRevisions(): int
     {
         global $wpdb;
-        // Keep the 3 most recent revisions per post, delete the rest
         $revisions = $wpdb->get_results(
             "SELECT ID, post_parent FROM {$wpdb->posts} WHERE post_type='revision' ORDER BY post_modified DESC"
         );
@@ -304,7 +289,9 @@ class DatabaseCleaner
     {
         global $wpdb;
         $ids = $wpdb->get_col("SELECT ID FROM {$wpdb->posts} WHERE post_status='auto-draft'");
-        foreach ($ids as $id) { wp_delete_post((int) $id, true); }
+        foreach ($ids as $id) {
+            wp_delete_post((int) $id, true);
+        }
         return count($ids);
     }
 
@@ -312,7 +299,9 @@ class DatabaseCleaner
     {
         global $wpdb;
         $ids = $wpdb->get_col("SELECT ID FROM {$wpdb->posts} WHERE post_status='trash'");
-        foreach ($ids as $id) { wp_delete_post((int) $id, true); }
+        foreach ($ids as $id) {
+            wp_delete_post((int) $id, true);
+        }
         return count($ids);
     }
 
@@ -346,7 +335,10 @@ class DatabaseCleaner
         $ids = $wpdb->get_col(
             "SELECT comment_ID FROM {$wpdb->comments} WHERE comment_approved IN ('spam','trash')"
         );
-        foreach ($ids as $id) { wp_delete_comment((int) $id, true); }
+        foreach ($ids as $id) {
+            wp_delete_comment((int) $id, true);
+        }
         return count($ids);
     }
 }
+

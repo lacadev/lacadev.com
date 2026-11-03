@@ -31,7 +31,7 @@ class AdminSettings
 			$this->removeUnnecessaryMenus();
 		}
 
-		$this->applyAdminColorVariables();
+		$this->restrictExtraSuperUserAccess();
 		$this->addDashboardContactWidget();
 		$this->addProjectManagerWidget(); // NEW: Project Manager Widget
 		$this->removeDefaultWidgets();
@@ -90,26 +90,6 @@ class AdminSettings
 
 			wp_send_json_success(['url' => esc_url_raw($url)]);
 		});
-	}
-
-	public function applyAdminColorVariables(): void
-	{
-		$printColors = static function () {
-			$primary   = \lacaSanitizeCssColor(carbon_get_theme_option('primary_color_ad'), '#566a7f');
-			$secondary = \lacaSanitizeCssColor(carbon_get_theme_option('secondary_color_ad'), '#566a7f');
-			$bg        = \lacaSanitizeCssColor(carbon_get_theme_option('bg_color_ad'), '#E6E4FC');
-			$text      = \lacaSanitizeCssColor(carbon_get_theme_option('text_color_ad'), '#000000');
-
-			echo '<style>:root{'
-				. '--primary-color-ad:' . esc_attr($primary) . ';'
-				. '--secondary-color-ad:' . esc_attr($secondary) . ';'
-				. '--bg-color-ad:' . esc_attr($bg) . ';'
-				. '--text-color-ad:' . esc_attr($text) . ';'
-				. '}</style>';
-		};
-
-		add_action('admin_head', $printColors);
-		add_action('login_head', $printColors);
 	}
 
 	public function disableCheckboxUseWeakPassword()
@@ -443,12 +423,29 @@ class AdminSettings
 			if ($this->isSuperUser()) {
 				return;
 			}
-			
+
 			global $wpdb;
-			$super_logins = apply_filters('lacadev_super_user_logins', ['lacadev']);
-			$super_users_str = "('" . implode("','", array_map('esc_sql', $super_logins)) . "')";
+			$super_users_str = "('" . implode("','", array_map('esc_sql', self::getSuperUserLogins())) . "')";
 			$user_search->query_where = str_replace('WHERE 1=1', "WHERE 1=1 AND {$wpdb->users}.user_login NOT IN " . $super_users_str, $user_search->query_where);
 		});
+	}
+
+	/**
+	 * Danh sách login của mọi Super User hiện tại: mặc định 'lacadev' + những
+	 * user được thêm qua option laca_extra_super_user_logins.
+	 *
+	 * @return string[]
+	 */
+	public static function getSuperUserLogins()
+	{
+		$super_logins = apply_filters('lacadev_super_user_logins', ['lacadev']);
+		$extra_logins = get_option('laca_extra_super_user_logins', []);
+
+		if (is_array($extra_logins) && $extra_logins) {
+			$super_logins = array_merge($super_logins, $extra_logins);
+		}
+
+		return array_values(array_unique(array_filter($super_logins)));
 	}
 
 	/**
@@ -458,10 +455,103 @@ class AdminSettings
 	 */
 	protected function isSuperUser()
 	{
-		$super_logins = apply_filters('lacadev_super_user_logins', ['lacadev']);
-		$is_super     = in_array($this->currentUser->user_login, $super_logins, true);
-		
+		$is_super = in_array($this->currentUser->user_login, self::getSuperUserLogins(), true);
+
 		return apply_filters('lacadev_is_super_user', $is_super, $this->currentUser);
+	}
+
+	/**
+	 * Super User được thêm qua UI (option laca_extra_super_user_logins)
+	 *
+	 * @return bool
+	 */
+	protected function isExtraSuperUser()
+	{
+		$extra_logins = get_option('laca_extra_super_user_logins', []);
+		if (!is_array($extra_logins) || empty($extra_logins)) {
+			return false;
+		}
+
+		return in_array($this->currentUser->user_login, $extra_logins, true);
+	}
+
+	/**
+	 * @return string[]
+	 */
+	public static function getExtraSuperUserDeniedLacaSlugs()
+	{
+		return apply_filters('lacadev_extra_super_user_denied_laca_slugs', [
+			'laca-security',
+			'laca-recaptcha',
+			'laca-login-socials',
+			'laca-discord-hub',
+		]);
+	}
+
+	/**
+	 * @return string[]
+	 */
+	public static function getExtraSuperUserDeniedPagenow()
+	{
+		return apply_filters('lacadev_extra_super_user_denied_pagenow', [
+			'themes.php',
+			'theme-editor.php',
+		]);
+	}
+
+	public function restrictExtraSuperUserAccess()
+	{
+		add_action('admin_init', [$this, 'maybeBlockDisallowedAdminPage']);
+		add_action('admin_menu', [$this, 'filterAdminMenuForExtraSuperUser'], 999);
+	}
+
+	public function maybeBlockDisallowedAdminPage()
+	{
+		if (!$this->isExtraSuperUser()) {
+			return;
+		}
+
+		global $pagenow;
+
+		if (in_array($pagenow, self::getExtraSuperUserDeniedPagenow(), true)) {
+			wp_safe_redirect(admin_url('admin.php?page=laca-admin'));
+			exit;
+		}
+
+		if ($pagenow === 'admin.php' && isset($_GET['page']) && in_array($_GET['page'], self::getExtraSuperUserDeniedLacaSlugs(), true)) {
+			wp_safe_redirect(admin_url('admin.php?page=laca-admin'));
+			exit;
+		}
+	}
+
+	public function filterAdminMenuForExtraSuperUser()
+	{
+		if (!$this->isExtraSuperUser()) {
+			return;
+		}
+
+		global $submenu;
+
+		$denied_laca_slugs = self::getExtraSuperUserDeniedLacaSlugs();
+		$denied_theme_slugs = self::getExtraSuperUserDeniedPagenow();
+
+		if (isset($submenu['laca-admin']) && is_array($submenu['laca-admin'])) {
+			foreach ($submenu['laca-admin'] as $key => $subItem) {
+				$slug = $subItem[2] ?? '';
+				if (in_array($slug, $denied_laca_slugs, true)) {
+					unset($submenu['laca-admin'][$key]);
+				}
+			}
+		}
+
+		if (isset($submenu['themes.php']) && is_array($submenu['themes.php'])) {
+			foreach ($submenu['themes.php'] as $key => $subItem) {
+				$slug = $subItem[2] ?? '';
+				if (in_array($slug, $denied_theme_slugs, true)) {
+					unset($submenu['themes.php'][$key]);
+				}
+			}
+		}
 	}
 
 	public function setupErrorMessage()
@@ -754,16 +844,6 @@ class AdminSettings
 			$options = Container::make('theme_options', __('Laca Admin', 'laca'))
 				->set_page_file(__('laca-admin', 'laca'))
 				->set_page_menu_position(3)
-				->add_tab(__('ADMIN COLOR', 'laca'), [
-					Field::make('color', 'primary_color_ad', __('Primary color', 'laca'))
-						->set_width(25),
-					Field::make('color', 'secondary_color_ad', __('Secondary color', 'laca'))
-						->set_width(25),
-					Field::make('color', 'bg_color_ad', __('Background color', 'laca'))
-						->set_width(25),
-					Field::make('color', 'text_color_ad', __('Text color', 'laca'))
-						->set_width(25),
-				])
 				->add_tab(__('ADMIN', 'laca'), [
 					Field::make('checkbox', 'is_maintenance', __('Bật chế độ bảo trì', 'laca')) 
 						->set_width(30),

@@ -30,7 +30,7 @@ class ProjectReportsManager
         }
 
         wp_localize_script('theme-admin-js-bundle', 'lacaProjectCharts', [
-            'primary'  => \lacaSanitizeCssColor(carbon_get_theme_option('primary_color_ad'), '#2ea2cc'),
+            'primary'  => '#18181b',
             'byStatus' => $this->getByStatus(),
             'byMonth'  => $this->getByMonth(),
         ]);
