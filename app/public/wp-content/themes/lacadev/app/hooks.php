@@ -183,7 +183,7 @@ add_action('manage_post_posts_custom_column', 'app_render_featured_image_column'
  * Tạo custom DB tables — chỉ chạy dbDelta() khi schema version thay đổi.
  * Tăng SCHEMA_VERSION khi thêm/sửa cấu trúc bảng.
  */
-define('LACADEV_HUB_SCHEMA_VERSION', '1.1.0');
+define('LACADEV_HUB_SCHEMA_VERSION', '1.2.0');
 
 function laca_install_project_manager_tables(): void
 {
@@ -196,6 +196,7 @@ function laca_install_project_manager_tables(): void
             fn() => \App\Databases\ContactFormTable::install(),
             fn() => \App\Settings\EmailLog\EmailLogTable::install(),
             fn() => \App\Settings\LoginLog\LoginLogTable::install(),
+            fn() => \App\Databases\UptimeLogTable::install(),
         ]
     );
 }

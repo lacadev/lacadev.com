@@ -578,6 +578,14 @@ class ProjectFields
                 ->set_default_value('14')
                 ->set_attribute('placeholder', '14'),
 
+            Field::make('checkbox', 'uptime_sslverify', __('Kiểm tra SSL khi ping Uptime', 'laca'))
+                ->set_width(50)
+                ->set_default_value(true),
+
+            Field::make('html', 'uptime_sslverify_desc', '')
+                ->set_width(50)
+                ->set_html('<div style="font-size:12px;color:#64748b;line-height:1.6;margin-top:4px;">' . esc_html__('Bật kiểm tra chứng chỉ SSL hợp lệ khi đo uptime. Tắt nếu website dùng SSL tự ký hoặc chưa cấu hình HTTPS hoàn chỉnh.', 'laca') . '</div>'),
+
             // FTP
             Field::make('separator', 'sep_ftp', __('FTP / SFTP', 'laca')),
 

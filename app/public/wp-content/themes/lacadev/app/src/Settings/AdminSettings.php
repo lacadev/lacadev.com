@@ -1311,6 +1311,73 @@ class AdminSettings
 					Field::make('checkbox', 'enable_slack_notify', __('Bật thông báo Slack', 'laca')),
 					Field::make('text', 'slack_webhook_url', __('Webhook URL', 'laca'))
 						->set_help_text('Nhập Webhook URL của kênh Slack để nhận cảnh báo.'),
+				])
+				->add_tab(__('Định tuyến thông báo', 'laca'), [
+					Field::make('html', 'notify_routing_desc', '')
+						->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0">'
+							. '<p style="margin:0 0 6px;font-weight:600;color:#0369a1">' . esc_html__('📡 Bảng ma trận định tuyến thông báo (Notification Bus)', 'laca') . '</p>'
+							. '<p style="margin:0;font-size:13px;color:#374151">' . esc_html__('Tuỳ biến các kênh nhận thông báo (Email, Zalo, Telegram, Slack, Discord) cho từng loại sự kiện hệ thống. Hệ thống tự động khử trùng lặp (dedup) theo loại sự kiện.', 'laca') . '</p>'
+							. '</div>'),
+
+					Field::make('set', 'notify_route_project_alert', __('Cảnh báo dự án (project_alert)', 'laca'))
+						->set_options([
+							'email'    => 'Email',
+							'zalo'     => 'Zalo OA',
+							'telegram' => 'Telegram',
+							'slack'    => 'Slack',
+							'discord'  => 'Discord',
+						])
+						->set_default_value(['email', 'zalo', 'telegram', 'slack', 'discord']),
+
+					Field::make('set', 'notify_route_uptime_down', __('Website không truy cập được (uptime_down)', 'laca'))
+						->set_options([
+							'email'    => 'Email',
+							'zalo'     => 'Zalo OA',
+							'telegram' => 'Telegram',
+							'slack'    => 'Slack',
+							'discord'  => 'Discord',
+						])
+						->set_default_value(['email', 'telegram', 'slack', 'discord']),
+
+					Field::make('set', 'notify_route_uptime_up', __('Website hoạt động trở lại (uptime_up)', 'laca'))
+						->set_options([
+							'email'    => 'Email',
+							'zalo'     => 'Zalo OA',
+							'telegram' => 'Telegram',
+							'slack'    => 'Slack',
+							'discord'  => 'Discord',
+						])
+						->set_default_value(['email', 'telegram', 'discord']),
+
+					Field::make('set', 'notify_route_cron_late', __('Cron hệ thống bị trễ (cron_late)', 'laca'))
+						->set_options([
+							'email'    => 'Email',
+							'zalo'     => 'Zalo OA',
+							'telegram' => 'Telegram',
+							'slack'    => 'Slack',
+							'discord'  => 'Discord',
+						])
+						->set_default_value(['email', 'telegram', 'discord']),
+
+					Field::make('set', 'notify_route_backup_outdated', __('Sao lưu quá hạn (backup_outdated)', 'laca'))
+						->set_options([
+							'email'    => 'Email',
+							'zalo'     => 'Zalo OA',
+							'telegram' => 'Telegram',
+							'slack'    => 'Slack',
+							'discord'  => 'Discord',
+						])
+						->set_default_value(['email', 'telegram', 'discord']),
+
+					Field::make('set', 'notify_route_deployment', __('Cập nhật từ xa thành công (deployment)', 'laca'))
+						->set_options([
+							'email'    => 'Email',
+							'zalo'     => 'Zalo OA',
+							'telegram' => 'Telegram',
+							'slack'    => 'Slack',
+							'discord'  => 'Discord',
+						])
+						->set_default_value(['slack', 'discord']),
 				]);
 
 			// Block Catalog Source — nơi hub lấy danh mục block để cho site

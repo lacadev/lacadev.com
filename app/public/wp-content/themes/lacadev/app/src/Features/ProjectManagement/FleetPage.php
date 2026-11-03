@@ -245,7 +245,7 @@ class FleetPage
                                         <?php echo $backupSummary['html']; // phpcs:ignore WordPress.Security.EscapeOutput ?>
                                     </td>
                                     <td>
-                                        <span style="color:#94a3b8;" title="<?php echo esc_attr__('Sẽ được kích hoạt ở Phase 10', 'laca'); ?>">—</span>
+                                        <?php echo $this->renderUptimeBadge($projectId); // phpcs:ignore WordPress.Security.EscapeOutput ?>
                                     </td>
                                     <td>
                                         <?php if ($pendingCount > 0): ?>
@@ -747,4 +747,38 @@ class FleetPage
             'badge' => '<span class="laca-badge laca-badge--subtle">' . esc_html__('chưa thấy', 'laca') . '</span>',
         ];
     }
+
+    private function renderUptimeBadge(int $projectId): string
+    {
+        if (!class_exists(\App\Databases\UptimeLogTable::class)) {
+            return '<span style="color:#94a3b8;">—</span>';
+        }
+
+        $stats = \App\Databases\UptimeLogTable::getUptimeStats($projectId, 24);
+        if ($stats['total_checks'] === 0) {
+            return '<span style="color:#94a3b8;" title="' . esc_attr__('Chưa có lượt ping nào trong 24 giờ qua', 'laca') . '">—</span>';
+        }
+
+        $pct = $stats['percentage'];
+        $badgeClass = ($pct >= 99.0) ? 'laca-badge--success' : (($pct >= 95.0) ? 'laca-badge--warning' : 'laca-badge--danger');
+
+        $tooltip = sprintf(
+            /* translators: 1: số lượt sống, 2: tổng lượt, 3: %, 4: ms tb, 5: ms gần nhất */
+            __('24h qua: %1$d/%2$d lượt sống (%3$s%%). Phản hồi TB: %4$dms, gần nhất: %5$dms.', 'laca'),
+            $stats['up_checks'],
+            $stats['total_checks'],
+            (string) $pct,
+            $stats['avg_ms'],
+            $stats['latest_ms']
+        );
+
+        return sprintf(
+            '<span class="laca-badge %s" title="%s">%s%% &bull; %dms</span>',
+            esc_attr($badgeClass),
+            esc_attr($tooltip),
+            esc_html((string) $pct),
+            (int) $stats['avg_ms']
+        );
+    }
 }
+
