@@ -11,7 +11,6 @@ return array(
     'WPEmerge\\' => array($vendorDir . '/htmlburger/wpemerge/src'),
     'WPEmergeTheme\\' => array($vendorDir . '/htmlburger/wpemerge-theme-core/src'),
     'WPEmergeTestTools\\' => array($vendorDir . '/htmlburger/wpemerge/tests/tools'),
-    'Tests\\' => array($baseDir . '/tests'),
     'Symfony\\Polyfill\\Php80\\' => array($vendorDir . '/symfony/polyfill-php80'),
     'Symfony\\Polyfill\\Mbstring\\' => array($vendorDir . '/symfony/polyfill-mbstring'),
     'Symfony\\Polyfill\\Intl\\Normalizer\\' => array($vendorDir . '/symfony/polyfill-intl-normalizer'),

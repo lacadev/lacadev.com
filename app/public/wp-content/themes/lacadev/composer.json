@@ -1,12 +1,11 @@
 {
-    "name": "moomsdev/wp-theme",
+    "name": "lacadev/lacadev-theme",
     "description": "Wordpress theme made by MOOMS.DEV",
     "version": "1.0.0",
     "type": "wordpress-theme",
     "keywords": [
         "wordpress",
-        "moomsdev",
-        "travel",
+        "lacadev",
         "blog",
         "website"
     ],
@@ -46,11 +45,6 @@
     "autoload": {
         "psr-4": {
             "App\\": "app/src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Tests\\": "tests/"
         }
     },
     "scripts": {

@@ -52,10 +52,6 @@ class ComposerStaticInit599a9e4bc4652d5b3be4c44ffd052c71
             'WPEmergeTheme\\' => 14,
             'WPEmergeTestTools\\' => 18,
         ),
-        'T' =>
-        array (
-            'Tests\\' => 6,
-        ),
         'S' =>
         array (
             'Symfony\\Polyfill\\Php80\\' => 23,
@@ -168,10 +164,6 @@ class ComposerStaticInit599a9e4bc4652d5b3be4c44ffd052c71
         'WPEmergeTestTools\\' =>
         array (
             0 => __DIR__ . '/..' . '/htmlburger/wpemerge/tests/tools',
-        ),
-        'Tests\\' =>
-        array (
-            0 => __DIR__ . '/../..' . '/tests',
         ),
         'Symfony\\Polyfill\\Php80\\' =>
         array (
