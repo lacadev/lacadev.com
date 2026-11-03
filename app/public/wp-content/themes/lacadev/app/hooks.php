@@ -252,6 +252,10 @@ add_action('init', function() {
         (new \App\Settings\LacaTools\BlockCatalogHub())->init();
     }
 
+    if (class_exists('\App\Settings\LacaTools\ThemePackageEndpoint')) {
+        (new \App\Settings\LacaTools\ThemePackageEndpoint())->init();
+    }
+
     // Uptime monitoring chủ động — hub tự ping homepage từng site khách mỗi
     // giờ, độc lập với tracker (site khách tự báo cáo). Nếu site sập hẳn nó
     // không thể tự báo, nên hub phải tự đi hỏi.
