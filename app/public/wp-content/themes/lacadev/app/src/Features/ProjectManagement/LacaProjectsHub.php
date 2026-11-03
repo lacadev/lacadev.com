@@ -784,7 +784,7 @@ class LacaProjectsHub
             'Theo dõi domain, hosting, tracker heartbeat, cảnh báo và trạng thái vận hành.',
             ['Dự án', 'Domain', 'Hết hạn domain', 'Hết hạn hosting', 'Heartbeat', 'Cảnh báo'],
             $rows,
-            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Vận hành</p><p style="margin:0;font-size:13px;color:#374151">Theo dõi tình trạng vận hành từng website: domain/hosting còn hạn bao lâu, tracker heartbeat có còn hoạt động và số cảnh báo đang active.</p></div>'
+            $this->getIntroCalloutHtml(__('Vận hành', 'laca'), __('Theo dõi tình trạng vận hành từng website: domain/hosting còn hạn bao lâu, tracker heartbeat có còn hoạt động và số cảnh báo đang active.', 'laca'))
         );
     }
 
@@ -809,7 +809,7 @@ class LacaProjectsHub
             'Theo dõi báo giá, số tiền đã thanh toán và trạng thái công nợ.',
             ['Dự án', 'Khách hàng', 'Giá build', 'Đã thanh toán', 'Trạng thái'],
             $rows,
-            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Thanh toán</p><p style="margin:0;font-size:13px;color:#374151">Theo dõi giá trị hợp đồng, số tiền khách đã thanh toán và trạng thái công nợ của từng dự án.</p></div>'
+            $this->getIntroCalloutHtml(__('Thanh toán', 'laca'), __('Theo dõi giá trị hợp đồng, số tiền khách đã thanh toán và trạng thái công nợ của từng dự án.', 'laca'))
         );
     }
 
@@ -840,7 +840,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Reports', 'Báo cáo tổng hợp doanh thu, công nợ, vận hành và cập nhật trong tháng.'); ?>
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Reports</p><p style="margin:0;font-size:13px;color:#374151">Báo cáo tổng hợp theo tháng: doanh thu đã thu, công nợ còn lại, số lượng cập nhật/bảo trì và cơ cấu trạng thái dự án — dùng để tổng kết định kỳ.</p></div>
+            <?php $this->renderIntroCallout(__('Reports', 'laca'), __('Báo cáo tổng hợp theo tháng: doanh thu đã thu, công nợ còn lại, số lượng cập nhật/bảo trì và cơ cấu trạng thái dự án — dùng để tổng kết định kỳ.', 'laca')); ?>
             <div class="laca-projects-overview">
                 <?php $this->renderMetric('Đã thu tháng này', $this->formatMoney($monthlyPaid), date_i18n('m/Y')); ?>
                 <?php $this->renderMetric('Tổng đã thu', $this->formatMoney($finance['total_paid']), $finance['collection_rate'] . '% tổng giá trị'); ?>
@@ -861,28 +861,30 @@ class LacaProjectsHub
                     </div>
                     <?php $this->renderKeyValueList($this->getReadableLogTypeCounts($monthLogs)); ?>
                 </section>
-                <section class="laca-projects-panel laca-projects-panel--wide">
+                <section class="laca-projects-panel laca-projects-panel--wide laca-card">
                     <div class="laca-projects-panel__head">
-                        <h2>Báo cáo chăm sóc website tháng này</h2>
+                        <h2><?php echo esc_html__('Báo cáo chăm sóc website tháng này', 'laca'); ?></h2>
                         <a href="<?php echo esc_url(admin_url('admin.php?page=laca-project-updates')); ?>">Mở Updates</a>
                     </div>
                     <?php if ($monthlyServiceRows === []): ?>
-                        <p class="laca-projects-empty">Chưa có hoạt động bảo trì/cập nhật trong tháng này.</p>
+                        <p class="laca-projects-empty"><?php echo esc_html__('Chưa có hoạt động bảo trì/cập nhật trong tháng này.', 'laca'); ?></p>
                     <?php else: ?>
-                        <table class="widefat striped laca-projects-table">
-                            <thead><tr><th>Dự án</th><th>Cập nhật</th><th>Sửa lỗi / yêu cầu</th><th>Bảo trì / task</th><th>Gần nhất</th></tr></thead>
-                            <tbody>
-                                <?php foreach ($monthlyServiceRows as $row): ?>
-                                    <tr>
-                                        <td><a href="<?php echo esc_url(get_edit_post_link((int) $row['project_id'], '')); ?>"><?php echo esc_html($row['project_name']); ?></a></td>
-                                        <td><?php echo esc_html((string) $row['updates']); ?></td>
-                                        <td><?php echo esc_html((string) $row['fixes']); ?></td>
-                                        <td><?php echo esc_html((string) $row['maintenance']); ?></td>
-                                        <td><?php echo esc_html($this->formatDateTime((string) $row['latest'])); ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                        <div class="laca-table-wrap">
+                            <table class="widefat striped laca-projects-table laca-table">
+                                <thead><tr><th><?php echo esc_html__('Dự án', 'laca'); ?></th><th><?php echo esc_html__('Cập nhật', 'laca'); ?></th><th><?php echo esc_html__('Sửa lỗi / yêu cầu', 'laca'); ?></th><th><?php echo esc_html__('Bảo trì / task', 'laca'); ?></th><th><?php echo esc_html__('Gần nhất', 'laca'); ?></th></tr></thead>
+                                <tbody>
+                                    <?php foreach ($monthlyServiceRows as $row): ?>
+                                        <tr>
+                                            <td><a href="<?php echo esc_url(get_edit_post_link((int) $row['project_id'], '')); ?>"><?php echo esc_html($row['project_name']); ?></a></td>
+                                            <td><?php echo esc_html((string) $row['updates']); ?></td>
+                                            <td><?php echo esc_html((string) $row['fixes']); ?></td>
+                                            <td><?php echo esc_html((string) $row['maintenance']); ?></td>
+                                            <td><?php echo esc_html($this->formatDateTime((string) $row['latest'])); ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
                     <?php endif; ?>
                 </section>
 
@@ -919,7 +921,7 @@ class LacaProjectsHub
             'Link theo dõi tiến độ dành cho khách hàng.',
             ['Dự án', 'Khách hàng', 'Portal URL', ''],
             $rows,
-            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Portal links</p><p style="margin:0;font-size:13px;color:#374151">Link Client Portal riêng cho từng dự án để gửi cho khách hàng theo dõi tiến độ, không cần đăng nhập vào wp-admin.</p></div>'
+            $this->getIntroCalloutHtml(__('Portal links', 'laca'), __('Link Client Portal riêng cho từng dự án để gửi cho khách hàng theo dõi tiến độ, không cần đăng nhập vào wp-admin.', 'laca'))
         );
     }
 
@@ -1087,21 +1089,23 @@ class LacaProjectsHub
         }
 
         ?>
-        <table class="widefat striped laca-projects-table">
-            <thead><tr><th>Dự án</th><th>Khách hàng</th><th>Trạng thái</th><th>Tài chính</th><th>Alerts</th><th>Hạn gần nhất</th></tr></thead>
-            <tbody>
-                <?php foreach ($rows as $row): ?>
-                    <tr>
-                        <td><a href="<?php echo esc_url(get_edit_post_link($row['id'], '')); ?>"><?php echo esc_html($row['title']); ?></a></td>
-                        <td><?php echo esc_html($row['client']); ?></td>
-                        <td><?php echo esc_html($row['status']); ?></td>
-                        <td><?php echo esc_html($row['finance']); ?></td>
-                        <td><?php echo esc_html((string) $row['alerts']); ?></td>
-                        <td><?php echo esc_html($row['expiry']); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+        <div class="laca-table-wrap">
+            <table class="widefat striped laca-projects-table laca-table">
+                <thead><tr><th><?php echo esc_html__('Dự án', 'laca'); ?></th><th><?php echo esc_html__('Khách hàng', 'laca'); ?></th><th><?php echo esc_html__('Trạng thái', 'laca'); ?></th><th><?php echo esc_html__('Tài chính', 'laca'); ?></th><th><?php echo esc_html__('Alerts', 'laca'); ?></th><th><?php echo esc_html__('Hạn gần nhất', 'laca'); ?></th></tr></thead>
+                <tbody>
+                    <?php foreach ($rows as $row): ?>
+                        <tr>
+                            <td><a href="<?php echo esc_url(get_edit_post_link($row['id'], '')); ?>"><?php echo esc_html($row['title']); ?></a></td>
+                            <td><?php echo esc_html($row['client']); ?></td>
+                            <td><?php echo esc_html($row['status']); ?></td>
+                            <td><?php echo esc_html($row['finance']); ?></td>
+                            <td><?php echo esc_html((string) $row['alerts']); ?></td>
+                            <td><?php echo esc_html($row['expiry']); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
         <?php
     }
 
