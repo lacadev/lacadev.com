@@ -61,28 +61,70 @@ class BlockCatalogHub
 
     public function handleGetCatalog(\WP_REST_Request $request): \WP_REST_Response
     {
-        $secretKey = $request->get_header('X-Laca-Key');
-        if (empty($secretKey)) {
-            $secretKey = (string) ($request->get_param('secret_key') ?? '');
-        }
-        $secretKey = sanitize_text_field($secretKey);
+        $projectId = null;
+        $sigHeader = $request->get_header('x_laca_signature') ?: $request->get_header('x-laca-signature');
+        $pubId     = $request->get_header('x_laca_project') ?: $request->get_header('x-laca-project');
 
-        if (empty($secretKey)) {
-            return new \WP_REST_Response(['success' => false, 'message' => 'Thiếu secret_key.'], 400);
-        }
+        // Luồng 1: Xác thực bằng chữ ký HMAC-SHA256 (key catalog, không cần query string)
+        if (!empty($sigHeader) && !empty($pubId)) {
+            $projectId = \App\Features\ProjectManagement\ProjectKeyManager::findProjectIdByPublicId($pubId);
+            if (!$projectId) {
+                return new \WP_REST_Response(['success' => false, 'message' => 'Project không tồn tại hoặc đã ngừng hoạt động.'], 401);
+            }
 
-        global $wpdb;
-        $projectId = $wpdb->get_var($wpdb->prepare(
-            "SELECT pm.post_id FROM {$wpdb->postmeta} pm
-             INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
-             WHERE pm.meta_key = %s AND pm.meta_value = %s AND p.post_status = 'publish'
-             LIMIT 1",
-            '_tracker_secret_key',
-            $secretKey
-        ));
+            $key = \App\Features\ProjectManagement\ProjectKeyManager::getKey(
+                $projectId,
+                \App\Features\ProjectManagement\ProjectKeyManager::KEY_CATALOG
+            );
 
-        if (!$projectId) {
-            return new \WP_REST_Response(['success' => false, 'message' => 'Secret key không đúng.'], 401);
+            $verify = \App\Security\RequestSigner::verify($request, $key);
+            if (!$verify['valid']) {
+                return new \WP_REST_Response(['success' => false, 'message' => $verify['message']], 401);
+            }
+        } else {
+            // Luồng 2: Legacy fallback qua secret_key query hoặc X-Laca-Key
+            $cfVal = function_exists('carbon_get_theme_option') ? carbon_get_theme_option('laca_allow_legacy_auth') : null;
+            if ($cfVal !== null && $cfVal !== '') {
+                $allowLegacy = ($cfVal === 'yes' || $cfVal === true || $cfVal === '1');
+            } else {
+                $raw = get_option('_laca_allow_legacy_auth', null);
+                if ($raw === null) {
+                    $raw = get_option('laca_allow_legacy_auth', 'yes');
+                }
+                $allowLegacy = ($raw === 'yes' || $raw === true || $raw === '1');
+            }
+            if (!$allowLegacy) {
+                return new \WP_REST_Response([
+                    'success' => false,
+                    'message' => 'Legacy authentication đã bị tắt. Yêu cầu ký HMAC (X-Laca-Signature) bằng Catalog Key.',
+                ], 401);
+            }
+
+            $secretKey = $request->get_header('X-Laca-Key');
+            if (empty($secretKey)) {
+                $secretKey = (string) ($request->get_param('secret_key') ?? '');
+            }
+            $secretKey = sanitize_text_field($secretKey);
+
+            if (empty($secretKey)) {
+                return new \WP_REST_Response(['success' => false, 'message' => 'Thiếu chữ ký hoặc secret_key.'], 401);
+            }
+
+            global $wpdb;
+            $projectId = $wpdb->get_var($wpdb->prepare(
+                "SELECT pm.post_id FROM {$wpdb->postmeta} pm
+                 INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+                 WHERE pm.meta_key = %s AND pm.meta_value = %s AND p.post_status = 'publish'
+                 LIMIT 1",
+                '_tracker_secret_key',
+                $secretKey
+            ));
+
+            if (!$projectId) {
+                return new \WP_REST_Response(['success' => false, 'message' => 'Secret key không đúng.'], 401);
+            }
+
+            update_post_meta((int) $projectId, '_laca_legacy_auth_last_seen', time());
         }
 
         $catalog = $this->getCachedCatalog();

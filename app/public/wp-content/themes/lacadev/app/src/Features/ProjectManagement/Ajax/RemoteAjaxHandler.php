@@ -45,20 +45,40 @@ class RemoteAjaxHandler
 
         // Lấy thông tin site từ project meta
         $siteUrl   = (string) carbon_get_post_meta($projectId, 'live_url');
-        $secretKey = (string) get_post_meta($projectId, '_tracker_secret_key', true);
+        $publicId  = \App\Features\ProjectManagement\ProjectKeyManager::getPublicId($projectId);
+        $keyRemote = \App\Features\ProjectManagement\ProjectKeyManager::getKey(
+            $projectId,
+            \App\Features\ProjectManagement\ProjectKeyManager::KEY_REMOTE
+        );
+        if (empty($keyRemote)) {
+            $keyRemote = (string) get_post_meta($projectId, '_tracker_secret_key', true);
+        }
 
-        if (empty($siteUrl) || empty($secretKey)) {
-            wp_send_json_error(['message' => 'Project chưa có live_url hoặc secret key.']);
+        if (empty($siteUrl) || empty($keyRemote)) {
+            wp_send_json_error(['message' => 'Project chưa có live_url hoặc remote update key.']);
         }
 
         $endpoint = trailingslashit($siteUrl) . 'wp-json/laca/v1/remote-update';
+        $bodyJson = (string) wp_json_encode([
+            'secret_key' => $keyRemote,
+            'action'     => $action,
+            'slug'       => $slug,
+        ]);
+
+        $sigHeaders = \App\Security\RequestSigner::sign(
+            'POST',
+            '/wp-json/laca/v1/remote-update',
+            $bodyJson,
+            $keyRemote,
+            $publicId
+        );
+
         $postArgs = [
-            'body'    => wp_json_encode([
-                'secret_key' => $secretKey,
-                'action'     => $action,
-                'slug'       => $slug,
-            ]),
-            'headers' => ['Content-Type' => 'application/json'],
+            'body'    => $bodyJson,
+            'headers' => array_merge([
+                'Content-Type' => 'application/json',
+                'X-Laca-Key'   => $keyRemote,
+            ], $sigHeaders),
             'timeout' => 30,
         ];
 

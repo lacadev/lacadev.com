@@ -125,9 +125,21 @@ class ClientPortalEndpoint
             return new \WP_REST_Response(['success' => false, 'message' => 'Thiếu nội dung yêu cầu.'], 400);
         }
 
+        // Chặn brute-force key trên submit request tương tự như endpoint đọc dữ liệu
+        $ip        = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+        $failKey   = 'laca_portal_fail_' . md5($ip);
+        $failCount = (int) get_transient($failKey);
+        if ($failCount >= 20) {
+            return new \WP_REST_Response([
+                'success' => false,
+                'message' => 'Quá nhiều lần thử với key không đúng. Vui lòng thử lại sau ít phút.',
+            ], 429);
+        }
+
         $projectId = $this->findProjectByKey($secretKey);
         if (!$projectId) {
-            return new \WP_REST_Response(['success' => false, 'message' => 'Secret key không hợp lệ.'], 401);
+            set_transient($failKey, $failCount + 1, 15 * MINUTE_IN_SECONDS);
+            return new \WP_REST_Response(['success' => false, 'message' => 'Portal key không hợp lệ.'], 401);
         }
 
         $post = get_post($projectId);
@@ -349,8 +361,6 @@ class ClientPortalEndpoint
 
     private function findProjectByKey(string $key): ?int
     {
-        global $wpdb;
-
         // Cache key để tránh query nhiều lần
         $cacheKey = 'laca_portal_key_' . md5($key);
         $cached   = wp_cache_get($cacheKey, 'laca_portal');
@@ -358,25 +368,8 @@ class ClientPortalEndpoint
             return (int) $cached ?: null;
         }
 
-        // 1. Ưu tiên tìm theo alias dễ nhớ (_portal_alias)
-        $projectId = $wpdb->get_var($wpdb->prepare(
-            "SELECT post_id FROM {$wpdb->postmeta}
-             WHERE meta_key = %s AND meta_value = %s
-             LIMIT 1",
-            '_portal_alias',
-            $key
-        ));
-
-        // 2. Fallback: tìm theo secret key gốc
-        if (!$projectId) {
-            $projectId = $wpdb->get_var($wpdb->prepare(
-                "SELECT post_id FROM {$wpdb->postmeta}
-                 WHERE meta_key = %s AND meta_value = %s
-                 LIMIT 1",
-                '_tracker_secret_key',
-                $key
-            ));
-        }
+        // Tìm qua ProjectKeyManager (chỉ nhận _portal_alias, _laca_public_id, _laca_key_portal_hash; KHÔNG nhận _tracker_secret_key)
+        $projectId = \App\Features\ProjectManagement\ProjectKeyManager::findProjectIdByPortalKey($key);
 
         wp_cache_set($cacheKey, $projectId ?: 0, 'laca_portal', 300); // Cache 5 phút
 

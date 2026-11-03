@@ -15,9 +15,14 @@
  * @var string $clientPortalAliasUrl
  * @var array  $trackerHealth
  * @var array  $trackerLastSeenMeta
+ * @var string|null $projectPublicId
+ * @var array<string,string>|null $projectKeys
+ * @var string|null $clientConfigJson
+ * @var int|null    $legacyAuthLastSeen
  */
 
 use App\Models\ProjectAlert;
+use App\Features\ProjectManagement\ProjectKeyManager;
 
 $pendingTasks = $pendingTasks ?? [];
 $pendingPlugins = $pendingPlugins ?? [];
@@ -25,9 +30,26 @@ $clientPortalUrl = $clientPortalUrl ?? '';
 $clientPortalAliasUrl = $clientPortalAliasUrl ?? '';
 $trackerHealth = is_array($trackerHealth ?? null) ? $trackerHealth : [];
 $trackerLastSeenMeta = is_array($trackerLastSeenMeta ?? null) ? $trackerLastSeenMeta : [];
+$projectPublicId = $projectPublicId ?? ProjectKeyManager::getPublicId($projectId);
+$projectKeys = is_array($projectKeys ?? null) ? $projectKeys : ProjectKeyManager::ensureKeys($projectId);
+$clientConfigJson = $clientConfigJson ?? (string) wp_json_encode(ProjectKeyManager::getClientConfigPayload($projectId), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+$legacyAuthLastSeen = isset($legacyAuthLastSeen) ? (int) $legacyAuthLastSeen : (int) get_post_meta($projectId, '_laca_legacy_auth_last_seen', true);
 ?>
 
 <div class="laca-pm-col laca-project-workspace__side">
+    <?php if ($legacyAuthLastSeen > 0): ?>
+        <div class="notice notice-warning inline" style="margin:0 0 16px;padding:12px;border-left:4px solid #f59e0b;background:#fffbeb;border-radius:4px;">
+            <strong style="color:#b45309;display:block;margin-bottom:4px;">⚠️ <?php echo esc_html__('Client chưa nâng cấp bảo mật', 'laca'); ?></strong>
+            <p style="margin:0;font-size:13px;color:#92400e;">
+                <?php
+                echo esc_html(sprintf(
+                    __('Website này vừa kết nối bằng Secret Key không ký (xác thực cũ) vào %s. Vui lòng sao chép khối cấu hình bảo mật mới bên dưới và dán vào Laca Admin trên website khách.', 'laca'),
+                    date_i18n('d/m/Y H:i', $legacyAuthLastSeen)
+                ));
+                ?>
+            </p>
+        </div>
+    <?php endif; ?>
     <section class="laca-project-panel">
         <div class="laca-project-panel__header">
             <div>
@@ -153,28 +175,94 @@ $trackerLastSeenMeta = is_array($trackerLastSeenMeta ?? null) ? $trackerLastSeen
     <section class="laca-project-panel">
         <div class="laca-project-panel__header">
             <div>
-                <h3><?php echo esc_html__('Auto Activity Tracker', 'laca'); ?></h3>
-                <p><?php echo esc_html__('Kết nối website khách để tự động gửi log, lỗi và cập nhật về đây.', 'laca'); ?></p>
+                <h3><?php echo esc_html__('Kết nối & Khóa bảo mật (HMAC)', 'laca'); ?></h3>
+                <p><?php echo esc_html__('Quản lý Public ID và 4 khóa riêng biệt theo mục đích, ký xác thực HMAC chống giả mạo.', 'laca'); ?></p>
             </div>
         </div>
 
-        <p class="laca-project-state">
-            <?php echo esc_html__('Cách chuẩn: nếu site khách chạy theme lacadev-client (hoặc theme con) — vào Laca Admin → 📡 Tracker trên site đó, dán 2 giá trị dưới đây vào. Không cần cài thêm gì khác — tracker đã có sẵn trong theme, đã hợp nhất và có cơ chế chống mất log khi mạng gián đoạn.', 'laca'); ?>
-        </p>
+        <div style="margin-bottom:14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:10px 12px;">
+            <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#166534;">
+                ⚡ <?php echo esc_html__('Cấu hình nhanh cho website khách', 'laca'); ?>
+            </p>
+            <p style="margin:0 0 10px;font-size:12px;color:#15803d;">
+                <?php echo esc_html__('Bấm nút bên dưới để sao chép toàn bộ endpoint và 4 khóa, sau đó dán vào ô "Dán cấu hình từ Hub" trong Laca Admin → 📡 Tracker trên site khách.', 'laca'); ?>
+            </p>
+            <button type="button" class="button button-primary js-copy-client-config" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;height:34px;">
+                <span class="dashicons dashicons-clipboard"></span>
+                <strong><?php echo esc_html__('Sao chép toàn bộ cấu hình (JSON)', 'laca'); ?></strong>
+            </button>
+            <details style="margin-top:8px;">
+                <summary style="font-size:11px;color:#166534;cursor:pointer;"><?php echo esc_html__('Xem nội dung cấu hình JSON', 'laca'); ?></summary>
+                <textarea readonly class="laca-client-config-json" rows="6" style="width:100%;margin-top:4px;font-family:monospace;font-size:11px;background:#fff;border:1px solid #86efac;border-radius:4px;"><?php echo esc_textarea($clientConfigJson); ?></textarea>
+            </details>
+        </div>
 
         <div class="laca-form-group laca-copyable-input">
             <label><?php echo esc_html__('Endpoint URL', 'laca'); ?></label>
             <input type="text" readonly value="<?php echo esc_url($endpoint); ?>">
         </div>
+
         <div class="laca-form-group laca-copyable-input">
-            <label><?php echo esc_html__('Secret Key', 'laca'); ?></label>
-            <input type="text" readonly value="<?php echo esc_attr($secretKey); ?>">
+            <label><?php echo esc_html__('Public Project ID', 'laca'); ?></label>
+            <input type="text" readonly value="<?php echo esc_attr($projectPublicId); ?>" id="laca_public_project_id">
         </div>
 
-        <details class="laca-project-tracker-fallback">
+        <div class="laca-keys-list" style="margin-top:14px;border-top:1px solid #e5e7eb;padding-top:12px;">
+            <h4 style="margin:0 0 10px;font-size:13px;color:#374151;text-transform:uppercase;letter-spacing:0.5px;">
+                <?php echo esc_html__('Khóa bảo mật riêng biệt (4 Keys)', 'laca'); ?>
+            </h4>
+
+            <?php
+            $keyDefinitions = [
+                ProjectKeyManager::KEY_TRACKER => [
+                    'title' => __('Tracker Key (Gửi log & crash)', 'laca'),
+                    'desc'  => __('Xác thực HMAC khi site khách gửi log, lỗi và heartbeat về hub.', 'laca'),
+                ],
+                ProjectKeyManager::KEY_CATALOG => [
+                    'title' => __('Block Catalog Key (Chợ block & Sync)', 'laca'),
+                    'desc'  => __('Ký HMAC khi tải danh mục block hoặc đồng bộ file block hai chiều.', 'laca'),
+                ],
+                ProjectKeyManager::KEY_REMOTE => [
+                    'title' => __('Remote Update Key (Cập nhật từ xa)', 'laca'),
+                    'desc'  => __('Ký HMAC khi Hub gửi lệnh cập nhật plugin/theme/core sang website khách.', 'laca'),
+                ],
+                ProjectKeyManager::KEY_PORTAL => [
+                    'title' => __('Client Portal Key (Portal khách hàng)', 'laca'),
+                    'desc'  => __('Khóa xác thực dành riêng cho khách hàng mở xem Client Portal.', 'laca'),
+                ],
+            ];
+
+            foreach ($keyDefinitions as $kType => $kMeta):
+                $kVal = $projectKeys[$kType] ?? '';
+            ?>
+                <div class="laca-key-row" style="margin-bottom:12px;padding:8px 10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;" data-key-type="<?php echo esc_attr($kType); ?>">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                        <strong style="font-size:12px;color:#1f2937;"><?php echo esc_html($kMeta['title']); ?></strong>
+                        <span style="font-size:11px;color:#6b7280;font-family:monospace;"><?php echo esc_html($kType); ?></span>
+                    </div>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        <input type="password" readonly class="laca-masked-key-input" value="<?php echo esc_attr($kVal); ?>" style="flex:1;font-family:monospace;font-size:12px;background:#fff;" id="laca_key_<?php echo esc_attr($kType); ?>">
+                        <button type="button" class="button button-small js-toggle-key-view" title="<?php esc_attr_e('Hiện 1 lần', 'laca'); ?>">
+                            <?php echo esc_html__('Hiện', 'laca'); ?>
+                        </button>
+                        <button type="button" class="button button-small js-copy-single-key" title="<?php esc_attr_e('Sao chép khóa', 'laca'); ?>">
+                            <?php echo esc_html__('Sao chép', 'laca'); ?>
+                        </button>
+                        <button type="button" class="button button-small js-regenerate-single-key" style="color:#dc2626;" title="<?php esc_attr_e('Tạo lại key mới', 'laca'); ?>">
+                            <?php echo esc_html__('Tạo lại', 'laca'); ?>
+                        </button>
+                    </div>
+                    <small style="display:block;margin-top:4px;color:#6b7280;font-size:11px;line-height:1.4;">
+                        <?php echo esc_html($kMeta['desc']); ?>
+                    </small>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <details class="laca-project-tracker-fallback" style="margin-top:12px;">
             <summary><?php echo esc_html__('Site khách KHÔNG chạy theme lacadev-client? Dùng MU-plugin dự phòng', 'laca'); ?></summary>
-            <p class="laca-project-state laca-project-state--warning">
-                <?php echo esc_html__('Chỉ dùng cách này khi site khách không phải theme lacadev-client (ví dụ site có sẵn của khách, theme khác). MU-plugin này chạy 1 tracker riêng, độc lập với theme — nếu dùng cho site đang chạy lacadev-client sẽ tạo ra 2 hệ tracker song song, không đồng bộ với nhau.', 'laca'); ?>
+            <p class="laca-project-state laca-project-state--warning" style="margin-top:6px;">
+                <?php echo esc_html__('Chỉ dùng cách này khi site khách không phải theme lacadev-client (ví dụ site có sẵn của khách, theme khác). MU-plugin đã tự động tích hợp chữ ký HMAC theo Tracker Key.', 'laca'); ?>
             </p>
             <div class="laca-project-actions">
                 <button type="button" class="button" id="btn_download_tracker"><?php echo esc_html__('Tải MU-plugin', 'laca'); ?></button>

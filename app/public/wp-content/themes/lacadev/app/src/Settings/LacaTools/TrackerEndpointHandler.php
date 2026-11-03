@@ -24,31 +24,75 @@ class TrackerEndpointHandler
     public function handleIncomingLog(\WP_REST_Request $request)
     {
         $parameters = $request->get_json_params() ?: $request->get_body_params();
+        $logs       = $parameters['logs'] ?? [];
 
-        $secretKey = $parameters['secret_key'] ?? '';
-        $logs      = $parameters['logs'] ?? [];
-
-        if (empty($secretKey) || empty($logs) || !is_array($logs)) {
+        if (empty($logs) || !is_array($logs)) {
             return new \WP_REST_Response(['success' => false, 'message' => 'Dữ liệu không hợp lệ.'], 400);
         }
 
-        // Tìm Project có secret_key tương ứng — lọc post_status = 'publish'
-        // để 1 project đã xoá/lưu trữ (postmeta không tự bị xoá khi vào
-        // thùng rác) không thể tiếp tục xác thực và ghi log/bắn cảnh báo vô
-        // thời hạn sau khi đã ngừng hợp tác với khách hàng đó.
-        global $wpdb;
-        $projectId = $wpdb->get_var($wpdb->prepare(
-            "SELECT pm.post_id FROM {$wpdb->postmeta} pm
-             INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
-             WHERE pm.meta_key = %s AND pm.meta_value = %s AND p.post_status = 'publish'
-             LIMIT 1",
-            '_tracker_secret_key',
-            $secretKey
-        ));
+        $projectId = null;
+        $sigHeader = $request->get_header('x_laca_signature') ?: $request->get_header('x-laca-signature');
+        $pubId     = $request->get_header('x_laca_project') ?: $request->get_header('x-laca-project');
 
-        if (!$projectId) {
-            return new \WP_REST_Response(['success' => false, 'message' => 'Secret key không đúng.'], 401);
+        // Luồng 1: Xác thực qua chữ ký HMAC-SHA256 (Chuẩn mới Phase 7)
+        if (!empty($sigHeader) && !empty($pubId)) {
+            $projectId = \App\Features\ProjectManagement\ProjectKeyManager::findProjectIdByPublicId($pubId);
+            if (!$projectId) {
+                return new \WP_REST_Response(['success' => false, 'message' => 'Project không tồn tại hoặc đã ngừng hoạt động.'], 401);
+            }
+
+            $key = \App\Features\ProjectManagement\ProjectKeyManager::getKey(
+                $projectId,
+                \App\Features\ProjectManagement\ProjectKeyManager::KEY_TRACKER
+            );
+
+            $verify = \App\Security\RequestSigner::verify($request, $key);
+            if (!$verify['valid']) {
+                return new \WP_REST_Response(['success' => false, 'message' => $verify['message']], 401);
+            }
+        } else {
+            // Luồng 2: Xác thực qua Secret Key truyền thống (Legacy Auth)
+            $cfVal = function_exists('carbon_get_theme_option') ? carbon_get_theme_option('laca_allow_legacy_auth') : null;
+            if ($cfVal !== null && $cfVal !== '') {
+                $allowLegacy = ($cfVal === 'yes' || $cfVal === true || $cfVal === '1');
+            } else {
+                $raw = get_option('_laca_allow_legacy_auth', null);
+                if ($raw === null) {
+                    $raw = get_option('laca_allow_legacy_auth', 'yes');
+                }
+                $allowLegacy = ($raw === 'yes' || $raw === true || $raw === '1');
+            }
+            if (!$allowLegacy) {
+                return new \WP_REST_Response([
+                    'success' => false,
+                    'message' => 'Legacy authentication đã bị tắt. Yêu cầu ký HMAC qua header X-Laca-*.',
+                ], 401);
+            }
+
+            $secretKey = $parameters['secret_key'] ?? '';
+            if (empty($secretKey)) {
+                return new \WP_REST_Response(['success' => false, 'message' => 'Thiếu chữ ký hoặc secret key.'], 401);
+            }
+
+            global $wpdb;
+            $projectId = $wpdb->get_var($wpdb->prepare(
+                "SELECT pm.post_id FROM {$wpdb->postmeta} pm
+                 INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+                 WHERE pm.meta_key = %s AND pm.meta_value = %s AND p.post_status = 'publish'
+                 LIMIT 1",
+                '_tracker_secret_key',
+                $secretKey
+            ));
+
+            if (!$projectId) {
+                return new \WP_REST_Response(['success' => false, 'message' => 'Secret key không đúng.'], 401);
+            }
+
+            // Ghi nhận lần cuối client dùng legacy auth để hiển thị badge cảnh báo
+            update_post_meta((int) $projectId, '_laca_legacy_auth_last_seen', time());
         }
+
+        $projectId = (int) $projectId;
 
         $insertedCount = 0;
         foreach ($logs as $log) {

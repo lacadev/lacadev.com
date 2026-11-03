@@ -44,6 +44,7 @@ class Project extends \App\Abstracts\AbstractPostType
         new LogAjaxHandler();
         new TaskAjaxHandler();
         new RemoteAjaxHandler();
+        \App\Features\ProjectManagement\ProjectKeyManager::registerAjax();
 
         // Meta box Project Workspace
         add_action('add_meta_boxes', [$this, 'registerLogsMetaBox']);
@@ -117,11 +118,13 @@ class Project extends \App\Abstracts\AbstractPostType
             $pendingPlugins = [];
         }
 
-        $secretKey = get_post_meta($projectId, '_tracker_secret_key', true);
-        if (empty($secretKey)) {
-            $secretKey = wp_generate_password(24, false);
-            update_post_meta($projectId, '_tracker_secret_key', $secretKey);
-        }
+        $projectPublicId = \App\Features\ProjectManagement\ProjectKeyManager::getPublicId($projectId);
+        $projectKeys     = \App\Features\ProjectManagement\ProjectKeyManager::ensureKeys($projectId);
+        $secretKey       = $projectKeys[\App\Features\ProjectManagement\ProjectKeyManager::KEY_TRACKER];
+        $portalKey       = $projectKeys[\App\Features\ProjectManagement\ProjectKeyManager::KEY_PORTAL];
+        $clientConfigPayload = \App\Features\ProjectManagement\ProjectKeyManager::getClientConfigPayload($projectId);
+        $clientConfigJson    = (string) wp_json_encode($clientConfigPayload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $legacyAuthLastSeen  = (int) get_post_meta($projectId, '_laca_legacy_auth_last_seen', true);
 
         $portalAlias = get_post_meta($projectId, '_portal_alias', true);
         $endpoint    = rest_url('laca/v1/tracker/log');
@@ -133,7 +136,7 @@ class Project extends \App\Abstracts\AbstractPostType
             'post_status'    => 'publish',
         ]);
         $portalUrl = !empty($portalPages) ? get_permalink($portalPages[0]->ID) : '';
-        $clientPortalUrl = $portalUrl ? add_query_arg('key', $secretKey, $portalUrl) : '';
+        $clientPortalUrl = $portalUrl ? add_query_arg('key', $portalKey, $portalUrl) : '';
         $clientPortalAliasUrl = ($portalUrl && $portalAlias) ? add_query_arg('key', $portalAlias, $portalUrl) : '';
         $latestLog = !empty($logs) ? $logs[0] : null;
         $trackerLastSeenAt = (string) get_post_meta($projectId, '_tracker_last_seen_at', true);

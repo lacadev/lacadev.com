@@ -16,6 +16,10 @@ trait HasEncryption
         '_hosting_password',
         '_ftp_password',
         '_db_password',
+        '_laca_key_tracker',
+        '_laca_key_catalog',
+        '_laca_key_remote',
+        '_laca_key_portal',
     ];
 
     // -------------------------------------------------------------------------

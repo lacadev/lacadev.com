@@ -1111,6 +1111,19 @@ class AdminSettings
 			])
 			// ── Security Tab ──────────────────────────────────────────────────────
 			->add_tab(__('Security', 'laca'), [
+				Field::make('separator', 'title_laca_api_security', __('Bảo mật kết nối Hub ↔ Client (HMAC & API)', 'laca')),
+
+				Field::make('checkbox', 'laca_allow_legacy_auth', __('Cho phép xác thực Legacy (secret_key không ký)', 'laca'))
+					->set_default_value(true)
+					->set_width(30),
+				Field::make('html', 'laca_allow_legacy_auth_desc')
+					->set_width(70)
+					->set_html('<div style="padding:8px 12px;background:#fff3cd;border-left:3px solid #ffc107;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>' . esc_html__('⚠️ Thời gian đệm nâng cấp: 30 ngày', 'laca') . '</strong><br>
+						<b>' . esc_html__('Tác dụng:', 'laca') . '</b> ' . esc_html__('Cho phép các website khách chưa nâng cấp tiếp tục gửi log và lấy catalog qua secret_key cũ (không có chữ ký HMAC). Khi tắt, tất cả request không có chữ ký HMAC hợp lệ sẽ bị từ chối (401).', 'laca') . '<br>
+						<b>' . esc_html__('Khuyến nghị:', 'laca') . '</b> ' . esc_html__('Giữ bật trong giai đoạn nâng cấp theme client, sau đó tắt đi để kích hoạt bảo mật tuyệt đối chống giả mạo và replay attack.', 'laca') . '
+					</div>'),
+
 				Field::make('separator', 'title_enhance_website_security', __('Tắt tính năng có nguy cơ bảo mật', 'laca')),
 
 				Field::make('checkbox', 'disable_rest_api', __('Disable REST API (cho khách)', 'laca'))

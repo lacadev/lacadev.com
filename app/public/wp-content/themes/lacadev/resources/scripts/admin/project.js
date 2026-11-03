@@ -525,6 +525,101 @@ document.addEventListener( 'DOMContentLoaded', () => {
 					} );
 			}
 		);
+
+		// ---- 4-KEY SECURITY MANAGEMENT & CONFIG COPY ----
+		// 1. Sao chép toàn bộ cấu hình JSON
+		jQuery( '.js-copy-client-config' ).on( 'click', function ( e ) {
+			e.preventDefault();
+			const configText = jQuery( '.laca-client-config-json' ).val() || '';
+			if ( configText ) {
+				navigator.clipboard.writeText( configText ).then( () => {
+					toastSuccess( 'Đã sao chép cấu hình JSON vào clipboard!' );
+				} ).catch( () => {
+					const $ta = jQuery( '.laca-client-config-json' );
+					$ta.select();
+					document.execCommand( 'copy' );
+					toastSuccess( 'Đã sao chép cấu hình JSON!' );
+				} );
+			}
+		} );
+
+		// 2. Hiện / Ẩn 1 key
+		jQuery( document ).on( 'click', '.js-toggle-key-view', function ( e ) {
+			e.preventDefault();
+			const $btn = jQuery( this );
+			const $input = $btn.siblings( '.laca-masked-key-input' );
+			if ( ! $input.length ) return;
+
+			if ( $input.attr( 'type' ) === 'password' ) {
+				$input.attr( 'type', 'text' );
+				$btn.text( 'Ẩn' );
+			} else {
+				$input.attr( 'type', 'password' );
+				$btn.text( 'Hiện' );
+			}
+		} );
+
+		// 3. Sao chép 1 key
+		jQuery( document ).on( 'click', '.js-copy-single-key', function ( e ) {
+			e.preventDefault();
+			const $btn = jQuery( this );
+			const $input = $btn.siblings( '.laca-masked-key-input' );
+			const val = $input.val() || '';
+			if ( val ) {
+				navigator.clipboard.writeText( val ).then( () => {
+					toastSuccess( 'Đã sao chép khóa!' );
+				} ).catch( () => {
+					$input.attr( 'type', 'text' ).select();
+					document.execCommand( 'copy' );
+					$input.attr( 'type', 'password' );
+					toastSuccess( 'Đã sao chép khóa!' );
+				} );
+			}
+		} );
+
+		// 4. Tạo lại 1 key (Regenerate key)
+		jQuery( document ).on( 'click', '.js-regenerate-single-key', function ( e ) {
+			e.preventDefault();
+			const $btn = jQuery( this );
+			const $row = $btn.closest( '.laca-key-row' );
+			const keyType = $row.data( 'key-type' );
+			if ( ! keyType ) return;
+
+			confirmAction(
+				'Tạo lại khóa này sẽ vô hiệu hóa khóa cũ trên website khách hàng ngay lập tức. Bạn có chắc chắn muốn tiếp tục?'
+			).then( ( confirmed ) => {
+				if ( ! confirmed ) return;
+
+				const originalText = $btn.text();
+				$btn.prop( 'disabled', true ).text( '...' );
+
+				jQuery.post(
+					ajaxurl,
+					{
+						action: 'laca_regenerate_project_key',
+						nonce: nonce,
+						project_id: postId,
+						key_type: keyType,
+					},
+					function ( res ) {
+						$btn.prop( 'disabled', false ).text( originalText );
+						if ( res.success && res.data ) {
+							const $input = $row.find( '.laca-masked-key-input' );
+							$input.val( res.data.new_key );
+							if ( res.data.config_payload ) {
+								jQuery( '.laca-client-config-json' ).val( res.data.config_payload );
+							}
+							toastSuccess( res.data.message || 'Đã tạo lại khóa thành công!' );
+						} else {
+							toastError( res && res.data && res.data.message ? res.data.message : 'Lỗi khi tạo lại khóa' );
+						}
+					}
+				).fail( function () {
+					$btn.prop( 'disabled', false ).text( originalText );
+					toastError( 'Lỗi kết nối máy chủ' );
+				} );
+			} );
+		} );
 	}
 
 	// 2. Project Payment Auto Calculation

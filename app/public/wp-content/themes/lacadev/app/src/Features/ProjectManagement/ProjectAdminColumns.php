@@ -153,6 +153,17 @@ class ProjectAdminColumns
             font-size:12px;font-weight:600;white-space:nowrap;">'
             . esc_html($info[0])
             . '</span>';
+
+        $legacyLastSeen = (int) get_post_meta($postId, '_laca_legacy_auth_last_seen', true);
+        if ($legacyLastSeen > 0) {
+            echo '<div style="margin-top:4px;"><span style="
+                display:inline-block;padding:2px 6px;border-radius:10px;
+                background:#fff3cd;color:#856404;border:1px solid #ffeeba;
+                font-size:11px;font-weight:600;white-space:nowrap;"
+                title="' . esc_attr(sprintf(__('Xác thực không ký lần cuối: %s', 'laca'), date_i18n('d/m/Y H:i', $legacyLastSeen))) . '">'
+                . esc_html__('⚠️ Client chưa nâng cấp', 'laca')
+                . '</span></div>';
+        }
     }
 
     private function renderDomain(int $postId): void

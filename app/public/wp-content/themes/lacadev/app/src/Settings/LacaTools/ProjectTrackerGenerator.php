@@ -25,25 +25,32 @@ class ProjectTrackerGenerator
             wp_send_json_error(['message' => 'Lỗi ID dự án']);
         }
 
-        $secretKey = get_post_meta($projectId, '_tracker_secret_key', true);
+        $secretKey = \App\Features\ProjectManagement\ProjectKeyManager::getKey(
+            $projectId,
+            \App\Features\ProjectManagement\ProjectKeyManager::KEY_TRACKER
+        );
+        if (empty($secretKey)) {
+            $secretKey = (string) get_post_meta($projectId, '_tracker_secret_key', true);
+        }
         if (empty($secretKey)) {
             wp_send_json_error(['message' => 'Dự án này chưa có Secret Key. Vui lòng F5 trang lấy lại mã.']);
         }
 
+        $publicId = \App\Features\ProjectManagement\ProjectKeyManager::getPublicId($projectId);
         $endpoint = rest_url('laca/v1/tracker/log');
-        $code     = $this->getMuPluginTemplate($endpoint, $secretKey);
+        $code     = $this->getMuPluginTemplate($endpoint, $secretKey, $publicId);
 
         wp_send_json_success(['code' => $code]);
     }
 
-    private function getMuPluginTemplate(string $endpoint, string $secretKey): string
+    private function getMuPluginTemplate(string $endpoint, string $secretKey, string $publicId = ''): string
     {
         return <<<PHP
 <?php
 /**
  * Plugin Name: LacaDev Project Tracker
  * Description: Tự động log cập nhật plugin/theme/core, kích hoạt/tắt/xóa plugin, phát hiện file lạ và gửi daily update digest về LacaDev CMS.
- * Version: 2.0.0
+ * Version: 2.1.0
  * Network: false
  * Author: MOOMS.DEV
  *
@@ -64,6 +71,7 @@ if (!defined('ABSPATH')) {
 // ──────────────────────────────────────────────
 define('LACA_TRACKER_ENDPOINT',   '{$endpoint}');
 define('LACA_TRACKER_SECRET_KEY', '{$secretKey}');
+define('LACA_TRACKER_PROJECT_ID', '{$publicId}');
 
 // ──────────────────────────────────────────────
 // MAIN CLASS
@@ -489,14 +497,46 @@ class LacaDev_MU_Tracker {
     private function send(array \$logs): void {
         if (!LACA_TRACKER_ENDPOINT || !LACA_TRACKER_SECRET_KEY || empty(\$logs)) return;
 
+        \$bodyJson = wp_json_encode([
+            'secret_key' => LACA_TRACKER_SECRET_KEY,
+            'site_url'   => get_bloginfo('url'),
+            'logs'       => \$logs,
+        ], JSON_UNESCAPED_UNICODE);
+
+        // Chuẩn hóa canonical path theo RequestSigner
+        \$endpoint = LACA_TRACKER_ENDPOINT;
+        \$parsed   = parse_url(\$endpoint);
+        \$path     = \$parsed['path'] ?? '/wp-json/laca/v1/tracker/log';
+        if (isset(\$parsed['query'])) {
+            parse_str(\$parsed['query'], \$query);
+            if (!empty(\$query['rest_route'])) {
+                \$path = (string) \$query['rest_route'];
+            }
+        }
+        \$path = preg_replace('#^/index\\.php#', '', \$path);
+        \$path = rtrim(\$path, '/');
+        if (\$path === '' || \$path[0] !== '/') {
+            \$path = '/' . \$path;
+        }
+
+        \$timestamp = time();
+        \$bodyHash  = hash('sha256', \$bodyJson);
+        \$canonical = "POST\n{\$path}\n{\$timestamp}\n{\$bodyHash}";
+        \$sig       = hash_hmac('sha256', \$canonical, LACA_TRACKER_SECRET_KEY);
+
+        \$headers = [
+            'Content-Type'     => 'application/json',
+            'X-Laca-Timestamp' => (string) \$timestamp,
+            'X-Laca-Signature' => \$sig,
+        ];
+        if (defined('LACA_TRACKER_PROJECT_ID') && LACA_TRACKER_PROJECT_ID !== '') {
+            \$headers['X-Laca-Project'] = LACA_TRACKER_PROJECT_ID;
+        }
+
         wp_remote_post(LACA_TRACKER_ENDPOINT, [
-            'body'    => wp_json_encode([
-                'secret_key' => LACA_TRACKER_SECRET_KEY,
-                'site_url'   => get_bloginfo('url'),
-                'logs'       => \$logs,
-            ], JSON_UNESCAPED_UNICODE),
-            'headers' => ['Content-Type' => 'application/json'],
-            'timeout' => 8,
+            'body'     => \$bodyJson,
+            'headers'  => \$headers,
+            'timeout'  => 8,
             'blocking' => false,
         ]);
     }

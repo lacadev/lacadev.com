@@ -454,7 +454,7 @@ trait BlockSyncSender
         // [0] = bản hiện tại vừa push, [1] = bản ngay trước đó — mục tiêu rollback
         $previous = $entries[1];
 
-        $result = $this->pushBlockFiles($blockName, $previous['version'], $previous['files'], $apiKey, $endpointUrl);
+        $result = $this->pushBlockFiles($blockName, $previous['version'], $previous['files'], $apiKey, $endpointUrl, $postId);
 
         if (!$result['success']) {
             wp_send_json_error(['message' => $result['message']]);
@@ -581,7 +581,7 @@ trait BlockSyncSender
             ];
         }
 
-        $result = $this->pushBlockFiles($blockName, $remote['version'], $remote['files'], $apiKey, $endpointUrl);
+        $result = $this->pushBlockFiles($blockName, $remote['version'], $remote['files'], $apiKey, $endpointUrl, $postId);
 
         if ($result['success']) {
             $installedMeta             = get_post_meta($postId, '_block_sync_versions', true) ?: [];
@@ -778,7 +778,7 @@ trait BlockSyncSender
             ];
         }
 
-        $result = $this->pushBlockFiles($blockName, $version, $files, $apiKey, $endpointUrl);
+        $result = $this->pushBlockFiles($blockName, $version, $files, $apiKey, $endpointUrl, $postId);
 
         // Push thủ công (chọn tay/Sync Outdated) do chính admin chủ động bấm —
         // không cần kiểm tra xung đột như nhánh yêu cầu từ khách, nhưng vẫn
@@ -799,7 +799,7 @@ trait BlockSyncSender
      *
      * @param array<string,string> $files
      */
-    private function pushBlockFiles(string $blockName, string $version, array $files, string $apiKey, string $endpointUrl): array
+    private function pushBlockFiles(string $blockName, string $version, array $files, string $apiKey, string $endpointUrl, int $projectId = 0): array
     {
         // POST đến client endpoint — retry với exponential backoff (max 3 lần)
         $payload = json_encode([
@@ -807,6 +807,32 @@ trait BlockSyncSender
             'version'    => $version,
             'files'      => $files,
         ]);
+
+        $headers = [
+            'X-Laca-Key'   => $apiKey,
+            'Content-Type' => 'application/json',
+            'Accept'       => 'application/json',
+        ];
+
+        // Chuẩn ký HMAC-SHA256 (Phase 7): Thêm chữ ký bằng key catalog
+        if ($projectId > 0) {
+            $keyCatalog = \App\Features\ProjectManagement\ProjectKeyManager::getKey(
+                $projectId,
+                \App\Features\ProjectManagement\ProjectKeyManager::KEY_CATALOG
+            );
+            if (empty($keyCatalog)) {
+                $keyCatalog = $apiKey;
+            }
+            $publicId   = \App\Features\ProjectManagement\ProjectKeyManager::getPublicId($projectId);
+            $sigHeaders = \App\Security\RequestSigner::sign(
+                'POST',
+                $endpointUrl,
+                (string) $payload,
+                $keyCatalog,
+                $publicId
+            );
+            $headers = array_merge($headers, $sigHeaders);
+        }
 
         $response    = null;
         $lastError   = '';
@@ -819,11 +845,7 @@ trait BlockSyncSender
             }
 
             $response = wp_remote_post($endpointUrl, [
-                'headers' => [
-                    'X-Laca-Key'   => $apiKey,
-                    'Content-Type' => 'application/json',
-                    'Accept'       => 'application/json',
-                ],
+                'headers' => $headers,
                 'body'    => $payload,
                 'timeout' => 30,
                 'sslverify' => !WP_DEBUG,
