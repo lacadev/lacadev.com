@@ -501,7 +501,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Notifications', 'Trung tâm thông báo gom yêu cầu khách hàng, cảnh báo, công nợ, gia hạn và dự án cần chăm sóc.'); ?>
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Notifications</p><p style="margin:0;font-size:13px;color:#374151">Tổng hợp yêu cầu gửi từ khách hàng qua Client Portal cùng issue, công nợ và gia hạn đang cần chăm sóc — nơi tổng hợp việc cần phản hồi khách, không phải log gửi Email/Zalo/Telegram/Slack.</p></div>
+            <?php $this->renderIntroCallout(__('Notifications', 'laca'), __('Tổng hợp yêu cầu gửi từ khách hàng qua Client Portal cùng issue, công nợ và gia hạn đang cần chăm sóc — nơi tổng hợp việc cần phản hồi khách, không phải log gửi Email/Zalo/Telegram/Slack.', 'laca')); ?>
             <div class="laca-projects-overview laca-projects-overview--compact">
                 <?php $this->renderMetric('Tổng thông báo', (string) $total, 'Từ CRM và client portal'); ?>
                 <?php $this->renderMetric('Yêu cầu khách', (string) count($clientRequests), 'Client Portal'); ?>

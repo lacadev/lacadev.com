@@ -1400,12 +1400,12 @@ class AdminSettings
 				->add_fields([
 					Field::make('html', 'block_catalog_source_info', '')
 						->set_html(
-							'<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0">'
-							. '<p style="margin:0 0 8px;font-weight:600;color:#0369a1">🗂️ Nguồn danh mục Block</p>'
-							. '<p style="margin:0;font-size:13px;color:#374151">Cấu hình DUY NHẤT 1 lần để hub đọc danh mục Gutenberg block từ '
-							. '<strong>clients.lacadev.com</strong>. Lấy Catalog Endpoint URL và Catalog Key từ trang '
-							. '<strong>Laca Theme → 🧩 LacaDev</strong> trên chính site clients.lacadev.com.</p>'
-							. '</div>'
+							'<div class="laca-alert laca-alert--info" role="status">'
+							. '<span class="dashicons dashicons-info laca-alert__icon"></span>'
+							. '<div class="laca-alert__content">'
+							. '<div class="laca-alert__title">🗂️ ' . esc_html__('Nguồn danh mục Block', 'laca') . '</div>'
+							. '<div class="laca-alert__description">' . esc_html__('Cấu hình DUY NHẤT 1 lần để hub đọc danh mục Gutenberg block từ clients.lacadev.com. Lấy Catalog Endpoint URL và Catalog Key từ trang Laca Theme → 🧩 LacaDev trên chính site clients.lacadev.com.', 'laca') . '</div>'
+							. '</div></div>'
 						),
 
 					Field::make('text', 'laca_catalog_source_url', __('Catalog Endpoint URL', 'laca'))
@@ -1421,9 +1421,9 @@ class AdminSettings
 					Field::make('html', 'block_catalog_refresh', '')
 						->set_html(static function () {
 							$nonce = wp_create_nonce('laca_refresh_block_catalog');
-							return '<button type="button" id="laca-refresh-catalog-btn" class="button" data-nonce="' . esc_attr($nonce) . '">🔄 Làm mới danh mục ngay</button>'
-								. ' <span id="laca-refresh-catalog-status" style="font-size:12px;color:#888;margin-left:8px"></span>'
-								. '<p style="margin:8px 0 0;font-size:12px;color:#6b7280">Danh mục được cache 6 tiếng để đỡ tải clients.lacadev.com — bấm nút này nếu vừa thêm block mới bên đó và muốn site khách thấy ngay, không cần chờ.</p>'
+							return '<button type="button" id="laca-refresh-catalog-btn" class="laca-btn laca-btn--outline laca-btn--sm button" data-nonce="' . esc_attr($nonce) . '">🔄 ' . esc_html__('Làm mới danh mục ngay', 'laca') . '</button>'
+								. ' <span id="laca-refresh-catalog-status" class="laca-stat__help" style="margin-left:8px"></span>'
+								. '<p style="margin:8px 0 0;font-size:12px;color:#6b7280">' . esc_html__('Danh mục được cache 6 tiếng để đỡ tải clients.lacadev.com — bấm nút này nếu vừa thêm block mới bên đó và muốn site khách thấy ngay, không cần chờ.', 'laca') . '</p>'
 								. '<script>
 									document.getElementById("laca-refresh-catalog-btn")?.addEventListener("click", function () {
 										var btn = this, statusEl = document.getElementById("laca-refresh-catalog-status");

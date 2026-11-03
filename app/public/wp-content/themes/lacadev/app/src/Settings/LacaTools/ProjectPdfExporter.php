@@ -43,20 +43,20 @@ class ProjectPdfExporter
         }
 
         $exportUrl = home_url('/?laca_export_quote=' . $post->ID);
-        echo '<a href="' . esc_url($exportUrl) . '" target="_blank" class="button button-primary button-large" style="width:100%; text-align:center; padding: 10px 0; font-size: 15px; height: auto;">' . esc_html__('Xuất PDF Báo Giá', 'laca') . '</a>';
-        echo '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:12px 14px;margin:10px 0 0"><p style="margin:0;font-size:13px;color:#374151">' . esc_html__('PDF tạo ra là bản báo giá chính thức dùng để gửi cho khách hàng xem và duyệt trước khi triển khai.', 'laca') . '</p></div>';
+        echo '<a href="' . esc_url($exportUrl) . '" target="_blank" class="laca-btn laca-btn--solid laca-btn--md laca-pdf-export-btn button button-primary">' . esc_html__('Xuất PDF Báo Giá', 'laca') . '</a>';
+        echo '<div class="laca-alert laca-alert--info laca-pdf-alert" role="status"><div class="laca-alert__content"><p class="laca-alert__description">' . esc_html__('PDF tạo ra là bản báo giá chính thức dùng để gửi cho khách hàng xem và duyệt trước khi triển khai.', 'laca') . '</p></div></div>';
 
         $reportUrl = home_url('/?laca_export_monthly_report=' . $post->ID);
         $sendNonce = wp_create_nonce('laca_send_monthly_report_' . $post->ID);
         $sendUrl   = admin_url('admin-post.php?action=laca_send_monthly_report&project_id=' . $post->ID . '&_wpnonce=' . $sendNonce);
 
-        echo '<div style="margin-top:16px;padding-top:14px;border-top:1px solid #e2e8f0;">';
-        echo '<h4 style="margin:0 0 8px;font-size:13px;font-weight:600;color:#0f172a;">📊 ' . esc_html__('Báo cáo vận hành tháng', 'laca') . '</h4>';
-        echo '<div style="display:flex;gap:8px;">';
-        echo '<a href="' . esc_url($reportUrl) . '" target="_blank" class="button button-secondary" style="flex:1;text-align:center;">' . esc_html__('Xem trước', 'laca') . '</a>';
-        echo '<a href="' . esc_url($sendUrl) . '" class="button button-secondary" style="flex:1;text-align:center;" onclick="return confirm(\'' . esc_js(__('Bạn có chắc muốn gửi email báo cáo tháng này cho khách hàng?', 'laca')) . '\');">' . esc_html__('Gửi ngay', 'laca') . '</a>';
+        echo '<div class="laca-pdf-meta-section">';
+        echo '<h4 class="laca-pdf-meta-title">📊 ' . esc_html__('Báo cáo vận hành tháng', 'laca') . '</h4>';
+        echo '<div class="laca-pdf-btn-row">';
+        echo '<a href="' . esc_url($reportUrl) . '" target="_blank" class="laca-btn laca-btn--outline laca-btn--sm button button-secondary">' . esc_html__('Xem trước', 'laca') . '</a>';
+        echo '<a href="' . esc_url($sendUrl) . '" class="laca-btn laca-btn--outline laca-btn--sm button button-secondary" onclick="return confirm(\'' . esc_js(__('Bạn có chắc muốn gửi email báo cáo tháng này cho khách hàng?', 'laca')) . '\');">' . esc_html__('Gửi ngay', 'laca') . '</a>';
         echo '</div>';
-        echo '<p style="margin:6px 0 0;font-size:11px;color:#64748b;">' . esc_html__('Tự động tổng hợp uptime, bảo mật, sao lưu và số liệu truy cập website.', 'laca') . '</p>';
+        echo '<p class="laca-pdf-help">' . esc_html__('Tự động tổng hợp uptime, bảo mật, sao lưu và số liệu truy cập website.', 'laca') . '</p>';
         echo '</div>';
     }
 
