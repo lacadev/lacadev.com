@@ -503,20 +503,28 @@ class LacaDev_MU_Tracker {
             'logs'       => \$logs,
         ], JSON_UNESCAPED_UNICODE);
 
-        // Chuẩn hóa canonical path theo RequestSigner
+        // Chuẩn hóa canonical path theo RequestSigner: luôn dạng /wp-json/<route>
         \$endpoint = LACA_TRACKER_ENDPOINT;
         \$parsed   = parse_url(\$endpoint);
         \$path     = \$parsed['path'] ?? '/wp-json/laca/v1/tracker/log';
         if (isset(\$parsed['query'])) {
             parse_str(\$parsed['query'], \$query);
             if (!empty(\$query['rest_route'])) {
-                \$path = (string) \$query['rest_route'];
+                \$path = '/wp-json/' . ltrim((string) \$query['rest_route'], '/');
             }
         }
-        \$path = preg_replace('#^/index\\.php#', '', \$path);
+        if (preg_match('#^/index\\.php(/.*)?$#', \$path, \$m)) {
+            \$path = \$m[1] ?? '';
+        }
+        \$pos = strpos(\$path, '/wp-json/');
+        if (\$pos !== false) {
+            \$path = substr(\$path, \$pos);
+        } elseif (\$path !== '/wp-json') {
+            \$path = '/wp-json/' . ltrim(\$path, '/');
+        }
         \$path = rtrim(\$path, '/');
-        if (\$path === '' || \$path[0] !== '/') {
-            \$path = '/' . \$path;
+        if (\$path === '') {
+            \$path = '/wp-json';
         }
 
         \$timestamp = time();
