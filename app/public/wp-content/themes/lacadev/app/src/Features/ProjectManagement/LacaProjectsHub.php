@@ -605,7 +605,7 @@ class LacaProjectsHub
             'CRM khách hàng tổng hợp theo tên/email, doanh thu, công nợ và danh sách website đang chăm sóc.',
             ['Khách hàng', 'Liên hệ', 'Dự án', 'Doanh thu', 'Công nợ', 'Cập nhật cuối'],
             $clientRows,
-            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Khách hàng</p><p style="margin:0;font-size:13px;color:#374151">Danh bạ khách hàng tổng hợp theo tên/email: số dự án đang chăm sóc, doanh thu và công nợ của từng khách.</p></div>'
+            $this->getIntroCalloutHtml(__('Khách hàng', 'laca'), __('Danh bạ khách hàng tổng hợp theo tên/email: số dự án đang chăm sóc, doanh thu và công nợ của từng khách.', 'laca'))
         );
     }
 
@@ -619,31 +619,33 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Issues', 'Tập trung các lỗi, cảnh báo bảo mật và cảnh báo vận hành chưa xử lý.'); ?>
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Issues</p><p style="margin:0;font-size:13px;color:#374151">Toàn bộ lỗi, cảnh báo bảo mật và cảnh báo vận hành đang active trên các website khách hàng, sắp xếp theo mức độ nghiêm trọng.</p></div>
+            <?php $this->renderIntroCallout(__('Issues', 'laca'), __('Toàn bộ lỗi, cảnh báo bảo mật và cảnh báo vận hành đang active trên các website khách hàng, sắp xếp theo mức độ nghiêm trọng.', 'laca')); ?>
             <div class="laca-projects-overview laca-projects-overview--compact">
                 <?php $this->renderMetric('Active issues', (string) $report['total'], 'Tổng cảnh báo chưa resolve'); ?>
                 <?php $this->renderMetric('Critical', (string) $report['critical'], 'Cần xử lý ngay'); ?>
                 <?php $this->renderMetric('Warning', (string) $report['warning'], 'Cần kiểm tra'); ?>
                 <?php $this->renderMetric('Website/security', (string) $report['website_issues'], 'Lỗi và bảo mật từ site khách'); ?>
             </div>
-            <section class="laca-projects-panel">
+            <section class="laca-projects-panel laca-card">
                 <?php if (($alerts['items'] ?? []) === []): ?>
-                    <p class="laca-projects-empty">Không có issue active.</p>
+                    <p class="laca-projects-empty"><?php echo esc_html__('Không có issue active.', 'laca'); ?></p>
                 <?php else: ?>
-                    <table class="widefat striped laca-projects-table">
-                        <thead><tr><th>Dự án</th><th>Loại</th><th>Mức độ</th><th>Nội dung</th><th>Ngày</th></tr></thead>
-                        <tbody>
-                            <?php foreach ($alerts['items'] as $alert): ?>
-                                <tr>
-                                    <td><a href="<?php echo esc_url(get_edit_post_link((int) $alert['project_id'], '')); ?>"><?php echo esc_html($alert['project_name'] ?? 'Dự án #' . $alert['project_id']); ?></a></td>
-                                    <td><?php echo esc_html(ProjectAlert::getTypeLabel((string) $alert['alert_type'])); ?></td>
-                                    <td><span class="laca-projects-badge"><?php echo esc_html((string) $alert['alert_level']); ?></span></td>
-                                    <td><?php echo esc_html(wp_trim_words((string) $alert['alert_msg'], 26)); ?></td>
-                                    <td><?php echo esc_html($this->formatDateTime((string) $alert['created_at'])); ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                    <div class="laca-table-wrap">
+                        <table class="widefat striped laca-projects-table laca-table">
+                            <thead><tr><th><?php echo esc_html__('Dự án', 'laca'); ?></th><th><?php echo esc_html__('Loại', 'laca'); ?></th><th><?php echo esc_html__('Mức độ', 'laca'); ?></th><th><?php echo esc_html__('Nội dung', 'laca'); ?></th><th><?php echo esc_html__('Ngày', 'laca'); ?></th></tr></thead>
+                            <tbody>
+                                <?php foreach ($alerts['items'] as $alert): ?>
+                                    <tr>
+                                        <td><a href="<?php echo esc_url(get_edit_post_link((int) $alert['project_id'], '')); ?>"><?php echo esc_html($alert['project_name'] ?? 'Dự án #' . $alert['project_id']); ?></a></td>
+                                        <td><?php echo esc_html(ProjectAlert::getTypeLabel((string) $alert['alert_type'])); ?></td>
+                                        <td><span class="laca-badge laca-badge--<?php echo (string) ($alert['alert_level'] ?? '') === 'critical' ? 'danger' : 'warning'; ?>"><?php echo esc_html((string) $alert['alert_level']); ?></span></td>
+                                        <td><?php echo esc_html(wp_trim_words((string) $alert['alert_msg'], 26)); ?></td>
+                                        <td><?php echo esc_html($this->formatDateTime((string) $alert['created_at'])); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 <?php endif; ?>
             </section>
 
@@ -660,7 +662,7 @@ class LacaProjectsHub
                 'client_request'
             ));
             ?>
-            <section class="laca-projects-panel" style="margin-top:24px;">
+            <section class="laca-projects-panel laca-projects-panel--spaced laca-card">
                 <div class="laca-projects-panel__head">
                     <h2><?php echo esc_html__('Yêu cầu hỗ trợ từ khách hàng', 'laca'); ?></h2>
                     <span class="laca-projects-meta"><?php echo esc_html(sprintf(__('%d yêu cầu gần nhất', 'laca'), count($clientRequests))); ?></span>
@@ -668,51 +670,53 @@ class LacaProjectsHub
                 <?php if (empty($clientRequests)): ?>
                     <p class="laca-projects-empty"><?php echo esc_html__('Chưa có yêu cầu hỗ trợ nào từ site khách.', 'laca'); ?></p>
                 <?php else: ?>
-                    <table class="widefat striped laca-projects-table">
-                        <thead>
-                            <tr>
-                                <th><?php echo esc_html__('Dự án', 'laca'); ?></th>
-                                <th><?php echo esc_html__('Loại', 'laca'); ?></th>
-                                <th><?php echo esc_html__('Mức độ', 'laca'); ?></th>
-                                <th><?php echo esc_html__('Tiêu đề & Nội dung', 'laca'); ?></th>
-                                <th><?php echo esc_html__('Trạng thái', 'laca'); ?></th>
-                                <th><?php echo esc_html__('Ngày gửi', 'laca'); ?></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($clientRequests as $req):
-                                $meta = !empty($req->meta) ? json_decode($req->meta, true) : [];
-                                $reqStatus = $meta['status'] ?? 'pending';
-                                $statusLabels = [
-                                    'pending'    => __('Chờ xử lý', 'laca'),
-                                    'processing' => __('Đang xử lý', 'laca'),
-                                    'resolved'   => __('Đã xử lý', 'laca'),
-                                ];
-                            ?>
+                    <div class="laca-table-wrap">
+                        <table class="widefat striped laca-projects-table laca-table">
+                            <thead>
                                 <tr>
-                                    <td><a href="<?php echo esc_url(get_edit_post_link((int) $req->project_id, '')); ?>"><strong><?php echo esc_html($req->project_name ?: '#' . $req->project_id); ?></strong></a></td>
-                                    <td><?php echo esc_html($meta['category_label'] ?? __('Hỗ trợ', 'laca')); ?></td>
-                                    <td><span class="laca-projects-badge"><?php echo esc_html($meta['priority_label'] ?? __('Bình thường', 'laca')); ?></span></td>
-                                    <td>
-                                        <strong><?php echo esc_html($meta['title'] ?? wp_trim_words($req->log_content, 8)); ?></strong>
-                                        <div style="font-size:12px;color:#64748b;margin-top:4px;"><?php echo esc_html(wp_trim_words($meta['description'] ?? $req->log_content, 20)); ?></div>
-                                        <?php if (!empty($meta['attachment_url'])): ?>
-                                            <div style="margin-top:4px;"><a href="<?php echo esc_url($meta['attachment_url']); ?>" target="_blank" style="font-size:11px;color:#0284c7;">📎 <?php echo esc_html__('Xem ảnh đính kèm', 'laca'); ?></a></div>
-                                        <?php endif; ?>
-                                        <?php if (!empty($meta['admin_reply'])): ?>
-                                            <div style="margin-top:4px;font-size:11px;background:#f0fdf4;color:#166534;padding:4px 8px;border-radius:4px;">💬 <?php echo esc_html($meta['admin_reply']); ?></div>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <span class="laca-projects-badge" style="<?php echo $reqStatus === 'resolved' ? 'background:#dcfce7;color:#166534;' : ($reqStatus === 'processing' ? 'background:#fef3c7;color:#92400e;' : 'background:#fee2e2;color:#991b1b;'); ?>">
-                                            <?php echo esc_html($statusLabels[$reqStatus] ?? $reqStatus); ?>
-                                        </span>
-                                    </td>
-                                    <td><?php echo esc_html($this->formatDateTime((string) $req->created_at)); ?></td>
+                                    <th><?php echo esc_html__('Dự án', 'laca'); ?></th>
+                                    <th><?php echo esc_html__('Loại', 'laca'); ?></th>
+                                    <th><?php echo esc_html__('Mức độ', 'laca'); ?></th>
+                                    <th><?php echo esc_html__('Tiêu đề & Nội dung', 'laca'); ?></th>
+                                    <th><?php echo esc_html__('Trạng thái', 'laca'); ?></th>
+                                    <th><?php echo esc_html__('Ngày gửi', 'laca'); ?></th>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($clientRequests as $req):
+                                    $meta = !empty($req->meta) ? json_decode($req->meta, true) : [];
+                                    $reqStatus = $meta['status'] ?? 'pending';
+                                    $statusLabels = [
+                                        'pending'    => __('Chờ xử lý', 'laca'),
+                                        'processing' => __('Đang xử lý', 'laca'),
+                                        'resolved'   => __('Đã xử lý', 'laca'),
+                                    ];
+                                ?>
+                                    <tr>
+                                        <td><a href="<?php echo esc_url(get_edit_post_link((int) $req->project_id, '')); ?>"><strong><?php echo esc_html($req->project_name ?: '#' . $req->project_id); ?></strong></a></td>
+                                        <td><?php echo esc_html($meta['category_label'] ?? __('Hỗ trợ', 'laca')); ?></td>
+                                        <td><span class="laca-projects-badge"><?php echo esc_html($meta['priority_label'] ?? __('Bình thường', 'laca')); ?></span></td>
+                                        <td>
+                                            <strong><?php echo esc_html($meta['title'] ?? wp_trim_words($req->log_content, 8)); ?></strong>
+                                            <div class="laca-projects-desc"><?php echo esc_html(wp_trim_words($meta['description'] ?? $req->log_content, 20)); ?></div>
+                                            <?php if (!empty($meta['attachment_url'])): ?>
+                                                <div class="laca-projects-attachment"><a href="<?php echo esc_url($meta['attachment_url']); ?>" target="_blank">📎 <?php echo esc_html__('Xem ảnh đính kèm', 'laca'); ?></a></div>
+                                            <?php endif; ?>
+                                            <?php if (!empty($meta['admin_reply'])): ?>
+                                                <div class="laca-projects-reply">💬 <?php echo esc_html($meta['admin_reply']); ?></div>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <span class="laca-badge laca-badge--<?php echo $reqStatus === 'resolved' ? 'success' : ($reqStatus === 'processing' ? 'warning' : 'danger'); ?>">
+                                                <?php echo esc_html($statusLabels[$reqStatus] ?? $reqStatus); ?>
+                                            </span>
+                                        </td>
+                                        <td><?php echo esc_html($this->formatDateTime((string) $req->created_at)); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 <?php endif; ?>
             </section>
         </div>
@@ -728,7 +732,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Updates', 'Theo dõi cập nhật tự động, deploy, bảo mật và thay đổi từ website khách hàng.'); ?>
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Updates</p><p style="margin:0;font-size:13px;color:#374151">Danh sách report tự động (deploy, cập nhật plugin/core, bảo mật, sửa lỗi...) mà tracker/site khách gửi về, giúp biết website nào vừa có thay đổi.</p></div>
+            <?php $this->renderIntroCallout(__('Updates', 'laca'), __('Danh sách report tự động (deploy, cập nhật plugin/core, bảo mật, sửa lỗi...) mà tracker/site khách gửi về, giúp biết website nào vừa có thay đổi.', 'laca')); ?>
             <div class="laca-projects-overview laca-projects-overview--compact">
                 <?php $this->renderMetric('Tổng updates', (string) count($logs), '100 log mới nhất'); ?>
                 <?php $this->renderMetric('Report tự động', (string) $clientUpdates['auto_count'], 'Gửi từ tracker/client site'); ?>
@@ -756,7 +760,7 @@ class LacaProjectsHub
             'Theo dõi domain, hosting và phí bảo trì cần gia hạn trong 120 ngày.',
             ['Dự án', 'Khách hàng', 'Hạng mục', 'Ngày đến hạn', 'Còn lại', 'Giá trị'],
             $rows,
-            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Renewals</p><p style="margin:0;font-size:13px;color:#374151">Danh sách domain, hosting và phí bảo trì sắp đến hạn trong 120 ngày tới — dùng để chủ động nhắc khách gia hạn trước khi hết hạn.</p></div>'
+            $this->getIntroCalloutHtml(__('Renewals', 'laca'), __('Danh sách domain, hosting và phí bảo trì sắp đến hạn trong 120 ngày tới — dùng để chủ động nhắc khách gia hạn trước khi hết hạn.', 'laca'))
         );
     }
 
@@ -1037,19 +1041,21 @@ class LacaProjectsHub
         }
 
         ?>
-        <table class="widefat striped laca-projects-table">
-            <thead><tr><th>Ngày</th><th>Dự án</th><th>Loại</th><th>Nội dung</th></tr></thead>
-            <tbody>
-                <?php foreach ($logs as $log): ?>
-                    <tr>
-                        <td><?php echo esc_html($this->formatLogDate($log)); ?></td>
-                        <td><a href="<?php echo esc_url(get_edit_post_link((int) $log['project_id'], '')); ?>"><?php echo esc_html($log['project_name'] ?? ''); ?></a></td>
-                        <td><?php echo esc_html($this->logTypeLabel((string) $log['log_type'])); ?></td>
-                        <td><?php echo esc_html(wp_trim_words((string) $log['log_content'], 20)); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+        <div class="laca-table-wrap">
+            <table class="widefat striped laca-projects-table laca-table">
+                <thead><tr><th><?php echo esc_html__('Ngày', 'laca'); ?></th><th><?php echo esc_html__('Dự án', 'laca'); ?></th><th><?php echo esc_html__('Loại', 'laca'); ?></th><th><?php echo esc_html__('Nội dung', 'laca'); ?></th></tr></thead>
+                <tbody>
+                    <?php foreach ($logs as $log): ?>
+                        <tr>
+                            <td><?php echo esc_html($this->formatLogDate($log)); ?></td>
+                            <td><a href="<?php echo esc_url(get_edit_post_link((int) $log['project_id'], '')); ?>"><?php echo esc_html($log['project_name'] ?? ''); ?></a></td>
+                            <td><?php echo esc_html($this->logTypeLabel((string) $log['log_type'])); ?></td>
+                            <td><?php echo esc_html(wp_trim_words((string) $log['log_content'], 20)); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
         <?php
     }
 

@@ -335,6 +335,10 @@ body.laca-projects-dock-active.folded #wpcontent {
     grid-column: 1 / -1;
   }
 
+  &--spaced {
+    margin-top: var(--laca-space-5);
+  }
+
   &__head {
     align-items: center;
     display: flex;
@@ -352,6 +356,35 @@ body.laca-projects-dock-active.folded #wpcontent {
       text-decoration: none;
     }
   }
+}
+
+.laca-projects-desc {
+  color: var(--laca-fg-muted);
+  font-size: var(--laca-font-size-xs);
+  margin-top: 4px;
+}
+
+.laca-projects-attachment {
+  margin-top: 4px;
+
+  a {
+    color: var(--laca-accent);
+    font-size: 11px;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.laca-projects-reply {
+  background: var(--laca-success-bg);
+  border-radius: var(--laca-radius-l2);
+  color: var(--laca-success);
+  font-size: 11px;
+  margin-top: 4px;
+  padding: 4px 8px;
 }
 
 .laca-projects-muted {
