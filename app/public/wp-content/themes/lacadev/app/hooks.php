@@ -98,6 +98,15 @@ add_action('carbon_fields_theme_options_container_saved', static function ($user
 }, 10, 2);
 
 /**
+ * Google Services (GSC & GA4 standalone module + Laca Admin pages).
+ */
+add_action('init', function () {
+    if (class_exists('\App\Features\GoogleServices\GoogleServices')) {
+        \App\Features\GoogleServices\GoogleServices::boot();
+    }
+});
+
+/**
  * UI Kit trang mẫu (style guide sống) để review.
  */
 add_action('init', static function () {
