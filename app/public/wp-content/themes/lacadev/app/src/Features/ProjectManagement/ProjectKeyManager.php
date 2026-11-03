@@ -222,19 +222,7 @@ class ProjectKeyManager
             $key
         ));
 
-        // 2. Tìm theo _laca_public_id
-        if (!$id) {
-            $id = $wpdb->get_var($wpdb->prepare(
-                "SELECT pm.post_id FROM {$wpdb->postmeta} pm
-                 INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
-                 WHERE pm.meta_key = %s AND pm.meta_value = %s AND p.post_status = 'publish'
-                 LIMIT 1",
-                self::META_PUBLIC_ID,
-                $key
-            ));
-        }
-
-        // 3. Tìm theo sha256 hash của _laca_key_portal
+        // 2. Tìm theo sha256 hash của _laca_key_portal
         if (!$id) {
             $hash = hash('sha256', $key);
             $id = $wpdb->get_var($wpdb->prepare(

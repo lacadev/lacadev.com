@@ -368,7 +368,7 @@ class ClientPortalEndpoint
             return (int) $cached ?: null;
         }
 
-        // Tìm qua ProjectKeyManager (chỉ nhận _portal_alias, _laca_public_id, _laca_key_portal_hash; KHÔNG nhận _tracker_secret_key)
+        // Tìm qua ProjectKeyManager (chỉ nhận _portal_alias, _laca_key_portal_hash; KHÔNG nhận _laca_public_id hay _tracker_secret_key)
         $projectId = \App\Features\ProjectManagement\ProjectKeyManager::findProjectIdByPortalKey($key);
 
         wp_cache_set($cacheKey, $projectId ?: 0, 'laca_portal', 300); // Cache 5 phút
