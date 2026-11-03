@@ -59,12 +59,37 @@ class RemoteAjaxHandler
         }
 
         $endpoint = trailingslashit($siteUrl) . 'wp-json/laca/v1/remote-update';
-        $bodyJson = (string) wp_json_encode([
-            'secret_key' => $keyRemote,
-            'action'     => $action,
-            'slug'       => $slug,
-        ]);
 
+        // Lấy tracker key (legacy secret_key) cho các client cũ chưa cấu hình remote key
+        $trackerKey = \App\Features\ProjectManagement\ProjectKeyManager::getKey(
+            $projectId,
+            \App\Features\ProjectManagement\ProjectKeyManager::KEY_TRACKER
+        ) ?: (string) get_post_meta($projectId, '_tracker_secret_key', true);
+
+        // Kiểm tra setting laca_allow_legacy_auth
+        $cfVal = function_exists('carbon_get_theme_option') ? carbon_get_theme_option('laca_allow_legacy_auth') : null;
+        if ($cfVal !== null && $cfVal !== '') {
+            $allowLegacy = ($cfVal === 'yes' || $cfVal === true || $cfVal === '1');
+        } else {
+            $raw = get_option('_laca_allow_legacy_auth', null);
+            if ($raw === null) {
+                $raw = get_option('laca_allow_legacy_auth', 'yes');
+            }
+            $allowLegacy = ($raw === 'yes' || $raw === true || $raw === '1');
+        }
+
+        $bodyData = [
+            'action' => $action,
+            'slug'   => $slug,
+        ];
+        // Chỉ gửi tracker key vào body.secret_key khi legacy auth đang bật (hỗ trợ client cũ)
+        if ($allowLegacy && !empty($trackerKey)) {
+            $bodyData['secret_key'] = $trackerKey;
+        }
+
+        $bodyJson = (string) wp_json_encode($bodyData);
+
+        // Chữ ký luôn dùng remote key
         $sigHeaders = \App\Security\RequestSigner::sign(
             'POST',
             '/wp-json/laca/v1/remote-update',
@@ -77,7 +102,6 @@ class RemoteAjaxHandler
             'body'    => $bodyJson,
             'headers' => array_merge([
                 'Content-Type' => 'application/json',
-                'X-Laca-Key'   => $keyRemote,
             ], $sigHeaders),
             'timeout' => 30,
         ];
