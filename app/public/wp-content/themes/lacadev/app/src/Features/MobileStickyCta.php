@@ -28,6 +28,14 @@ class MobileStickyCta
             return;
         }
 
+        // Tắt nếu admin đã chủ động bỏ chọn (mặc định bật)
+        if (function_exists('carbon_get_theme_option')) {
+            $enabled = carbon_get_theme_option('enable_mobile_sticky_cta');
+            if ($enabled === false || $enabled === 'no' || $enabled === '0') {
+                return;
+            }
+        }
+
         $phone   = $this->getOption('phone_number');
         $zalo    = $this->getOption('zalo');
         $contact = get_permalink(get_option('laca_cta_contact_page_id')) ?: home_url('/lien-he/');

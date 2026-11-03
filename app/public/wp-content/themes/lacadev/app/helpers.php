@@ -22,7 +22,6 @@ require_once APP_APP_HELPERS_DIR . 'functions.php';
 require_once APP_APP_HELPERS_DIR . 'ajax.php';
 require_once APP_APP_HELPERS_DIR . 'hooks.php';
 require_once APP_APP_HELPERS_DIR . 'template_tags.php';
-require_once APP_APP_HELPERS_DIR . 'woocommerce.php';
 require_once APP_APP_HELPERS_DIR . 'carbon_fields.php';
 require_once APP_APP_SETUP_DIR . 'users/auth.php';
 require_once get_template_directory() . '/setup/admin-ui.php';
@@ -32,7 +31,6 @@ require_once get_template_directory() . '/setup/admin-ui.php';
  */
 new \App\Settings\RequirePlugins();
 new \App\Settings\AdminSettings();
-new \App\Settings\AutoDownloadImage();
 new \App\Settings\ThemeSettings();
 new \App\Settings\LacaTools\Optimize();
 new \App\Settings\LacaTools\Security();

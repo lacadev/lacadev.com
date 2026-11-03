@@ -1014,6 +1014,20 @@ class AdminSettings
 						<b>Nên bật khi:</b> Đã có file <code>/dist/sw.js</code> trong theme và muốn PWA-like experience.<br>
 						<b>Rủi ro:</b> Nếu thiếu <code>sw.js</code> → lỗi console (không crash). Cache cũ có thể gây khó update CSS/JS sau deploy nếu không có cache busting.
 					</div>'),
+
+				// ── Mobile UX ────────────────────────────────────────────────────────
+				Field::make('separator', 'title_mobile_ux', __('Mobile UX', 'laca')),
+
+				Field::make('checkbox', 'enable_mobile_sticky_cta', __('Bật thanh CTA liên hệ trên mobile', 'laca'))
+					->set_default_value(true)
+					->set_width(30),
+				Field::make('html', 'enable_mobile_sticky_cta_desc')
+					->set_width(70)
+					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
+						<strong>' . esc_html__('✅ Mặc định bật', 'laca') . '</strong><br>
+						<b>' . esc_html__('Tác dụng:', 'laca') . '</b> ' . esc_html__('Hiển thị thanh gọi nhanh / Zalo / Báo giá cố định ở chân trang trên thiết bị di động (< 768px). Tự ẩn khi cuộn xuống và hiện khi cuộn lên.', 'laca') . '<br>
+						<b>' . esc_html__('Nên tắt khi:', 'laca') . '</b> ' . esc_html__('Muốn tối ưu không gian màn hình mobile hoặc landing page đã có CTA riêng.', 'laca') . '
+					</div>'),
 			])
 			// ── Security Tab ──────────────────────────────────────────────────────
 			->add_tab(__('Security', 'laca'), [
