@@ -1337,7 +1337,7 @@ class AdminSettings
 							'slack'    => 'Slack',
 							'discord'  => 'Discord',
 						])
-						->set_default_value(['email', 'telegram', 'slack', 'discord']),
+						->set_default_value(['email', 'zalo', 'telegram', 'slack', 'discord']),
 
 					Field::make('set', 'notify_route_uptime_up', __('Website hoạt động trở lại (uptime_up)', 'laca'))
 						->set_options([
@@ -1347,7 +1347,7 @@ class AdminSettings
 							'slack'    => 'Slack',
 							'discord'  => 'Discord',
 						])
-						->set_default_value(['email', 'telegram', 'discord']),
+						->set_default_value(['email', 'zalo', 'telegram', 'slack', 'discord']),
 
 					Field::make('set', 'notify_route_cron_late', __('Cron hệ thống bị trễ (cron_late)', 'laca'))
 						->set_options([
@@ -1357,7 +1357,7 @@ class AdminSettings
 							'slack'    => 'Slack',
 							'discord'  => 'Discord',
 						])
-						->set_default_value(['email', 'telegram', 'discord']),
+						->set_default_value(['discord']),
 
 					Field::make('set', 'notify_route_backup_outdated', __('Sao lưu quá hạn (backup_outdated)', 'laca'))
 						->set_options([

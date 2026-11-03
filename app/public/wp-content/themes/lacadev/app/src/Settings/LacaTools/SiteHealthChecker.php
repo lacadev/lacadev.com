@@ -127,7 +127,7 @@ class SiteHealthChecker
                 $url
             );
 
-            $this->recordAlert($projectId, $msg, 'critical');
+            $this->recordAlert($projectId, $msg, 'critical', false);
 
             if (class_exists(NotificationBus::class)) {
                 NotificationBus::emit(NotificationBus::EVENT_UPTIME_DOWN, [
@@ -143,7 +143,7 @@ class SiteHealthChecker
                 __('✅ Site khách đã hoạt động trở lại: %s', 'laca'),
                 $url
             );
-            $this->recordAlert($projectId, $msg, 'warning');
+            $this->recordAlert($projectId, $msg, 'warning', false);
 
             if (class_exists(NotificationBus::class)) {
                 NotificationBus::emit(NotificationBus::EVENT_UPTIME_UP, [
@@ -278,7 +278,7 @@ class SiteHealthChecker
                     $reason
                 );
 
-                $this->recordAlert($projectId, $msg, 'critical');
+                $this->recordAlert($projectId, $msg, 'critical', false);
 
                 if (class_exists(NotificationBus::class)) {
                     NotificationBus::emit(
@@ -306,7 +306,7 @@ class SiteHealthChecker
                     $responseMs
                 );
 
-                $this->recordAlert($projectId, $msg, 'warning');
+                $this->recordAlert($projectId, $msg, 'warning', false);
 
                 if (class_exists(NotificationBus::class)) {
                     NotificationBus::emit(
@@ -330,7 +330,7 @@ class SiteHealthChecker
     /**
      * Ghi alert vào bảng wp_laca_project_alerts TRƯỚC KHI bắn thông báo
      */
-    private function recordAlert(int $projectId, string $msg, string $level): void
+    private function recordAlert(int $projectId, string $msg, string $level, bool $notify = true): void
     {
         if (!class_exists(ProjectAlert::class)) {
             return;
@@ -347,7 +347,7 @@ class SiteHealthChecker
             'alert_msg'   => $msg,
         ]);
 
-        if ($alertId !== false) {
+        if ($alertId !== false && $notify) {
             do_action('laca_project_alert_notify', $projectId, $level, $msg);
         }
     }

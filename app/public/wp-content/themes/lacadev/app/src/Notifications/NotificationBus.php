@@ -27,10 +27,10 @@ class NotificationBus
 
     public const DEFAULT_ROUTES = [
         self::EVENT_PROJECT_ALERT   => ['email', 'zalo', 'telegram', 'slack', 'discord'],
-        self::EVENT_CRON_LATE       => ['email', 'telegram', 'discord'],
+        self::EVENT_CRON_LATE       => ['discord'],
         self::EVENT_BACKUP_OUTDATED => ['email', 'telegram', 'discord'],
-        self::EVENT_UPTIME_DOWN     => ['email', 'telegram', 'slack', 'discord'],
-        self::EVENT_UPTIME_UP       => ['email', 'telegram', 'discord'],
+        self::EVENT_UPTIME_DOWN     => ['email', 'zalo', 'telegram', 'slack', 'discord'],
+        self::EVENT_UPTIME_UP       => ['email', 'zalo', 'telegram', 'slack', 'discord'],
         self::EVENT_DEPLOYMENT      => ['slack', 'discord'],
     ];
 
@@ -83,12 +83,16 @@ class NotificationBus
         // 4. Gửi qua các kênh truyền thống (Email, Zalo, Telegram, Slack)
         $handlerChannels = array_values(array_intersect($channels, ['email', 'zalo', 'telegram', 'slack']));
         if (!empty($handlerChannels)) {
+            foreach ($handlerChannels as $ch) {
+                do_action('laca_notification_bus_dispatch_channel', $ch, $event, $payload, $projectId);
+            }
             $handler = new ProjectNotificationHandler();
             $handler->sendNotificationsFiltered([$messageText], $handlerChannels);
         }
 
         // 5. Gửi qua kênh Discord
         if (in_array('discord', $channels, true) && class_exists(Notifier::class) && class_exists(DiscordSettings::class)) {
+            do_action('laca_notification_bus_dispatch_channel', 'discord', $event, $payload, $projectId);
             self::sendToDiscord($event, $payload, $projectId, $messageText);
         }
 
@@ -213,3 +217,4 @@ class NotificationBus
         Notifier::send($discordChannel, 'bus.' . $event, $embed);
     }
 }
+

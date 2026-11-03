@@ -76,6 +76,18 @@
 - Kênh Discord tích hợp chặt chẽ với DiscordHub (`Notifier::send()`), các kênh Email/Zalo/Telegram/Slack gọi qua `ProjectNotificationHandler::sendNotificationsFiltered()`.
 - Bỏ trùng thông báo "cron trễ": DiscordHub `CronHealthMonitor` phát sự kiện `cron_late` qua bus thay vì tự gửi tin trực tiếp.
 
+### Bảng định tuyến mặc định (DEFAULT_ROUTES)
+Bảo đảm tính tương thích ngược hoàn toàn với hệ thống thông báo trước Phase 10:
+
+| Sự kiện | Hằng sự kiện | Kênh nhận mặc định | Tương thích ngược |
+|---|---|---|---|
+| Cảnh báo dự án | `EVENT_PROJECT_ALERT` | Email, Zalo, Telegram, Slack, Discord | Tương thích 100% `handleRealtimeAlert` |
+| Cron hệ thống trễ | `EVENT_CRON_LATE` | Discord | Tương thích `CronHealthMonitor` (chỉ Discord) |
+| Sao lưu quá hạn | `EVENT_BACKUP_OUTDATED` | Email, Telegram, Discord | Cảnh báo sao lưu hằng ngày |
+| Website không truy cập được | `EVENT_UPTIME_DOWN` | Email, Zalo, Telegram, Slack, Discord | Tương thích 100% `handleRealtimeAlert` |
+| Website hoạt động trở lại | `EVENT_UPTIME_UP` | Email, Zalo, Telegram, Slack, Discord | Tương thích 100% `handleRealtimeAlert` |
+| Cập nhật từ xa thành công | `EVENT_DEPLOYMENT` | Slack, Discord | Thông báo devops |
+
 ## 6. Giám sát Uptime song song & nhật ký phản hồi
 
 **Vấn đề cũ:** Uptime trước đây quét tuần tự từng site bằng `wp_remote_get()` và chỉ lưu trạng thái hiện tại (`up`/`down`) mà không có lịch sử đo độ trễ (response time ms), dễ nghẽn khi số lượng website khách tăng lớn.
