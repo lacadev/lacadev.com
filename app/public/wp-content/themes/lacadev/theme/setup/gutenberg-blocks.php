@@ -182,3 +182,57 @@ function lacadev_register_block_category($categories, $post) {
     );
 }
 add_filter('block_categories_all', 'lacadev_register_block_category', 10, 2);
+
+/**
+ * Register backward compatibility aliases for rank-math/* blocks when Rank Math is not active.
+ */
+function lacadev_register_rank_math_block_aliases(): void
+{
+    $registry = \WP_Block_Type_Registry::get_instance();
+
+    // 1. FAQ block
+    if (!$registry->is_registered('rank-math/faq-block')) {
+        register_block_type('rank-math/faq-block', [
+            'render_callback' => function ($attributes) {
+                $file = get_template_directory() . '/block-gutenberg/block-seo-faq/render.php';
+                if (file_exists($file)) {
+                    ob_start();
+                    require $file;
+                    return ob_get_clean();
+                }
+                return '';
+            },
+        ]);
+    }
+
+    // 2. HowTo block
+    if (!$registry->is_registered('rank-math/howto-block')) {
+        register_block_type('rank-math/howto-block', [
+            'render_callback' => function ($attributes) {
+                $file = get_template_directory() . '/block-gutenberg/block-seo-howto/render.php';
+                if (file_exists($file)) {
+                    ob_start();
+                    require $file;
+                    return ob_get_clean();
+                }
+                return '';
+            },
+        ]);
+    }
+
+    // 3. TOC block
+    if (!$registry->is_registered('rank-math/toc-block')) {
+        register_block_type('rank-math/toc-block', [
+            'render_callback' => function ($attributes) {
+                $file = get_template_directory() . '/block-gutenberg/block-seo-toc/render.php';
+                if (file_exists($file)) {
+                    ob_start();
+                    require $file;
+                    return ob_get_clean();
+                }
+                return '';
+            },
+        ]);
+    }
+}
+add_action('init', 'lacadev_register_rank_math_block_aliases', 20);

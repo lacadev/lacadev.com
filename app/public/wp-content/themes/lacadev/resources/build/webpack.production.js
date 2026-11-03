@@ -146,7 +146,7 @@ module.exports = {
             })
         ],
         splitChunks: {
-            chunks: 'all',
+            chunks: (chunk) => !chunk.name.startsWith('laca-seo'),
             minSize: 20000,
             cacheGroups: {
                 // GSAP — animation library (~200KB) — tách riêng để cache lâu dài
