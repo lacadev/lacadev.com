@@ -94,30 +94,62 @@ class ContactFormTable
     // -------------------------------------------------------------------------
 
     /**
-     * Đảm bảo luôn có ít nhất 1 form mặc định (dùng cho shortcode không truyền id và template-contact.php)
+     * Đảm bảo luôn có 1 form mặc định (dùng cho shortcode không truyền id và template-contact.php).
+     * Lưu ID vào option 'laca_cf_default_form_id' và kiểm tra form còn tồn tại trước khi trả về.
      */
     public static function ensureDefaultForm(): int
     {
-        $all = self::getAllForms();
-        if (!empty($all)) {
-            return (int) $all[0]['id'];
+        $defaultId = (int) get_option('laca_cf_default_form_id', 0);
+        if ($defaultId > 0 && self::getForm($defaultId) !== null) {
+            return $defaultId;
         }
 
-        return self::insertForm([
-            'name'                   => 'Form Liên hệ',
+        // Nếu option chưa set, kiểm tra xem đã có form mặc định với tên 'Form Liên hệ' chưa
+        global $wpdb;
+        $formsTable  = self::getFormsTable();
+        $defaultName = __('Form Liên hệ', 'laca');
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $existing = $wpdb->get_row(
+            $wpdb->prepare("SELECT id FROM {$formsTable} WHERE name = %s ORDER BY id ASC LIMIT 1", $defaultName),
+            ARRAY_A
+        );
+        if ($existing && !empty($existing['id'])) {
+            $id = (int) $existing['id'];
+            update_option('laca_cf_default_form_id', $id);
+            return $id;
+        }
+
+        $newId = self::insertForm([
+            'name'                   => __('Form Liên hệ', 'laca'),
             'fields'                 => [
-                ['type' => 'text',     'name' => 'name',    'label' => 'Họ và tên',     'required' => true],
-                ['type' => 'phone',    'name' => 'phone',   'label' => 'Số điện thoại', 'required' => true],
-                ['type' => 'email',    'name' => 'email',   'label' => 'Email',         'required' => false],
-                ['type' => 'textarea', 'name' => 'message', 'label' => 'Nội dung',      'required' => true],
+                ['type' => 'text',     'name' => 'name',    'label' => __('Họ và tên', 'laca'),     'required' => true],
+                ['type' => 'phone',    'name' => 'phone',   'label' => __('Số điện thoại', 'laca'), 'required' => true],
+                ['type' => 'email',    'name' => 'email',   'label' => __('Email', 'laca'),         'required' => false],
+                ['type' => 'textarea', 'name' => 'message', 'label' => __('Nội dung', 'laca'),      'required' => true],
             ],
             'notify_email'           => '',
-            'email_admin_subject'    => 'Lời nhắn mới từ $name - $phone',
-            'email_admin_body'       => "<p><strong>Họ và tên:</strong> \$name</p><p><strong>Số điện thoại:</strong> \$phone</p><p><strong>Email:</strong> \$email</p><p><strong>Nội dung:</strong></p><p>\$message</p>",
-            'email_customer_subject' => 'Cảm ơn bạn đã liên hệ',
-            'email_customer_body'    => "<p>Chào \$name,</p><p>Chúng tôi đã nhận được lời nhắn của bạn và sẽ phản hồi sớm nhất.</p>",
+            'email_admin_subject'    => __('Lời nhắn mới từ $name - $phone', 'laca'),
+            'email_admin_body'       => sprintf(
+                '<p><strong>%s:</strong> $name</p><p><strong>%s:</strong> $phone</p><p><strong>%s:</strong> $email</p><p><strong>%s:</strong></p><p>$message</p>',
+                __('Họ và tên', 'laca'),
+                __('Số điện thoại', 'laca'),
+                __('Email', 'laca'),
+                __('Nội dung', 'laca')
+            ),
+            'email_customer_subject' => __('Cảm ơn bạn đã liên hệ', 'laca'),
+            'email_customer_body'    => sprintf(
+                '<p>%s $name,</p><p>%s</p>',
+                __('Chào', 'laca'),
+                __('Chúng tôi đã nhận được lời nhắn của bạn và sẽ phản hồi sớm nhất.', 'laca')
+            ),
             'is_active'              => 1,
         ]);
+
+        if ($newId > 0) {
+            update_option('laca_cf_default_form_id', $newId);
+        }
+
+        return $newId;
     }
 
     /**
