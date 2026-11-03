@@ -11,13 +11,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # dist/ và block-gutenberg build bị gitignore nên phải build trước khi FTP
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Create config.json from dist
+        working-directory: app/public/wp-content/themes/lacadev
+        run: cp config.json.dist config.json
+
+      - name: Install Node dependencies
+        working-directory: app/public/wp-content/themes/lacadev
+        run: yarn install --frozen-lockfile
+
+      - name: Build theme & blocks assets
+        working-directory: app/public/wp-content/themes/lacadev
+        run: yarn build:theme && yarn build:blocks
+
       - name: Deploy Theme & Plugins
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: /public_html/ # deploy thẳng vào clients.lacadev.com
+          server-dir: /public_html/ # deploy thẳng vào lacadev.com
 
           # local-dir làm gốc đồng bộ — bỏ hẳn tiền tố app/public/, server
           # chỉ có wp-content/... ở gốc (không có thư mục app/ trên server).
@@ -35,4 +53,20 @@ jobs:
             *.md
             .cpanel.yml
             .gitignore
+            wp-content/themes/**/node_modules/**
+            wp-content/plugins/**/node_modules/**
             wp-content/uploads/**
+
+  smoke:
+    name: Post-Deploy Smoke Test
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Wait for server caches
+        run: sleep 20
+
+      - name: Run Smoke Test
+        run: ./tools/smoke.sh https://lacadev.com

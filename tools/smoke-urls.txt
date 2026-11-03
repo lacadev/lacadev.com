@@ -1,0 +1,8 @@
+# Smoke test URLs for LacaDev Hub (M)
+# Format: <path> [expected_http_code] (default: 200)
+/ 200
+/hello-world/ 200
+/sample-page/ 200
+/category/uncategorized/ 200
+/sitemap_index.xml 200
+/this-page-does-not-exist-404/ 404
