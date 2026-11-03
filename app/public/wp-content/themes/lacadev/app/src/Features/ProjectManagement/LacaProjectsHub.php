@@ -258,7 +258,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Laca Projects', 'Báo cáo nhanh về doanh thu, công nợ, lỗi và cập nhật từ website khách hàng.'); ?>
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Dashboard</p><p style="margin:0;font-size:13px;color:#374151">Nhìn nhanh sức khỏe toàn bộ dự án/website đang quản lý: doanh thu, công nợ, cảnh báo, tracker và log cập nhật mới nhất. Nhấn vào một dòng để xem chi tiết dự án.</p></div>
+            <?php $this->renderIntroCallout(__('Dashboard', 'laca'), __('Nhìn nhanh sức khỏe toàn bộ dự án/website đang quản lý: doanh thu, công nợ, cảnh báo, tracker và log cập nhật mới nhất. Nhấn vào một dòng để xem chi tiết dự án.', 'laca')); ?>
             <?php $this->renderChartDataScript($chartData); ?>
 
             <div class="laca-projects-overview">
@@ -280,8 +280,8 @@ class LacaProjectsHub
                     <div class="laca-projects-chart">
                         <canvas id="laca-projects-finance-chart" height="180"></canvas>
                     </div>
-                    <div class="laca-projects-progress" aria-label="<?php echo esc_attr__('Tỷ lệ đã thu', 'laca'); ?>">
-                        <span style="width: <?php echo esc_attr((string) min(100, $finance['collection_rate'])); ?>%"></span>
+                    <div class="laca-projects-progress laca-progress" aria-label="<?php echo esc_attr__('Tỷ lệ đã thu', 'laca'); ?>" style="<?php echo esc_attr('--laca-progress:' . min(100, $finance['collection_rate']) . '%;'); ?>">
+                        <span class="laca-progress__bar"></span>
                     </div>
                     <dl class="laca-projects-kv">
                         <div><dt>Đã thu</dt><dd><?php echo esc_html($this->formatMoney($finance['total_paid'])); ?></dd></div>
@@ -440,7 +440,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Action center', 'Danh sách việc cần xử lý được gom theo mức ưu tiên từ cảnh báo, công nợ, gia hạn và cập nhật dự án.'); ?>
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Action center</p><p style="margin:0;font-size:13px;color:#374151">Việc cần xử lý ngay, tự động gom theo mức ưu tiên: issue nghiêm trọng, công nợ, gia hạn sắp đến hạn và dự án lâu chưa có cập nhật.</p></div>
+            <?php $this->renderIntroCallout(__('Action center', 'laca'), __('Việc cần xử lý ngay, tự động gom theo mức ưu tiên: issue nghiêm trọng, công nợ, gia hạn sắp đến hạn và dự án lâu chưa có cập nhật.', 'laca')); ?>
             <div class="laca-projects-overview laca-projects-overview--compact">
                 <?php $this->renderMetric('Tổng việc cần xử lý', (string) $total, 'Tự tổng hợp từ CRM'); ?>
                 <?php $this->renderMetric('Cần xử lý ngay', (string) count($groups['urgent']), 'Critical/warning issues'); ?>
@@ -557,7 +557,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Pipeline', 'Board theo trạng thái để nhìn nhanh project đang ở đâu, ai phụ trách thanh toán và có rủi ro gì.'); ?>
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Pipeline</p><p style="margin:0;font-size:13px;color:#374151">Bảng Kanban theo trạng thái dự án, giúp nhìn nhanh dự án nào đang ở giai đoạn nào, tình hình tài chính và cảnh báo. Bấm vào thẻ để xem chi tiết.</p></div>
+            <?php $this->renderIntroCallout(__('Pipeline', 'laca'), __('Bảng Kanban theo trạng thái dự án, giúp nhìn nhanh dự án nào đang ở giai đoạn nào, tình hình tài chính và cảnh báo. Bấm vào thẻ để xem chi tiết.', 'laca')); ?>
             <div class="laca-projects-board">
                 <?php foreach ($columns as $column): ?>
                     <section class="laca-projects-column">
@@ -818,7 +818,7 @@ class LacaProjectsHub
             'Chấm điểm sức khoẻ dự án dựa trên cảnh báo, công nợ, hạn dịch vụ, cập nhật và heartbeat tracker.',
             ['Dự án', 'Khách hàng', 'Score', 'Trạng thái', 'Điểm trừ chính', 'Heartbeat', 'Cập nhật cuối'],
             $rows,
-            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Health score</p><p style="margin:0;font-size:13px;color:#374151">Điểm sức khỏe từng dự án được tính tự động dựa trên cảnh báo, công nợ, hạn dịch vụ, cập nhật và heartbeat tracker — điểm càng thấp càng cần quan tâm.</p></div>'
+            $this->getIntroCalloutHtml(__('Health score', 'laca'), __('Điểm sức khỏe từng dự án được tính tự động dựa trên cảnh báo, công nợ, hạn dịch vụ, cập nhật và heartbeat tracker — điểm càng thấp càng cần quan tâm.', 'laca'))
         );
     }
 
@@ -930,485 +930,21 @@ class LacaProjectsHub
 
     public function printStyles(): void
     {
-        ?>
-        <style>
-            #toplevel_page_laca-projects .wp-submenu { display: none !important; }
-            body.laca-projects-dock-active:not(.folded) #wpcontent,
-            body.laca-projects-dock-active.folded #wpcontent { padding-left: 316px; }
-            .laca-projects-dock {
-                background: #f8fafc;
-                border-right: 1px solid #e1e5eb;
-                bottom: 0;
-                box-shadow: 12px 0 28px rgba(15,23,42,.055);
-                color: #1f2937;
-                left: 160px;
-                overflow-y: auto;
-                padding: 14px 12px 22px;
-                position: fixed;
-                top: 32px;
-                width: 288px;
-                z-index: 99;
-            }
-            body.folded .laca-projects-dock { left: 36px; }
-            .laca-projects-dock__brand {
-                align-items: center;
-                background: #fff;
-                border: 1px solid #e5e7eb;
-                border-radius: 12px;
-                box-shadow: 0 1px 2px rgba(15,23,42,.04);
-                color: #111827;
-                display: flex;
-                gap: 10px;
-                margin: 0 2px 14px;
-                padding: 10px;
-                text-decoration: none;
-            }
-            .laca-projects-dock__mark {
-                align-items: center;
-                background: #111827;
-                border: 1px solid #111827;
-                border-radius: 10px;
-                color: #fff;
-                display: inline-flex;
-                flex: 0 0 auto;
-                font-size: 12px;
-                font-weight: 700;
-                height: 34px;
-                justify-content: center;
-                width: 34px;
-            }
-            .laca-projects-dock__brand-copy {
-                display: grid;
-                gap: 2px;
-                min-width: 0;
-            }
-            .laca-projects-dock__title {
-                color: #111827;
-                font-size: 13px;
-                font-weight: 700;
-                line-height: 1.2;
-            }
-            .laca-projects-dock__subtitle {
-                color: #6b7280;
-                font-size: 11px;
-                line-height: 1.3;
-            }
-            .laca-projects-dock__group {
-                border-top: 1px solid #e8edf3;
-                margin: 0 2px;
-                padding: 15px 0;
-            }
-            .laca-projects-dock__group:first-of-type {
-                border-top: 0;
-                padding-top: 0;
-            }
-            .laca-projects-dock__group-title {
-                align-items: center;
-                color: #64748b;
-                display: flex;
-                font-size: 11px;
-                font-weight: 700;
-                gap: 8px;
-                letter-spacing: 0;
-                line-height: 1.25;
-                margin: 0 0 7px;
-            }
-            .laca-projects-dock__group-title .dashicons {
-                align-items: center;
-                background: #eef2f7;
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-                color: #475569;
-                display: inline-flex;
-                font-size: 14px;
-                height: 24px;
-                justify-content: center;
-                width: 24px;
-            }
-            .laca-projects-dock__group-count {
-                color: #94a3b8;
-                font-size: 11px;
-                font-weight: 600;
-                margin-left: auto;
-                text-transform: none;
-            }
-            .laca-projects-dock__items {
-                display: grid;
-                gap: 4px;
-            }
-            .laca-projects-dock__item {
-                align-items: center;
-                border: 1px solid transparent;
-                border-radius: 9px;
-                color: #475569;
-                display: flex;
-                font-size: 13px;
-                gap: 8px;
-                line-height: 1.35;
-                min-height: 34px;
-                padding: 7px 10px 7px 14px;
-                position: relative;
-                text-decoration: none;
-                transition: background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
-            }
-            .laca-projects-dock__item::before {
-                background: transparent;
-                border-radius: 999px;
-                content: "";
-                height: 18px;
-                left: 5px;
-                position: absolute;
-                top: 50%;
-                transform: translateY(-50%);
-                width: 3px;
-            }
-            .laca-projects-dock__item:hover,
-            .laca-projects-dock__item:focus {
-                background: #fff;
-                border-color: #e2e8f0;
-                color: #111827;
-                outline: none;
-            }
-            .laca-projects-dock__item.is-active {
-                background: #fff;
-                border-color: #cfd7e3;
-                box-shadow: 0 1px 2px rgba(15,23,42,.045);
-                color: #111827;
-                font-weight: 700;
-            }
-            .laca-projects-dock__item.is-active::before {
-                background: #111827;
-            }
-            .laca-projects-wrap {
-                --laca-ink: #111827;
-                --laca-muted: #6b7280;
-                --laca-border: #e5e7eb;
-                --laca-soft: #f8fafc;
-                --laca-finance: #2563eb;
-                --laca-success: #059669;
-                --laca-warning: #d97706;
-                --laca-danger: #dc2626;
-                --laca-info: #7c3aed;
-                max-width: 1360px;
-            }
-            .laca-projects-header {
-                align-items: flex-start;
-                display: flex;
-                gap: 16px;
-                justify-content: space-between;
-                margin: 12px 0 18px;
-            }
-            .laca-projects-header h1 { color: #111827; font-size: 24px; font-weight: 600; margin: 0 0 4px; }
-            .laca-projects-header p { color: #6b7280; margin: 0; }
-            .laca-projects-header .button-primary {
-                background: #111827;
-                border-color: #111827;
-                border-radius: 7px;
-                box-shadow: none;
-                font-weight: 600;
-            }
-            .laca-projects-overview {
-                display: grid;
-                gap: 12px;
-                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-                margin-bottom: 18px;
-            }
-            .laca-projects-overview--compact { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
-            .laca-projects-metric {
-                background: #fff;
-                border: 1px solid #e5e7eb;
-                border-top: 3px solid #d1d5db;
-                border-radius: 8px;
-                box-shadow: 0 10px 24px rgba(15, 23, 42, .04);
-                min-height: 92px;
-                overflow: hidden;
-                padding: 14px 15px;
-                position: relative;
-            }
-            .laca-projects-metric::after {
-                background: linear-gradient(135deg, rgba(17,24,39,.08), rgba(17,24,39,0));
-                border-radius: 999px;
-                content: "";
-                height: 72px;
-                position: absolute;
-                right: -34px;
-                top: -34px;
-                width: 72px;
-            }
-            .laca-projects-metric--finance { border-top-color: var(--laca-finance); }
-            .laca-projects-metric--success { border-top-color: var(--laca-success); }
-            .laca-projects-metric--warning { border-top-color: var(--laca-warning); }
-            .laca-projects-metric--danger { border-top-color: var(--laca-danger); }
-            .laca-projects-metric--info { border-top-color: var(--laca-info); }
-            .laca-projects-metric span,
-            .laca-projects-metric small {
-                color: #6b7280;
-                display: block;
-                font-size: 12px;
-                line-height: 1.45;
-            }
-            .laca-projects-metric strong {
-                color: #111827;
-                display: block;
-                font-size: 23px;
-                font-weight: 600;
-                line-height: 1.2;
-                margin: 8px 0 6px;
-                position: relative;
-                z-index: 1;
-            }
-            .laca-projects-stats {
-                display: grid;
-                gap: 10px;
-                grid-template-columns: repeat(5, minmax(120px, 1fr));
-                margin-bottom: 18px;
-            }
-            .laca-projects-stat {
-                background: #fff;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                padding: 12px 14px;
-            }
-            .laca-projects-stat span { color: #6b7280; display: block; font-size: 12px; margin-bottom: 6px; }
-            .laca-projects-stat strong { color: #111827; font-size: 24px; font-weight: 600; }
-            .laca-projects-report-grid {
-                display: grid;
-                gap: 16px;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                margin-bottom: 16px;
-            }
-            .laca-projects-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .laca-projects-panel {
-                background: #fff;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                box-shadow: 0 10px 30px rgba(15, 23, 42, .045);
-                overflow-x: auto;
-                padding: 16px;
-            }
-            .laca-projects-panel--chart {
-                background: linear-gradient(180deg, #fff 0%, #fbfcff 100%);
-            }
-            .laca-projects-panel--wide { grid-column: 1 / -1; }
-            .laca-projects-panel__head { align-items: center; display: flex; justify-content: space-between; margin-bottom: 12px; }
-            .laca-projects-panel__head h2 { color: #111827; font-size: 15px; margin: 0; }
-            .laca-projects-panel__head a { font-size: 12px; text-decoration: none; }
-            .laca-projects-muted { color: #6b7280; font-size: 12px; }
-            .laca-projects-empty { color: #6b7280; margin: 0; }
-            .laca-projects-chart {
-                height: 186px;
-                margin: 2px 0 12px;
-                position: relative;
-            }
-            .laca-projects-chart canvas { max-height: 186px; }
-            .laca-projects-table {
-                border-color: #e5e7eb;
-                border-radius: 7px;
-                overflow: hidden;
-            }
-            .laca-projects-table thead th {
-                background: #f8fafc;
-                color: #374151;
-                font-size: 12px;
-                font-weight: 600;
-            }
-            .laca-projects-table td,
-            .laca-projects-table th { vertical-align: middle; }
-            .laca-projects-progress {
-                background: #f3f4f6;
-                border-radius: 999px;
-                height: 8px;
-                margin-bottom: 14px;
-                overflow: hidden;
-            }
-            .laca-projects-progress span {
-                background: linear-gradient(90deg, var(--laca-finance), var(--laca-success));
-                display: block;
-                height: 100%;
-            }
-            .laca-projects-kv {
-                display: grid;
-                gap: 10px;
-                margin: 0;
-            }
-            .laca-projects-kv div {
-                align-items: center;
-                border-top: 1px solid #f1f3f5;
-                display: flex;
-                justify-content: space-between;
-                padding-top: 10px;
-            }
-            .laca-projects-kv dt { color: #6b7280; font-size: 12px; }
-            .laca-projects-kv dd { color: #111827; font-size: 13px; font-weight: 600; margin: 0; text-align: right; }
-            .laca-projects-list { display: grid; gap: 8px; }
-            .laca-projects-list__item {
-                border: 1px solid #eef0f3;
-                border-radius: 6px;
-                display: block;
-                padding: 10px;
-                text-decoration: none;
-            }
-            .laca-projects-list__item:hover,
-            .laca-projects-list__item:focus {
-                background: #f8fafc;
-                border-color: #d1d5db;
-                outline: none;
-            }
-            .laca-projects-list__item strong { color: #111827; display: block; margin-bottom: 4px; }
-            .laca-projects-list__item span { color: #4b5563; }
-            .laca-projects-activity { display: grid; gap: 8px; }
-            .laca-projects-activity a {
-                border-top: 1px solid #f1f3f5;
-                display: block;
-                padding-top: 9px;
-                text-decoration: none;
-            }
-            .laca-projects-activity a:first-child { border-top: 0; padding-top: 0; }
-            .laca-projects-activity strong { color: #111827; display: block; font-size: 13px; margin-bottom: 3px; }
-            .laca-projects-activity span { color: #6b7280; font-size: 12px; }
-            .laca-projects-actions { display: grid; gap: 8px; }
-            .laca-projects-action {
-                align-items: flex-start;
-                border: 1px solid #eef0f3;
-                border-radius: 6px;
-                color: #374151;
-                display: grid;
-                gap: 8px;
-                grid-template-columns: minmax(0, 1fr) auto;
-                padding: 10px;
-                text-decoration: none;
-            }
-            .laca-projects-action:hover,
-            .laca-projects-action:focus {
-                background: #f8fafc;
-                border-color: #d1d5db;
-                color: #111827;
-                outline: none;
-            }
-            .laca-projects-action__meta { display: block; min-width: 0; }
-            .laca-projects-action__meta strong { color: #111827; display: block; font-size: 13px; margin-bottom: 3px; }
-            .laca-projects-action__meta em { color: #6b7280; display: block; font-size: 12px; font-style: normal; }
-            .laca-projects-action__message {
-                color: #4b5563;
-                display: block;
-                font-size: 12px;
-                grid-column: 1 / -1;
-                line-height: 1.45;
-            }
-            .laca-projects-board {
-                display: grid;
-                gap: 12px;
-                grid-template-columns: repeat(5, minmax(220px, 1fr));
-                overflow-x: auto;
-                padding-bottom: 6px;
-            }
-            .laca-projects-column {
-                background: linear-gradient(180deg, #fff 0%, #fbfcff 100%);
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                box-shadow: 0 10px 24px rgba(15, 23, 42, .04);
-                min-width: 220px;
-                padding: 12px;
-            }
-            .laca-projects-column__head {
-                align-items: center;
-                display: flex;
-                justify-content: space-between;
-                margin-bottom: 10px;
-            }
-            .laca-projects-column__head h2 {
-                color: #111827;
-                font-size: 13px;
-                margin: 0;
-            }
-            .laca-projects-column__head span {
-                background: #f3f4f6;
-                border: 1px solid #e5e7eb;
-                border-radius: 999px;
-                color: #4b5563;
-                font-size: 12px;
-                min-width: 26px;
-                padding: 3px 8px;
-                text-align: center;
-            }
-            .laca-projects-cards { display: grid; gap: 8px; }
-            .laca-projects-card {
-                border: 1px solid #eef0f3;
-                border-radius: 6px;
-                display: block;
-                padding: 10px;
-                text-decoration: none;
-            }
-            .laca-projects-card:hover,
-            .laca-projects-card:focus {
-                background: #f8fafc;
-                border-color: #d1d5db;
-                outline: none;
-            }
-            .laca-projects-card strong { color: #111827; display: block; font-size: 13px; margin-bottom: 4px; }
-            .laca-projects-card > span { color: #6b7280; display: block; font-size: 12px; margin-bottom: 8px; }
-            .laca-projects-card dl { display: grid; gap: 6px; margin: 0; }
-            .laca-projects-card dl div { display: grid; gap: 2px; }
-            .laca-projects-card dt { color: #6b7280; font-size: 11px; }
-            .laca-projects-card dd { color: #374151; font-size: 12px; margin: 0; }
-            .laca-projects-swal { text-align: left; }
-            .laca-projects-swal__meta {
-                color: #6b7280;
-                font-size: 12px;
-                margin: 0 0 10px;
-            }
-            .laca-projects-swal__message {
-                background: #f8fafc;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                color: #374151;
-                font-size: 13px;
-                line-height: 1.55;
-                margin: 0;
-                padding: 12px;
-            }
-            .laca-projects-badge {
-                background: #f3f4f6;
-                border: 1px solid #e5e7eb;
-                border-radius: 999px;
-                color: #111827;
-                display: inline-block;
-                font-size: 12px;
-                font-weight: 600;
-                line-height: 1;
-                min-width: 34px;
-                padding: 5px 8px;
-                text-align: center;
-            }
-            .laca-projects-copy { width: 100%; }
-            @media (max-width: 1100px) {
-                .laca-projects-overview,
-                .laca-projects-stats,
-                .laca-projects-report-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
-                .laca-projects-board { grid-template-columns: repeat(3, minmax(220px, 1fr)); }
-                .laca-projects-grid { grid-template-columns: 1fr; }
-            }
-            @media (max-width: 782px) {
-                body.laca-projects-dock-active #wpcontent,
-                body.laca-projects-dock-active.folded #wpcontent,
-                body.laca-projects-dock-active:not(.folded) #wpcontent { padding-left: 10px; }
-                .laca-projects-dock {
-                    border-radius: 10px;
-                    bottom: auto;
-                    left: auto;
-                    margin: 12px 10px 18px;
-                    position: relative;
-                    top: auto;
-                    width: auto;
-                }
-                body.folded .laca-projects-dock { left: auto; }
-                .laca-projects-header { display: block; }
-                .laca-projects-overview,
-                .laca-projects-report-grid { grid-template-columns: 1fr; }
-                .laca-projects-board { grid-template-columns: 1fr; }
-            }
-        </style>
-        <?php
+        // Hub layout styles have been migrated to resources/styles/admin/skins/_project-hub.scss
+    }
+
+    private function getIntroCalloutHtml(string $title, string $description): string
+    {
+        return sprintf(
+            '<div class="laca-alert laca-alert--info laca-projects-intro" role="status"><span class="dashicons dashicons-info laca-alert__icon"></span><div class="laca-alert__content"><div class="laca-alert__title">🔧 %s</div><div class="laca-alert__description">%s</div></div></div>',
+            esc_html($title),
+            esc_html($description)
+        );
+    }
+
+    private function renderIntroCallout(string $title, string $description): void
+    {
+        echo $this->getIntroCalloutHtml($title, $description);
     }
 
     public function renderDock(): void
@@ -1452,12 +988,14 @@ class LacaProjectsHub
     private function renderHeader(string $title, string $description): void
     {
         ?>
-        <div class="laca-projects-header">
-            <div>
-                <h1><?php echo esc_html($title); ?></h1>
-                <p><?php echo esc_html($description); ?></p>
+        <div class="laca-page-header laca-projects-header">
+            <div class="laca-page-header__content">
+                <h1 class="laca-page-header__title"><?php echo esc_html($title); ?></h1>
+                <p class="laca-page-header__description"><?php echo esc_html($description); ?></p>
             </div>
-            <a class="button button-primary" href="<?php echo esc_url(admin_url('post-new.php?post_type=project')); ?>">Thêm dự án</a>
+            <div class="laca-page-header__actions">
+                <a class="laca-btn laca-btn--solid laca-btn--sm button button-primary" href="<?php echo esc_url(admin_url('post-new.php?post_type=project')); ?>"><span class="dashicons dashicons-plus-alt2"></span> <?php esc_html_e('Thêm dự án', 'laca'); ?></a>
+            </div>
         </div>
         <?php
     }
@@ -1640,28 +1178,30 @@ class LacaProjectsHub
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader($title, $description); ?>
             <?php echo $intro; ?>
-            <section class="laca-projects-panel">
+            <section class="laca-projects-panel laca-card">
                 <?php if ($rows === []): ?>
-                    <p class="laca-projects-empty">Chưa có dữ liệu.</p>
+                    <p class="laca-projects-empty"><?php echo esc_html__('Chưa có dữ liệu.', 'laca'); ?></p>
                 <?php else: ?>
-                    <table class="widefat striped laca-projects-table">
-                        <thead>
-                            <tr>
-                                <?php foreach ($headers as $header): ?>
-                                    <th><?php echo esc_html($header); ?></th>
-                                <?php endforeach; ?>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($rows as $row): ?>
+                    <div class="laca-table-wrap">
+                        <table class="widefat striped laca-projects-table laca-table">
+                            <thead>
                                 <tr>
-                                    <?php foreach ($row as $cell): ?>
-                                        <td><?php echo wp_kses_post($cell); ?></td>
+                                    <?php foreach ($headers as $header): ?>
+                                        <th><?php echo esc_html($header); ?></th>
                                     <?php endforeach; ?>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($rows as $row): ?>
+                                    <tr>
+                                        <?php foreach ($row as $cell): ?>
+                                            <td><?php echo wp_kses_post($cell); ?></td>
+                                        <?php endforeach; ?>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 <?php endif; ?>
             </section>
         </div>
