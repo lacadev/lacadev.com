@@ -616,8 +616,18 @@ trait BlockSyncSender
             return null;
         }
 
-        // Định danh block được truyền qua path segment: {catalogUrl}/{rawurlencode($blockName)}/files
-        $filesUrl = rtrim($catalogUrl, '/') . '/' . rawurlencode($blockName) . '/files';
+        // Nếu $blockName KHÔNG chứa "/" (block phẳng thông thường), dùng URL chuẩn qua path segment:
+        //   {catalogUrl}/{blockName}/files
+        // Tương thích tối đa với mọi phiên bản client cũ.
+        // Nếu $blockName CÓ chứa "/" (bucket/block), KHÔNG được dùng %2F trong path segment vì
+        // Apache có cấu hình AllowEncodedSlashes mặc định là Off, sẽ trả về lỗi 404 HTML trước khi
+        // request kịp đến WordPress/WPEmerge. Do đó, chuyển sang dùng route tương thích qua query param:
+        //   {catalogUrl}/files?block=...
+        if (!str_contains($blockName, '/')) {
+            $filesUrl = rtrim($catalogUrl, '/') . '/' . rawurlencode($blockName) . '/files';
+        } else {
+            $filesUrl = rtrim($catalogUrl, '/') . '/files?' . http_build_query(['block' => $blockName]);
+        }
 
         $response = wp_remote_get($filesUrl, [
             'headers'   => [
