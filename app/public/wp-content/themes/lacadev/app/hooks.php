@@ -107,6 +107,17 @@ add_action('init', static function () {
 });
 
 /**
+ * Checklist phát hành production — đầu trang Laca Admin (chỉ Super User).
+ */
+add_action('init', static function () {
+    if (is_admin() && class_exists('\App\Settings\LacaAdmin\ReleaseChecklist')) {
+        (new \App\Settings\LacaAdmin\ReleaseChecklist())->register();
+    }
+});
+// Tra DNS (SPF/DMARC) chạy nền qua WP-Cron — request cron không phải is_admin() nên đăng ký riêng.
+add_action('laca_release_checklist_dns', ['\App\Settings\LacaAdmin\ReleaseChecklist', 'refreshDns']);
+
+/**
  * Pages/Posts list table: Add Thumbnail column
  */
 function app_add_featured_image_column($cols) {
@@ -436,6 +447,22 @@ add_action('after_setup_theme', function () {
         (new \App\Settings\Security\CoreInfoFileCleanup())->register();
     }
 }, 15);
+
+/**
+ * Discord Hub — đẩy lead/hoạt động/cảnh báo bảo mật về Discord (Laca Admin → Discord Hub).
+ * Boot ở after_setup_theme (sớm hơn init) vì một số sự kiện cần bắt có thể xảy ra
+ * ngay đầu request (xác thực Application Password qua REST).
+ */
+add_action('after_setup_theme', function () {
+    // Tính năng phụ: file đang upload dở khi deploy (ParseError/Class not found) không được làm sập site.
+    try {
+        if (class_exists('\App\Features\DiscordHub\DiscordHub')) {
+            (new \App\Features\DiscordHub\DiscordHub())->boot();
+        }
+    } catch (\Throwable $e) {
+        error_log('[laca-discord-hub] Không khởi động được: ' . $e->getMessage());
+    }
+}, 20);
 
 /**
  * Login Log — ghi lại lý do thật của đăng nhập thất bại.

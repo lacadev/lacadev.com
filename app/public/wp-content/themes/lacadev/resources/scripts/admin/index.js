@@ -6,6 +6,7 @@ import './project-charts.js';
 import './contact-form.js';
 import './global-alerts.js';
 import './media-library-infinite-scroll.js';
+import { initReleaseChecklistAjax } from './release-checklist.js';
 import { initCarbonFieldsAutoSave } from './carbon-autosave.js';
 import { initListTableInlineEditor } from './list-table-inline.js';
 
@@ -462,11 +463,13 @@ document.addEventListener( 'DOMContentLoaded', function () {
 	if ( document.readyState === 'loading' ) {
 		document.addEventListener( 'DOMContentLoaded', () => {
 			LacaDashboard.init();
+			initReleaseChecklistAjax();
 			initCarbonFieldsAutoSave();
 			initListTableInlineEditor();
 		} );
 	} else {
 		LacaDashboard.init();
+		initReleaseChecklistAjax();
 		initCarbonFieldsAutoSave();
 		initListTableInlineEditor();
 	}
