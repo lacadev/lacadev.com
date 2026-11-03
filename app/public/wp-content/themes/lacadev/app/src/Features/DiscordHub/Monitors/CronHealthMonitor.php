@@ -84,6 +84,21 @@ final class CronHealthMonitor
         set_transient(self::ALERT_THROTTLE, 1, 12 * HOUR_IN_SECONDS);
 
         $hours = (int) floor((time() - $last) / HOUR_IN_SECONDS);
+
+        // Bọc phát sự kiện qua NotificationBus
+        if (class_exists(\App\Notifications\NotificationBus::class)) {
+            \App\Notifications\NotificationBus::emit(
+                \App\Notifications\NotificationBus::EVENT_CRON_LATE,
+                [
+                    'hours'         => $hours,
+                    'last_run'      => $last,
+                    'overdue_count' => self::overdueCount(),
+                    'command'       => self::suggestedCommand(),
+                ]
+            );
+            return;
+        }
+
         $embed = Embed::make(
             sprintf(I18n::t('⏰ Cron không chạy %1$d giờ', '⏰ Cron has not run for %1$d hours'), $hours),
             Embed::COLOR_DANGER

@@ -37,6 +37,36 @@ $legacyAuthLastSeen = isset($legacyAuthLastSeen) ? (int) $legacyAuthLastSeen : (
 ?>
 
 <div class="laca-pm-col laca-project-workspace__side">
+    <?php
+    $uptimeStats24h = class_exists(\App\Databases\UptimeLogTable::class) ? \App\Databases\UptimeLogTable::getUptimeStats($projectId, 24) : null;
+    $uptimeStats7d  = class_exists(\App\Databases\UptimeLogTable::class) ? \App\Databases\UptimeLogTable::getUptimeStats($projectId, 168) : null;
+    ?>
+    <section class="laca-project-panel" style="margin-bottom:16px;">
+        <div class="laca-project-panel__header" style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <h3 style="margin:0;"><?php echo esc_html__('Uptime Monitor', 'laca'); ?></h3>
+                <p style="margin:4px 0 0;font-size:12px;color:#64748b;"><?php echo esc_html__('Theo dõi thời gian hoạt động & độ trễ phản hồi.', 'laca'); ?></p>
+            </div>
+            <?php if ($uptimeStats24h && $uptimeStats24h['total_checks'] > 0): ?>
+                <span class="laca-badge <?php echo $uptimeStats24h['percentage'] >= 99 ? 'laca-badge--success' : 'laca-badge--warning'; ?>">
+                    <?php echo esc_html((string) $uptimeStats24h['percentage']); ?>%
+                </span>
+            <?php endif; ?>
+        </div>
+        <div style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#f8fafc;border-radius:6px;margin-top:8px;">
+            <div style="border-right:1px solid #e2e8f0;padding-right:8px;">
+                <span style="font-size:11px;color:#64748b;display:block;"><?php echo esc_html__('Uptime 24 giờ', 'laca'); ?></span>
+                <strong style="font-size:14px;color:#0f172a;"><?php echo $uptimeStats24h && $uptimeStats24h['total_checks'] > 0 ? esc_html($uptimeStats24h['percentage'] . '%') : '—'; ?></strong>
+                <small style="display:block;font-size:11px;color:#64748b;"><?php echo $uptimeStats24h && $uptimeStats24h['total_checks'] > 0 ? esc_html($uptimeStats24h['avg_ms'] . 'ms') : ''; ?></small>
+            </div>
+            <div>
+                <span style="font-size:11px;color:#64748b;display:block;"><?php echo esc_html__('Uptime 7 ngày', 'laca'); ?></span>
+                <strong style="font-size:14px;color:#0f172a;"><?php echo $uptimeStats7d && $uptimeStats7d['total_checks'] > 0 ? esc_html($uptimeStats7d['percentage'] . '%') : '—'; ?></strong>
+                <small style="display:block;font-size:11px;color:#64748b;"><?php echo $uptimeStats7d && $uptimeStats7d['total_checks'] > 0 ? esc_html($uptimeStats7d['avg_ms'] . 'ms') : ''; ?></small>
+            </div>
+        </div>
+    </section>
+
     <?php if ($legacyAuthLastSeen > 0): ?>
         <div class="notice notice-warning inline" style="margin:0 0 16px;padding:12px;border-left:4px solid #f59e0b;background:#fffbeb;border-radius:4px;">
             <strong style="color:#b45309;display:block;margin-bottom:4px;">⚠️ <?php echo esc_html__('Client chưa nâng cấp bảo mật', 'laca'); ?></strong>

@@ -50,6 +50,9 @@ class TrackerEndpointHandler
             if (!$verify['valid']) {
                 return new \WP_REST_Response(['success' => false, 'message' => $verify['message']], 401);
             }
+
+            // Ghi nhận lần cuối client dùng xác thực có ký HMAC hợp lệ
+            update_post_meta((int) $projectId, '_laca_signed_auth_last_seen', time());
         } else {
             // Luồng 2: Xác thực qua Secret Key truyền thống (Legacy Auth)
             $cfVal = function_exists('carbon_get_theme_option') ? carbon_get_theme_option('laca_allow_legacy_auth') : null;
@@ -389,6 +392,100 @@ class TrackerEndpointHandler
         if (!empty($meta)) {
             update_post_meta($projectId, '_tracker_last_seen_meta', $meta);
         }
+
+        if (isset($meta['plugins_pending_update'])) {
+            update_post_meta($projectId, '_plugins_pending_count', absint($meta['plugins_pending_update']));
+        }
+
+        if (isset($meta['backup']) && is_array($meta['backup'])) {
+            $backupData = [
+                'plugin'         => sanitize_text_field((string) ($meta['backup']['plugin'] ?? 'none')),
+                'last_backup_at' => sanitize_text_field((string) ($meta['backup']['last_backup_at'] ?? '')),
+                'status'         => sanitize_text_field((string) ($meta['backup']['status'] ?? 'unknown')),
+                'received_at'    => current_time('mysql'),
+            ];
+            update_post_meta($projectId, '_tracker_last_backup', $backupData);
+            $this->checkBackupWarning($projectId, $backupData);
+        }
+    }
+
+    /**
+     * Kiểm tra trạng thái backup và sinh cảnh báo khi quá hạn hoặc không rõ quá 7 ngày
+     *
+     * @param int $projectId
+     * @param array{plugin: string, last_backup_at: string, status: string, received_at: string} $backupData
+     */
+    private function checkBackupWarning(int $projectId, array $backupData): void
+    {
+        $status       = $backupData['status'] ?? 'unknown';
+        $lastBackupAt = $backupData['last_backup_at'] ?? '';
+        $plugin       = $backupData['plugin'] ?? 'none';
+
+        $maxDays = function_exists('carbon_get_theme_option') ? (int) carbon_get_theme_option('laca_backup_max_age_days') : 7;
+        if ($maxDays <= 0) {
+            $maxDays = 7;
+        }
+
+        $now = time();
+        $isWarning = false;
+        $warningMsg = '';
+
+        if ($status === 'unknown') {
+            $unknownSince = (int) get_post_meta($projectId, '_laca_backup_unknown_since', true);
+            if ($unknownSince === 0) {
+                update_post_meta($projectId, '_laca_backup_unknown_since', $now);
+            } elseif (($now - $unknownSince) >= 7 * DAY_IN_SECONDS) {
+                $isWarning   = true;
+                $projectName = get_the_title($projectId) ?: "#{$projectId}";
+                /* translators: %s: tên dự án */
+                $warningMsg  = sprintf(__('Dự án %s không xác định được trạng thái sao lưu trong hơn 7 ngày.', 'laca'), $projectName);
+            }
+        } else {
+            // Đã phát hiện được backup rõ ràng -> xóa baseline unknown
+            delete_post_meta($projectId, '_laca_backup_unknown_since');
+
+            if (!empty($lastBackupAt)) {
+                $backupTime = strtotime($lastBackupAt);
+                if ($backupTime > 0) {
+                    $ageDays = ($now - $backupTime) / DAY_IN_SECONDS;
+                    if ($ageDays > $maxDays) {
+                        $isWarning   = true;
+                        $daysDiff    = (int) floor($ageDays);
+                        $projectName = get_the_title($projectId) ?: "#{$projectId}";
+                        /* translators: 1: tên dự án, 2: số ngày, 3: tên plugin sao lưu, 4: ngày sao lưu */
+                        $warningMsg = sprintf(
+                            __('Dự án %1$s chưa có bản sao lưu mới trong %2$d ngày qua (Plugin: %3$s, Lần cuối: %4$s).', 'laca'),
+                            $projectName,
+                            $daysDiff,
+                            $plugin,
+                            $lastBackupAt
+                        );
+                    }
+                }
+            } elseif ($status === 'failed') {
+                $isWarning   = true;
+                $projectName = get_the_title($projectId) ?: "#{$projectId}";
+                /* translators: 1: tên dự án, 2: tên plugin sao lưu */
+                $warningMsg = sprintf(
+                    __('Dự án %1$s có bản sao lưu gần nhất thất bại (Plugin: %2$s).', 'laca'),
+                    $projectName,
+                    $plugin
+                );
+            }
+        }
+
+        if (!$isWarning) {
+            return;
+        }
+
+        // Dedup 1 lần/ngày/project
+        $lastAlertSent = (int) get_post_meta($projectId, '_laca_backup_alert_last_sent', true);
+        if ($lastAlertSent > 0 && ($now - $lastAlertSent) < DAY_IN_SECONDS) {
+            return;
+        }
+
+        $this->createAlertByType($projectId, $warningMsg, 'warning', 'backup');
+        update_post_meta($projectId, '_laca_backup_alert_last_sent', $now);
     }
 
     private function sanitizeMeta(mixed $value): array|string|int|float|bool|null

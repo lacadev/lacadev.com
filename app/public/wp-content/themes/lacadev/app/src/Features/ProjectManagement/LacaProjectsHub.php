@@ -48,6 +48,7 @@ class LacaProjectsHub
             'items' => [
                 ['key' => 'issues', 'label' => 'Issues', 'url' => 'admin.php?page=laca-project-issues'],
                 ['key' => 'updates', 'label' => 'Updates', 'url' => 'admin.php?page=laca-project-updates'],
+                ['key' => 'fleet', 'label' => 'Fleet', 'url' => 'admin.php?page=laca-project-fleet'],
                 ['key' => 'renewals', 'label' => 'Renewals', 'url' => 'admin.php?page=laca-project-renewals'],
                 ['key' => 'alerts', 'label' => 'Cảnh báo', 'url' => 'admin.php?page=laca-global-alerts'],
                 ['key' => 'operations', 'label' => 'Vận hành', 'url' => 'admin.php?page=laca-project-operations'],
@@ -163,6 +164,15 @@ class LacaProjectsHub
 
         add_submenu_page(
             self::MENU_SLUG,
+            __('Fleet', 'laca'),
+            __('Fleet', 'laca'),
+            'edit_posts',
+            'laca-project-fleet',
+            [$this, 'renderFleet']
+        );
+
+        add_submenu_page(
+            self::MENU_SLUG,
             __('Renewals', 'laca'),
             __('Renewals', 'laca'),
             'edit_posts',
@@ -248,7 +258,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Laca Projects', 'Báo cáo nhanh về doanh thu, công nợ, lỗi và cập nhật từ website khách hàng.'); ?>
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Dashboard</p><p style="margin:0;font-size:13px;color:#374151">Nhìn nhanh sức khỏe toàn bộ dự án/website đang quản lý: doanh thu, công nợ, cảnh báo, tracker và log cập nhật mới nhất. Nhấn vào một dòng để xem chi tiết dự án.</p></div>
+            <?php $this->renderIntroCallout(__('Dashboard', 'laca'), __('Nhìn nhanh sức khỏe toàn bộ dự án/website đang quản lý: doanh thu, công nợ, cảnh báo, tracker và log cập nhật mới nhất. Nhấn vào một dòng để xem chi tiết dự án.', 'laca')); ?>
             <?php $this->renderChartDataScript($chartData); ?>
 
             <div class="laca-projects-overview">
@@ -270,8 +280,8 @@ class LacaProjectsHub
                     <div class="laca-projects-chart">
                         <canvas id="laca-projects-finance-chart" height="180"></canvas>
                     </div>
-                    <div class="laca-projects-progress" aria-label="<?php echo esc_attr__('Tỷ lệ đã thu', 'laca'); ?>">
-                        <span style="width: <?php echo esc_attr((string) min(100, $finance['collection_rate'])); ?>%"></span>
+                    <div class="laca-projects-progress laca-progress" aria-label="<?php echo esc_attr__('Tỷ lệ đã thu', 'laca'); ?>" style="<?php echo esc_attr('--laca-progress:' . min(100, $finance['collection_rate']) . '%;'); ?>">
+                        <span class="laca-progress__bar"></span>
                     </div>
                     <dl class="laca-projects-kv">
                         <div><dt>Đã thu</dt><dd><?php echo esc_html($this->formatMoney($finance['total_paid'])); ?></dd></div>
@@ -430,7 +440,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Action center', 'Danh sách việc cần xử lý được gom theo mức ưu tiên từ cảnh báo, công nợ, gia hạn và cập nhật dự án.'); ?>
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Action center</p><p style="margin:0;font-size:13px;color:#374151">Việc cần xử lý ngay, tự động gom theo mức ưu tiên: issue nghiêm trọng, công nợ, gia hạn sắp đến hạn và dự án lâu chưa có cập nhật.</p></div>
+            <?php $this->renderIntroCallout(__('Action center', 'laca'), __('Việc cần xử lý ngay, tự động gom theo mức ưu tiên: issue nghiêm trọng, công nợ, gia hạn sắp đến hạn và dự án lâu chưa có cập nhật.', 'laca')); ?>
             <div class="laca-projects-overview laca-projects-overview--compact">
                 <?php $this->renderMetric('Tổng việc cần xử lý', (string) $total, 'Tự tổng hợp từ CRM'); ?>
                 <?php $this->renderMetric('Cần xử lý ngay', (string) count($groups['urgent']), 'Critical/warning issues'); ?>
@@ -491,7 +501,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Notifications', 'Trung tâm thông báo gom yêu cầu khách hàng, cảnh báo, công nợ, gia hạn và dự án cần chăm sóc.'); ?>
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Notifications</p><p style="margin:0;font-size:13px;color:#374151">Tổng hợp yêu cầu gửi từ khách hàng qua Client Portal cùng issue, công nợ và gia hạn đang cần chăm sóc — nơi tổng hợp việc cần phản hồi khách, không phải log gửi Email/Zalo/Telegram/Slack.</p></div>
+            <?php $this->renderIntroCallout(__('Notifications', 'laca'), __('Tổng hợp yêu cầu gửi từ khách hàng qua Client Portal cùng issue, công nợ và gia hạn đang cần chăm sóc — nơi tổng hợp việc cần phản hồi khách, không phải log gửi Email/Zalo/Telegram/Slack.', 'laca')); ?>
             <div class="laca-projects-overview laca-projects-overview--compact">
                 <?php $this->renderMetric('Tổng thông báo', (string) $total, 'Từ CRM và client portal'); ?>
                 <?php $this->renderMetric('Yêu cầu khách', (string) count($clientRequests), 'Client Portal'); ?>
@@ -547,7 +557,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Pipeline', 'Board theo trạng thái để nhìn nhanh project đang ở đâu, ai phụ trách thanh toán và có rủi ro gì.'); ?>
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Pipeline</p><p style="margin:0;font-size:13px;color:#374151">Bảng Kanban theo trạng thái dự án, giúp nhìn nhanh dự án nào đang ở giai đoạn nào, tình hình tài chính và cảnh báo. Bấm vào thẻ để xem chi tiết.</p></div>
+            <?php $this->renderIntroCallout(__('Pipeline', 'laca'), __('Bảng Kanban theo trạng thái dự án, giúp nhìn nhanh dự án nào đang ở giai đoạn nào, tình hình tài chính và cảnh báo. Bấm vào thẻ để xem chi tiết.', 'laca')); ?>
             <div class="laca-projects-board">
                 <?php foreach ($columns as $column): ?>
                     <section class="laca-projects-column">
@@ -595,7 +605,7 @@ class LacaProjectsHub
             'CRM khách hàng tổng hợp theo tên/email, doanh thu, công nợ và danh sách website đang chăm sóc.',
             ['Khách hàng', 'Liên hệ', 'Dự án', 'Doanh thu', 'Công nợ', 'Cập nhật cuối'],
             $clientRows,
-            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Khách hàng</p><p style="margin:0;font-size:13px;color:#374151">Danh bạ khách hàng tổng hợp theo tên/email: số dự án đang chăm sóc, doanh thu và công nợ của từng khách.</p></div>'
+            $this->getIntroCalloutHtml(__('Khách hàng', 'laca'), __('Danh bạ khách hàng tổng hợp theo tên/email: số dự án đang chăm sóc, doanh thu và công nợ của từng khách.', 'laca'))
         );
     }
 
@@ -609,31 +619,104 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Issues', 'Tập trung các lỗi, cảnh báo bảo mật và cảnh báo vận hành chưa xử lý.'); ?>
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Issues</p><p style="margin:0;font-size:13px;color:#374151">Toàn bộ lỗi, cảnh báo bảo mật và cảnh báo vận hành đang active trên các website khách hàng, sắp xếp theo mức độ nghiêm trọng.</p></div>
+            <?php $this->renderIntroCallout(__('Issues', 'laca'), __('Toàn bộ lỗi, cảnh báo bảo mật và cảnh báo vận hành đang active trên các website khách hàng, sắp xếp theo mức độ nghiêm trọng.', 'laca')); ?>
             <div class="laca-projects-overview laca-projects-overview--compact">
                 <?php $this->renderMetric('Active issues', (string) $report['total'], 'Tổng cảnh báo chưa resolve'); ?>
                 <?php $this->renderMetric('Critical', (string) $report['critical'], 'Cần xử lý ngay'); ?>
                 <?php $this->renderMetric('Warning', (string) $report['warning'], 'Cần kiểm tra'); ?>
                 <?php $this->renderMetric('Website/security', (string) $report['website_issues'], 'Lỗi và bảo mật từ site khách'); ?>
             </div>
-            <section class="laca-projects-panel">
+            <section class="laca-projects-panel laca-card">
                 <?php if (($alerts['items'] ?? []) === []): ?>
-                    <p class="laca-projects-empty">Không có issue active.</p>
+                    <p class="laca-projects-empty"><?php echo esc_html__('Không có issue active.', 'laca'); ?></p>
                 <?php else: ?>
-                    <table class="widefat striped laca-projects-table">
-                        <thead><tr><th>Dự án</th><th>Loại</th><th>Mức độ</th><th>Nội dung</th><th>Ngày</th></tr></thead>
-                        <tbody>
-                            <?php foreach ($alerts['items'] as $alert): ?>
+                    <div class="laca-table-wrap">
+                        <table class="widefat striped laca-projects-table laca-table">
+                            <thead><tr><th><?php echo esc_html__('Dự án', 'laca'); ?></th><th><?php echo esc_html__('Loại', 'laca'); ?></th><th><?php echo esc_html__('Mức độ', 'laca'); ?></th><th><?php echo esc_html__('Nội dung', 'laca'); ?></th><th><?php echo esc_html__('Ngày', 'laca'); ?></th></tr></thead>
+                            <tbody>
+                                <?php foreach ($alerts['items'] as $alert): ?>
+                                    <tr>
+                                        <td><a href="<?php echo esc_url(get_edit_post_link((int) $alert['project_id'], '')); ?>"><?php echo esc_html($alert['project_name'] ?? 'Dự án #' . $alert['project_id']); ?></a></td>
+                                        <td><?php echo esc_html(ProjectAlert::getTypeLabel((string) $alert['alert_type'])); ?></td>
+                                        <td><span class="laca-badge laca-badge--<?php echo (string) ($alert['alert_level'] ?? '') === 'critical' ? 'danger' : 'warning'; ?>"><?php echo esc_html((string) $alert['alert_level']); ?></span></td>
+                                        <td><?php echo esc_html(wp_trim_words((string) $alert['alert_msg'], 26)); ?></td>
+                                        <td><?php echo esc_html($this->formatDateTime((string) $alert['created_at'])); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </section>
+
+            <?php
+            global $wpdb;
+            $logTable = \App\Databases\ProjectLogTable::getTableName();
+            $clientRequests = $wpdb->get_results($wpdb->prepare(
+                "SELECT l.*, p.post_title as project_name
+                 FROM {$logTable} l
+                 INNER JOIN {$wpdb->posts} p ON p.ID = l.project_id
+                 WHERE l.log_type = %s
+                 ORDER BY l.id DESC
+                 LIMIT 20",
+                'client_request'
+            ));
+            ?>
+            <section class="laca-projects-panel laca-projects-panel--spaced laca-card">
+                <div class="laca-projects-panel__head">
+                    <h2><?php echo esc_html__('Yêu cầu hỗ trợ từ khách hàng', 'laca'); ?></h2>
+                    <span class="laca-projects-meta"><?php echo esc_html(sprintf(__('%d yêu cầu gần nhất', 'laca'), count($clientRequests))); ?></span>
+                </div>
+                <?php if (empty($clientRequests)): ?>
+                    <p class="laca-projects-empty"><?php echo esc_html__('Chưa có yêu cầu hỗ trợ nào từ site khách.', 'laca'); ?></p>
+                <?php else: ?>
+                    <div class="laca-table-wrap">
+                        <table class="widefat striped laca-projects-table laca-table">
+                            <thead>
                                 <tr>
-                                    <td><a href="<?php echo esc_url(get_edit_post_link((int) $alert['project_id'], '')); ?>"><?php echo esc_html($alert['project_name'] ?? 'Dự án #' . $alert['project_id']); ?></a></td>
-                                    <td><?php echo esc_html(ProjectAlert::getTypeLabel((string) $alert['alert_type'])); ?></td>
-                                    <td><span class="laca-projects-badge"><?php echo esc_html((string) $alert['alert_level']); ?></span></td>
-                                    <td><?php echo esc_html(wp_trim_words((string) $alert['alert_msg'], 26)); ?></td>
-                                    <td><?php echo esc_html($this->formatDateTime((string) $alert['created_at'])); ?></td>
+                                    <th><?php echo esc_html__('Dự án', 'laca'); ?></th>
+                                    <th><?php echo esc_html__('Loại', 'laca'); ?></th>
+                                    <th><?php echo esc_html__('Mức độ', 'laca'); ?></th>
+                                    <th><?php echo esc_html__('Tiêu đề & Nội dung', 'laca'); ?></th>
+                                    <th><?php echo esc_html__('Trạng thái', 'laca'); ?></th>
+                                    <th><?php echo esc_html__('Ngày gửi', 'laca'); ?></th>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($clientRequests as $req):
+                                    $meta = !empty($req->meta) ? json_decode($req->meta, true) : [];
+                                    $reqStatus = $meta['status'] ?? 'pending';
+                                    $statusLabels = [
+                                        'pending'    => __('Chờ xử lý', 'laca'),
+                                        'processing' => __('Đang xử lý', 'laca'),
+                                        'resolved'   => __('Đã xử lý', 'laca'),
+                                    ];
+                                ?>
+                                    <tr>
+                                        <td><a href="<?php echo esc_url(get_edit_post_link((int) $req->project_id, '')); ?>"><strong><?php echo esc_html($req->project_name ?: '#' . $req->project_id); ?></strong></a></td>
+                                        <td><?php echo esc_html($meta['category_label'] ?? __('Hỗ trợ', 'laca')); ?></td>
+                                        <td><span class="laca-projects-badge"><?php echo esc_html($meta['priority_label'] ?? __('Bình thường', 'laca')); ?></span></td>
+                                        <td>
+                                            <strong><?php echo esc_html($meta['title'] ?? wp_trim_words($req->log_content, 8)); ?></strong>
+                                            <div class="laca-projects-desc"><?php echo esc_html(wp_trim_words($meta['description'] ?? $req->log_content, 20)); ?></div>
+                                            <?php if (!empty($meta['attachment_url'])): ?>
+                                                <div class="laca-projects-attachment"><a href="<?php echo esc_url($meta['attachment_url']); ?>" target="_blank">📎 <?php echo esc_html__('Xem ảnh đính kèm', 'laca'); ?></a></div>
+                                            <?php endif; ?>
+                                            <?php if (!empty($meta['admin_reply'])): ?>
+                                                <div class="laca-projects-reply">💬 <?php echo esc_html($meta['admin_reply']); ?></div>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <span class="laca-badge laca-badge--<?php echo $reqStatus === 'resolved' ? 'success' : ($reqStatus === 'processing' ? 'warning' : 'danger'); ?>">
+                                                <?php echo esc_html($statusLabels[$reqStatus] ?? $reqStatus); ?>
+                                            </span>
+                                        </td>
+                                        <td><?php echo esc_html($this->formatDateTime((string) $req->created_at)); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 <?php endif; ?>
             </section>
         </div>
@@ -649,7 +732,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Updates', 'Theo dõi cập nhật tự động, deploy, bảo mật và thay đổi từ website khách hàng.'); ?>
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Updates</p><p style="margin:0;font-size:13px;color:#374151">Danh sách report tự động (deploy, cập nhật plugin/core, bảo mật, sửa lỗi...) mà tracker/site khách gửi về, giúp biết website nào vừa có thay đổi.</p></div>
+            <?php $this->renderIntroCallout(__('Updates', 'laca'), __('Danh sách report tự động (deploy, cập nhật plugin/core, bảo mật, sửa lỗi...) mà tracker/site khách gửi về, giúp biết website nào vừa có thay đổi.', 'laca')); ?>
             <div class="laca-projects-overview laca-projects-overview--compact">
                 <?php $this->renderMetric('Tổng updates', (string) count($logs), '100 log mới nhất'); ?>
                 <?php $this->renderMetric('Report tự động', (string) $clientUpdates['auto_count'], 'Gửi từ tracker/client site'); ?>
@@ -663,6 +746,11 @@ class LacaProjectsHub
         <?php
     }
 
+    public function renderFleet(): void
+    {
+        (new FleetPage())->render();
+    }
+
     public function renderRenewals(): void
     {
         $rows = $this->getRenewalRows($this->getProjects(), 120);
@@ -672,7 +760,7 @@ class LacaProjectsHub
             'Theo dõi domain, hosting và phí bảo trì cần gia hạn trong 120 ngày.',
             ['Dự án', 'Khách hàng', 'Hạng mục', 'Ngày đến hạn', 'Còn lại', 'Giá trị'],
             $rows,
-            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Renewals</p><p style="margin:0;font-size:13px;color:#374151">Danh sách domain, hosting và phí bảo trì sắp đến hạn trong 120 ngày tới — dùng để chủ động nhắc khách gia hạn trước khi hết hạn.</p></div>'
+            $this->getIntroCalloutHtml(__('Renewals', 'laca'), __('Danh sách domain, hosting và phí bảo trì sắp đến hạn trong 120 ngày tới — dùng để chủ động nhắc khách gia hạn trước khi hết hạn.', 'laca'))
         );
     }
 
@@ -696,7 +784,7 @@ class LacaProjectsHub
             'Theo dõi domain, hosting, tracker heartbeat, cảnh báo và trạng thái vận hành.',
             ['Dự án', 'Domain', 'Hết hạn domain', 'Hết hạn hosting', 'Heartbeat', 'Cảnh báo'],
             $rows,
-            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Vận hành</p><p style="margin:0;font-size:13px;color:#374151">Theo dõi tình trạng vận hành từng website: domain/hosting còn hạn bao lâu, tracker heartbeat có còn hoạt động và số cảnh báo đang active.</p></div>'
+            $this->getIntroCalloutHtml(__('Vận hành', 'laca'), __('Theo dõi tình trạng vận hành từng website: domain/hosting còn hạn bao lâu, tracker heartbeat có còn hoạt động và số cảnh báo đang active.', 'laca'))
         );
     }
 
@@ -721,7 +809,7 @@ class LacaProjectsHub
             'Theo dõi báo giá, số tiền đã thanh toán và trạng thái công nợ.',
             ['Dự án', 'Khách hàng', 'Giá build', 'Đã thanh toán', 'Trạng thái'],
             $rows,
-            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Thanh toán</p><p style="margin:0;font-size:13px;color:#374151">Theo dõi giá trị hợp đồng, số tiền khách đã thanh toán và trạng thái công nợ của từng dự án.</p></div>'
+            $this->getIntroCalloutHtml(__('Thanh toán', 'laca'), __('Theo dõi giá trị hợp đồng, số tiền khách đã thanh toán và trạng thái công nợ của từng dự án.', 'laca'))
         );
     }
 
@@ -734,7 +822,7 @@ class LacaProjectsHub
             'Chấm điểm sức khoẻ dự án dựa trên cảnh báo, công nợ, hạn dịch vụ, cập nhật và heartbeat tracker.',
             ['Dự án', 'Khách hàng', 'Score', 'Trạng thái', 'Điểm trừ chính', 'Heartbeat', 'Cập nhật cuối'],
             $rows,
-            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Health score</p><p style="margin:0;font-size:13px;color:#374151">Điểm sức khỏe từng dự án được tính tự động dựa trên cảnh báo, công nợ, hạn dịch vụ, cập nhật và heartbeat tracker — điểm càng thấp càng cần quan tâm.</p></div>'
+            $this->getIntroCalloutHtml(__('Health score', 'laca'), __('Điểm sức khỏe từng dự án được tính tự động dựa trên cảnh báo, công nợ, hạn dịch vụ, cập nhật và heartbeat tracker — điểm càng thấp càng cần quan tâm.', 'laca'))
         );
     }
 
@@ -752,7 +840,7 @@ class LacaProjectsHub
         ?>
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader('Reports', 'Báo cáo tổng hợp doanh thu, công nợ, vận hành và cập nhật trong tháng.'); ?>
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Reports</p><p style="margin:0;font-size:13px;color:#374151">Báo cáo tổng hợp theo tháng: doanh thu đã thu, công nợ còn lại, số lượng cập nhật/bảo trì và cơ cấu trạng thái dự án — dùng để tổng kết định kỳ.</p></div>
+            <?php $this->renderIntroCallout(__('Reports', 'laca'), __('Báo cáo tổng hợp theo tháng: doanh thu đã thu, công nợ còn lại, số lượng cập nhật/bảo trì và cơ cấu trạng thái dự án — dùng để tổng kết định kỳ.', 'laca')); ?>
             <div class="laca-projects-overview">
                 <?php $this->renderMetric('Đã thu tháng này', $this->formatMoney($monthlyPaid), date_i18n('m/Y')); ?>
                 <?php $this->renderMetric('Tổng đã thu', $this->formatMoney($finance['total_paid']), $finance['collection_rate'] . '% tổng giá trị'); ?>
@@ -773,28 +861,30 @@ class LacaProjectsHub
                     </div>
                     <?php $this->renderKeyValueList($this->getReadableLogTypeCounts($monthLogs)); ?>
                 </section>
-                <section class="laca-projects-panel laca-projects-panel--wide">
+                <section class="laca-projects-panel laca-projects-panel--wide laca-card">
                     <div class="laca-projects-panel__head">
-                        <h2>Báo cáo chăm sóc website tháng này</h2>
+                        <h2><?php echo esc_html__('Báo cáo chăm sóc website tháng này', 'laca'); ?></h2>
                         <a href="<?php echo esc_url(admin_url('admin.php?page=laca-project-updates')); ?>">Mở Updates</a>
                     </div>
                     <?php if ($monthlyServiceRows === []): ?>
-                        <p class="laca-projects-empty">Chưa có hoạt động bảo trì/cập nhật trong tháng này.</p>
+                        <p class="laca-projects-empty"><?php echo esc_html__('Chưa có hoạt động bảo trì/cập nhật trong tháng này.', 'laca'); ?></p>
                     <?php else: ?>
-                        <table class="widefat striped laca-projects-table">
-                            <thead><tr><th>Dự án</th><th>Cập nhật</th><th>Sửa lỗi / yêu cầu</th><th>Bảo trì / task</th><th>Gần nhất</th></tr></thead>
-                            <tbody>
-                                <?php foreach ($monthlyServiceRows as $row): ?>
-                                    <tr>
-                                        <td><a href="<?php echo esc_url(get_edit_post_link((int) $row['project_id'], '')); ?>"><?php echo esc_html($row['project_name']); ?></a></td>
-                                        <td><?php echo esc_html((string) $row['updates']); ?></td>
-                                        <td><?php echo esc_html((string) $row['fixes']); ?></td>
-                                        <td><?php echo esc_html((string) $row['maintenance']); ?></td>
-                                        <td><?php echo esc_html($this->formatDateTime((string) $row['latest'])); ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                        <div class="laca-table-wrap">
+                            <table class="widefat striped laca-projects-table laca-table">
+                                <thead><tr><th><?php echo esc_html__('Dự án', 'laca'); ?></th><th><?php echo esc_html__('Cập nhật', 'laca'); ?></th><th><?php echo esc_html__('Sửa lỗi / yêu cầu', 'laca'); ?></th><th><?php echo esc_html__('Bảo trì / task', 'laca'); ?></th><th><?php echo esc_html__('Gần nhất', 'laca'); ?></th></tr></thead>
+                                <tbody>
+                                    <?php foreach ($monthlyServiceRows as $row): ?>
+                                        <tr>
+                                            <td><a href="<?php echo esc_url(get_edit_post_link((int) $row['project_id'], '')); ?>"><?php echo esc_html($row['project_name']); ?></a></td>
+                                            <td><?php echo esc_html((string) $row['updates']); ?></td>
+                                            <td><?php echo esc_html((string) $row['fixes']); ?></td>
+                                            <td><?php echo esc_html((string) $row['maintenance']); ?></td>
+                                            <td><?php echo esc_html($this->formatDateTime((string) $row['latest'])); ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
                     <?php endif; ?>
                 </section>
 
@@ -831,7 +921,7 @@ class LacaProjectsHub
             'Link theo dõi tiến độ dành cho khách hàng.',
             ['Dự án', 'Khách hàng', 'Portal URL', ''],
             $rows,
-            '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0 16px"><p style="margin:0 0 6px;font-weight:600;color:#0369a1">🔧 Portal links</p><p style="margin:0;font-size:13px;color:#374151">Link Client Portal riêng cho từng dự án để gửi cho khách hàng theo dõi tiến độ, không cần đăng nhập vào wp-admin.</p></div>'
+            $this->getIntroCalloutHtml(__('Portal links', 'laca'), __('Link Client Portal riêng cho từng dự án để gửi cho khách hàng theo dõi tiến độ, không cần đăng nhập vào wp-admin.', 'laca'))
         );
     }
 
@@ -846,485 +936,21 @@ class LacaProjectsHub
 
     public function printStyles(): void
     {
-        ?>
-        <style>
-            #toplevel_page_laca-projects .wp-submenu { display: none !important; }
-            body.laca-projects-dock-active:not(.folded) #wpcontent,
-            body.laca-projects-dock-active.folded #wpcontent { padding-left: 316px; }
-            .laca-projects-dock {
-                background: #f8fafc;
-                border-right: 1px solid #e1e5eb;
-                bottom: 0;
-                box-shadow: 12px 0 28px rgba(15,23,42,.055);
-                color: #1f2937;
-                left: 160px;
-                overflow-y: auto;
-                padding: 14px 12px 22px;
-                position: fixed;
-                top: 32px;
-                width: 288px;
-                z-index: 99;
-            }
-            body.folded .laca-projects-dock { left: 36px; }
-            .laca-projects-dock__brand {
-                align-items: center;
-                background: #fff;
-                border: 1px solid #e5e7eb;
-                border-radius: 12px;
-                box-shadow: 0 1px 2px rgba(15,23,42,.04);
-                color: #111827;
-                display: flex;
-                gap: 10px;
-                margin: 0 2px 14px;
-                padding: 10px;
-                text-decoration: none;
-            }
-            .laca-projects-dock__mark {
-                align-items: center;
-                background: #111827;
-                border: 1px solid #111827;
-                border-radius: 10px;
-                color: #fff;
-                display: inline-flex;
-                flex: 0 0 auto;
-                font-size: 12px;
-                font-weight: 700;
-                height: 34px;
-                justify-content: center;
-                width: 34px;
-            }
-            .laca-projects-dock__brand-copy {
-                display: grid;
-                gap: 2px;
-                min-width: 0;
-            }
-            .laca-projects-dock__title {
-                color: #111827;
-                font-size: 13px;
-                font-weight: 700;
-                line-height: 1.2;
-            }
-            .laca-projects-dock__subtitle {
-                color: #6b7280;
-                font-size: 11px;
-                line-height: 1.3;
-            }
-            .laca-projects-dock__group {
-                border-top: 1px solid #e8edf3;
-                margin: 0 2px;
-                padding: 15px 0;
-            }
-            .laca-projects-dock__group:first-of-type {
-                border-top: 0;
-                padding-top: 0;
-            }
-            .laca-projects-dock__group-title {
-                align-items: center;
-                color: #64748b;
-                display: flex;
-                font-size: 11px;
-                font-weight: 700;
-                gap: 8px;
-                letter-spacing: 0;
-                line-height: 1.25;
-                margin: 0 0 7px;
-            }
-            .laca-projects-dock__group-title .dashicons {
-                align-items: center;
-                background: #eef2f7;
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-                color: #475569;
-                display: inline-flex;
-                font-size: 14px;
-                height: 24px;
-                justify-content: center;
-                width: 24px;
-            }
-            .laca-projects-dock__group-count {
-                color: #94a3b8;
-                font-size: 11px;
-                font-weight: 600;
-                margin-left: auto;
-                text-transform: none;
-            }
-            .laca-projects-dock__items {
-                display: grid;
-                gap: 4px;
-            }
-            .laca-projects-dock__item {
-                align-items: center;
-                border: 1px solid transparent;
-                border-radius: 9px;
-                color: #475569;
-                display: flex;
-                font-size: 13px;
-                gap: 8px;
-                line-height: 1.35;
-                min-height: 34px;
-                padding: 7px 10px 7px 14px;
-                position: relative;
-                text-decoration: none;
-                transition: background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
-            }
-            .laca-projects-dock__item::before {
-                background: transparent;
-                border-radius: 999px;
-                content: "";
-                height: 18px;
-                left: 5px;
-                position: absolute;
-                top: 50%;
-                transform: translateY(-50%);
-                width: 3px;
-            }
-            .laca-projects-dock__item:hover,
-            .laca-projects-dock__item:focus {
-                background: #fff;
-                border-color: #e2e8f0;
-                color: #111827;
-                outline: none;
-            }
-            .laca-projects-dock__item.is-active {
-                background: #fff;
-                border-color: #cfd7e3;
-                box-shadow: 0 1px 2px rgba(15,23,42,.045);
-                color: #111827;
-                font-weight: 700;
-            }
-            .laca-projects-dock__item.is-active::before {
-                background: #111827;
-            }
-            .laca-projects-wrap {
-                --laca-ink: #111827;
-                --laca-muted: #6b7280;
-                --laca-border: #e5e7eb;
-                --laca-soft: #f8fafc;
-                --laca-finance: #2563eb;
-                --laca-success: #059669;
-                --laca-warning: #d97706;
-                --laca-danger: #dc2626;
-                --laca-info: #7c3aed;
-                max-width: 1360px;
-            }
-            .laca-projects-header {
-                align-items: flex-start;
-                display: flex;
-                gap: 16px;
-                justify-content: space-between;
-                margin: 12px 0 18px;
-            }
-            .laca-projects-header h1 { color: #111827; font-size: 24px; font-weight: 600; margin: 0 0 4px; }
-            .laca-projects-header p { color: #6b7280; margin: 0; }
-            .laca-projects-header .button-primary {
-                background: #111827;
-                border-color: #111827;
-                border-radius: 7px;
-                box-shadow: none;
-                font-weight: 600;
-            }
-            .laca-projects-overview {
-                display: grid;
-                gap: 12px;
-                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-                margin-bottom: 18px;
-            }
-            .laca-projects-overview--compact { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
-            .laca-projects-metric {
-                background: #fff;
-                border: 1px solid #e5e7eb;
-                border-top: 3px solid #d1d5db;
-                border-radius: 8px;
-                box-shadow: 0 10px 24px rgba(15, 23, 42, .04);
-                min-height: 92px;
-                overflow: hidden;
-                padding: 14px 15px;
-                position: relative;
-            }
-            .laca-projects-metric::after {
-                background: linear-gradient(135deg, rgba(17,24,39,.08), rgba(17,24,39,0));
-                border-radius: 999px;
-                content: "";
-                height: 72px;
-                position: absolute;
-                right: -34px;
-                top: -34px;
-                width: 72px;
-            }
-            .laca-projects-metric--finance { border-top-color: var(--laca-finance); }
-            .laca-projects-metric--success { border-top-color: var(--laca-success); }
-            .laca-projects-metric--warning { border-top-color: var(--laca-warning); }
-            .laca-projects-metric--danger { border-top-color: var(--laca-danger); }
-            .laca-projects-metric--info { border-top-color: var(--laca-info); }
-            .laca-projects-metric span,
-            .laca-projects-metric small {
-                color: #6b7280;
-                display: block;
-                font-size: 12px;
-                line-height: 1.45;
-            }
-            .laca-projects-metric strong {
-                color: #111827;
-                display: block;
-                font-size: 23px;
-                font-weight: 600;
-                line-height: 1.2;
-                margin: 8px 0 6px;
-                position: relative;
-                z-index: 1;
-            }
-            .laca-projects-stats {
-                display: grid;
-                gap: 10px;
-                grid-template-columns: repeat(5, minmax(120px, 1fr));
-                margin-bottom: 18px;
-            }
-            .laca-projects-stat {
-                background: #fff;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                padding: 12px 14px;
-            }
-            .laca-projects-stat span { color: #6b7280; display: block; font-size: 12px; margin-bottom: 6px; }
-            .laca-projects-stat strong { color: #111827; font-size: 24px; font-weight: 600; }
-            .laca-projects-report-grid {
-                display: grid;
-                gap: 16px;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                margin-bottom: 16px;
-            }
-            .laca-projects-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .laca-projects-panel {
-                background: #fff;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                box-shadow: 0 10px 30px rgba(15, 23, 42, .045);
-                overflow-x: auto;
-                padding: 16px;
-            }
-            .laca-projects-panel--chart {
-                background: linear-gradient(180deg, #fff 0%, #fbfcff 100%);
-            }
-            .laca-projects-panel--wide { grid-column: 1 / -1; }
-            .laca-projects-panel__head { align-items: center; display: flex; justify-content: space-between; margin-bottom: 12px; }
-            .laca-projects-panel__head h2 { color: #111827; font-size: 15px; margin: 0; }
-            .laca-projects-panel__head a { font-size: 12px; text-decoration: none; }
-            .laca-projects-muted { color: #6b7280; font-size: 12px; }
-            .laca-projects-empty { color: #6b7280; margin: 0; }
-            .laca-projects-chart {
-                height: 186px;
-                margin: 2px 0 12px;
-                position: relative;
-            }
-            .laca-projects-chart canvas { max-height: 186px; }
-            .laca-projects-table {
-                border-color: #e5e7eb;
-                border-radius: 7px;
-                overflow: hidden;
-            }
-            .laca-projects-table thead th {
-                background: #f8fafc;
-                color: #374151;
-                font-size: 12px;
-                font-weight: 600;
-            }
-            .laca-projects-table td,
-            .laca-projects-table th { vertical-align: middle; }
-            .laca-projects-progress {
-                background: #f3f4f6;
-                border-radius: 999px;
-                height: 8px;
-                margin-bottom: 14px;
-                overflow: hidden;
-            }
-            .laca-projects-progress span {
-                background: linear-gradient(90deg, var(--laca-finance), var(--laca-success));
-                display: block;
-                height: 100%;
-            }
-            .laca-projects-kv {
-                display: grid;
-                gap: 10px;
-                margin: 0;
-            }
-            .laca-projects-kv div {
-                align-items: center;
-                border-top: 1px solid #f1f3f5;
-                display: flex;
-                justify-content: space-between;
-                padding-top: 10px;
-            }
-            .laca-projects-kv dt { color: #6b7280; font-size: 12px; }
-            .laca-projects-kv dd { color: #111827; font-size: 13px; font-weight: 600; margin: 0; text-align: right; }
-            .laca-projects-list { display: grid; gap: 8px; }
-            .laca-projects-list__item {
-                border: 1px solid #eef0f3;
-                border-radius: 6px;
-                display: block;
-                padding: 10px;
-                text-decoration: none;
-            }
-            .laca-projects-list__item:hover,
-            .laca-projects-list__item:focus {
-                background: #f8fafc;
-                border-color: #d1d5db;
-                outline: none;
-            }
-            .laca-projects-list__item strong { color: #111827; display: block; margin-bottom: 4px; }
-            .laca-projects-list__item span { color: #4b5563; }
-            .laca-projects-activity { display: grid; gap: 8px; }
-            .laca-projects-activity a {
-                border-top: 1px solid #f1f3f5;
-                display: block;
-                padding-top: 9px;
-                text-decoration: none;
-            }
-            .laca-projects-activity a:first-child { border-top: 0; padding-top: 0; }
-            .laca-projects-activity strong { color: #111827; display: block; font-size: 13px; margin-bottom: 3px; }
-            .laca-projects-activity span { color: #6b7280; font-size: 12px; }
-            .laca-projects-actions { display: grid; gap: 8px; }
-            .laca-projects-action {
-                align-items: flex-start;
-                border: 1px solid #eef0f3;
-                border-radius: 6px;
-                color: #374151;
-                display: grid;
-                gap: 8px;
-                grid-template-columns: minmax(0, 1fr) auto;
-                padding: 10px;
-                text-decoration: none;
-            }
-            .laca-projects-action:hover,
-            .laca-projects-action:focus {
-                background: #f8fafc;
-                border-color: #d1d5db;
-                color: #111827;
-                outline: none;
-            }
-            .laca-projects-action__meta { display: block; min-width: 0; }
-            .laca-projects-action__meta strong { color: #111827; display: block; font-size: 13px; margin-bottom: 3px; }
-            .laca-projects-action__meta em { color: #6b7280; display: block; font-size: 12px; font-style: normal; }
-            .laca-projects-action__message {
-                color: #4b5563;
-                display: block;
-                font-size: 12px;
-                grid-column: 1 / -1;
-                line-height: 1.45;
-            }
-            .laca-projects-board {
-                display: grid;
-                gap: 12px;
-                grid-template-columns: repeat(5, minmax(220px, 1fr));
-                overflow-x: auto;
-                padding-bottom: 6px;
-            }
-            .laca-projects-column {
-                background: linear-gradient(180deg, #fff 0%, #fbfcff 100%);
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                box-shadow: 0 10px 24px rgba(15, 23, 42, .04);
-                min-width: 220px;
-                padding: 12px;
-            }
-            .laca-projects-column__head {
-                align-items: center;
-                display: flex;
-                justify-content: space-between;
-                margin-bottom: 10px;
-            }
-            .laca-projects-column__head h2 {
-                color: #111827;
-                font-size: 13px;
-                margin: 0;
-            }
-            .laca-projects-column__head span {
-                background: #f3f4f6;
-                border: 1px solid #e5e7eb;
-                border-radius: 999px;
-                color: #4b5563;
-                font-size: 12px;
-                min-width: 26px;
-                padding: 3px 8px;
-                text-align: center;
-            }
-            .laca-projects-cards { display: grid; gap: 8px; }
-            .laca-projects-card {
-                border: 1px solid #eef0f3;
-                border-radius: 6px;
-                display: block;
-                padding: 10px;
-                text-decoration: none;
-            }
-            .laca-projects-card:hover,
-            .laca-projects-card:focus {
-                background: #f8fafc;
-                border-color: #d1d5db;
-                outline: none;
-            }
-            .laca-projects-card strong { color: #111827; display: block; font-size: 13px; margin-bottom: 4px; }
-            .laca-projects-card > span { color: #6b7280; display: block; font-size: 12px; margin-bottom: 8px; }
-            .laca-projects-card dl { display: grid; gap: 6px; margin: 0; }
-            .laca-projects-card dl div { display: grid; gap: 2px; }
-            .laca-projects-card dt { color: #6b7280; font-size: 11px; }
-            .laca-projects-card dd { color: #374151; font-size: 12px; margin: 0; }
-            .laca-projects-swal { text-align: left; }
-            .laca-projects-swal__meta {
-                color: #6b7280;
-                font-size: 12px;
-                margin: 0 0 10px;
-            }
-            .laca-projects-swal__message {
-                background: #f8fafc;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                color: #374151;
-                font-size: 13px;
-                line-height: 1.55;
-                margin: 0;
-                padding: 12px;
-            }
-            .laca-projects-badge {
-                background: #f3f4f6;
-                border: 1px solid #e5e7eb;
-                border-radius: 999px;
-                color: #111827;
-                display: inline-block;
-                font-size: 12px;
-                font-weight: 600;
-                line-height: 1;
-                min-width: 34px;
-                padding: 5px 8px;
-                text-align: center;
-            }
-            .laca-projects-copy { width: 100%; }
-            @media (max-width: 1100px) {
-                .laca-projects-overview,
-                .laca-projects-stats,
-                .laca-projects-report-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
-                .laca-projects-board { grid-template-columns: repeat(3, minmax(220px, 1fr)); }
-                .laca-projects-grid { grid-template-columns: 1fr; }
-            }
-            @media (max-width: 782px) {
-                body.laca-projects-dock-active #wpcontent,
-                body.laca-projects-dock-active.folded #wpcontent,
-                body.laca-projects-dock-active:not(.folded) #wpcontent { padding-left: 10px; }
-                .laca-projects-dock {
-                    border-radius: 10px;
-                    bottom: auto;
-                    left: auto;
-                    margin: 12px 10px 18px;
-                    position: relative;
-                    top: auto;
-                    width: auto;
-                }
-                body.folded .laca-projects-dock { left: auto; }
-                .laca-projects-header { display: block; }
-                .laca-projects-overview,
-                .laca-projects-report-grid { grid-template-columns: 1fr; }
-                .laca-projects-board { grid-template-columns: 1fr; }
-            }
-        </style>
-        <?php
+        // Hub layout styles have been migrated to resources/styles/admin/skins/_project-hub.scss
+    }
+
+    private function getIntroCalloutHtml(string $title, string $description): string
+    {
+        return sprintf(
+            '<div class="laca-alert laca-alert--info laca-projects-intro" role="status"><span class="dashicons dashicons-info laca-alert__icon"></span><div class="laca-alert__content"><div class="laca-alert__title">🔧 %s</div><div class="laca-alert__description">%s</div></div></div>',
+            esc_html($title),
+            esc_html($description)
+        );
+    }
+
+    private function renderIntroCallout(string $title, string $description): void
+    {
+        echo $this->getIntroCalloutHtml($title, $description);
     }
 
     public function renderDock(): void
@@ -1368,12 +994,14 @@ class LacaProjectsHub
     private function renderHeader(string $title, string $description): void
     {
         ?>
-        <div class="laca-projects-header">
-            <div>
-                <h1><?php echo esc_html($title); ?></h1>
-                <p><?php echo esc_html($description); ?></p>
+        <div class="laca-page-header laca-projects-header">
+            <div class="laca-page-header__content">
+                <h1 class="laca-page-header__title"><?php echo esc_html($title); ?></h1>
+                <p class="laca-page-header__description"><?php echo esc_html($description); ?></p>
             </div>
-            <a class="button button-primary" href="<?php echo esc_url(admin_url('post-new.php?post_type=project')); ?>">Thêm dự án</a>
+            <div class="laca-page-header__actions">
+                <a class="laca-btn laca-btn--solid laca-btn--sm button button-primary" href="<?php echo esc_url(admin_url('post-new.php?post_type=project')); ?>"><span class="dashicons dashicons-plus-alt2"></span> <?php esc_html_e('Thêm dự án', 'laca'); ?></a>
+            </div>
         </div>
         <?php
     }
@@ -1415,19 +1043,21 @@ class LacaProjectsHub
         }
 
         ?>
-        <table class="widefat striped laca-projects-table">
-            <thead><tr><th>Ngày</th><th>Dự án</th><th>Loại</th><th>Nội dung</th></tr></thead>
-            <tbody>
-                <?php foreach ($logs as $log): ?>
-                    <tr>
-                        <td><?php echo esc_html($this->formatLogDate($log)); ?></td>
-                        <td><a href="<?php echo esc_url(get_edit_post_link((int) $log['project_id'], '')); ?>"><?php echo esc_html($log['project_name'] ?? ''); ?></a></td>
-                        <td><?php echo esc_html($this->logTypeLabel((string) $log['log_type'])); ?></td>
-                        <td><?php echo esc_html(wp_trim_words((string) $log['log_content'], 20)); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+        <div class="laca-table-wrap">
+            <table class="widefat striped laca-projects-table laca-table">
+                <thead><tr><th><?php echo esc_html__('Ngày', 'laca'); ?></th><th><?php echo esc_html__('Dự án', 'laca'); ?></th><th><?php echo esc_html__('Loại', 'laca'); ?></th><th><?php echo esc_html__('Nội dung', 'laca'); ?></th></tr></thead>
+                <tbody>
+                    <?php foreach ($logs as $log): ?>
+                        <tr>
+                            <td><?php echo esc_html($this->formatLogDate($log)); ?></td>
+                            <td><a href="<?php echo esc_url(get_edit_post_link((int) $log['project_id'], '')); ?>"><?php echo esc_html($log['project_name'] ?? ''); ?></a></td>
+                            <td><?php echo esc_html($this->logTypeLabel((string) $log['log_type'])); ?></td>
+                            <td><?php echo esc_html(wp_trim_words((string) $log['log_content'], 20)); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
         <?php
     }
 
@@ -1459,21 +1089,23 @@ class LacaProjectsHub
         }
 
         ?>
-        <table class="widefat striped laca-projects-table">
-            <thead><tr><th>Dự án</th><th>Khách hàng</th><th>Trạng thái</th><th>Tài chính</th><th>Alerts</th><th>Hạn gần nhất</th></tr></thead>
-            <tbody>
-                <?php foreach ($rows as $row): ?>
-                    <tr>
-                        <td><a href="<?php echo esc_url(get_edit_post_link($row['id'], '')); ?>"><?php echo esc_html($row['title']); ?></a></td>
-                        <td><?php echo esc_html($row['client']); ?></td>
-                        <td><?php echo esc_html($row['status']); ?></td>
-                        <td><?php echo esc_html($row['finance']); ?></td>
-                        <td><?php echo esc_html((string) $row['alerts']); ?></td>
-                        <td><?php echo esc_html($row['expiry']); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+        <div class="laca-table-wrap">
+            <table class="widefat striped laca-projects-table laca-table">
+                <thead><tr><th><?php echo esc_html__('Dự án', 'laca'); ?></th><th><?php echo esc_html__('Khách hàng', 'laca'); ?></th><th><?php echo esc_html__('Trạng thái', 'laca'); ?></th><th><?php echo esc_html__('Tài chính', 'laca'); ?></th><th><?php echo esc_html__('Alerts', 'laca'); ?></th><th><?php echo esc_html__('Hạn gần nhất', 'laca'); ?></th></tr></thead>
+                <tbody>
+                    <?php foreach ($rows as $row): ?>
+                        <tr>
+                            <td><a href="<?php echo esc_url(get_edit_post_link($row['id'], '')); ?>"><?php echo esc_html($row['title']); ?></a></td>
+                            <td><?php echo esc_html($row['client']); ?></td>
+                            <td><?php echo esc_html($row['status']); ?></td>
+                            <td><?php echo esc_html($row['finance']); ?></td>
+                            <td><?php echo esc_html((string) $row['alerts']); ?></td>
+                            <td><?php echo esc_html($row['expiry']); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
         <?php
     }
 
@@ -1556,28 +1188,30 @@ class LacaProjectsHub
         <div class="wrap laca-projects-wrap">
             <?php $this->renderHeader($title, $description); ?>
             <?php echo $intro; ?>
-            <section class="laca-projects-panel">
+            <section class="laca-projects-panel laca-card">
                 <?php if ($rows === []): ?>
-                    <p class="laca-projects-empty">Chưa có dữ liệu.</p>
+                    <p class="laca-projects-empty"><?php echo esc_html__('Chưa có dữ liệu.', 'laca'); ?></p>
                 <?php else: ?>
-                    <table class="widefat striped laca-projects-table">
-                        <thead>
-                            <tr>
-                                <?php foreach ($headers as $header): ?>
-                                    <th><?php echo esc_html($header); ?></th>
-                                <?php endforeach; ?>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($rows as $row): ?>
+                    <div class="laca-table-wrap">
+                        <table class="widefat striped laca-projects-table laca-table">
+                            <thead>
                                 <tr>
-                                    <?php foreach ($row as $cell): ?>
-                                        <td><?php echo wp_kses_post($cell); ?></td>
+                                    <?php foreach ($headers as $header): ?>
+                                        <th><?php echo esc_html($header); ?></th>
                                     <?php endforeach; ?>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($rows as $row): ?>
+                                    <tr>
+                                        <?php foreach ($row as $cell): ?>
+                                            <td><?php echo wp_kses_post($cell); ?></td>
+                                        <?php endforeach; ?>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 <?php endif; ?>
             </section>
         </div>
@@ -2601,6 +2235,7 @@ class LacaProjectsHub
             'laca-project-clients',
             'laca-project-issues',
             'laca-project-updates',
+            'laca-project-fleet',
             'laca-project-renewals',
             'laca-project-operations',
             'laca-project-health',
@@ -2629,6 +2264,7 @@ class LacaProjectsHub
             'laca-project-clients' => 'clients',
             'laca-project-issues' => 'issues',
             'laca-project-updates' => 'updates',
+            'laca-project-fleet' => 'fleet',
             'laca-project-renewals' => 'renewals',
             'laca-project-operations' => 'operations',
             'laca-project-health' => 'health',
