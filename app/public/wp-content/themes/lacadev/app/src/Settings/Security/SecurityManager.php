@@ -632,11 +632,26 @@ class SecurityManager
         $slug    = sanitize_title(trim(sanitize_text_field($_POST['slug'] ?? ''), '/'));
         $enabled = !empty($_POST['enabled']) ? 1 : 0;
         if ($enabled && empty($slug)) {
-            wp_send_json_error('Slug không được để trống khi bật tính năng.');
+            wp_send_json_error(__('Slug không được để trống khi bật tính năng.', 'lacadev'));
+        }
+        if ($enabled && $this->isForbiddenLoginSlug($slug)) {
+            wp_send_json_error(__('Slug trùng với query var hệ thống của WordPress, vui lòng chọn slug khác.', 'lacadev'));
         }
         update_option('laca_login_slug',          $slug);
         update_option('laca_enable_custom_login', $enabled);
-        wp_send_json_success('Cài đặt đã lưu. Tải lại trang để áp dụng.');
+        wp_send_json_success(__('Cài đặt đã lưu. Tải lại trang để áp dụng.', 'lacadev'));
+    }
+
+    /** Chặn các slug trùng public/private query var — nếu không site sẽ tự khoá truy cập admin. */
+    private function isForbiddenLoginSlug(string $slug): bool
+    {
+        if (str_contains($slug, 'wp-login') || str_contains($slug, 'wp-admin')) {
+            return true;
+        }
+
+        $wp = new \WP();
+
+        return in_array($slug, array_merge($wp->public_query_vars, $wp->private_query_vars), true);
     }
 
     // 2FA Master Setting
