@@ -103,7 +103,7 @@ class RemoteAjaxHandler
             'headers' => array_merge([
                 'Content-Type' => 'application/json',
             ], $sigHeaders),
-            'timeout' => 120,
+            'timeout' => 30,
         ];
 
         $response = wp_remote_post($endpoint, $postArgs);

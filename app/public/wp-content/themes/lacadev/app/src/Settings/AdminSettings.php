@@ -1124,19 +1124,6 @@ class AdminSettings
 						<b>' . esc_html__('Khuyến nghị:', 'laca') . '</b> ' . esc_html__('Giữ bật trong giai đoạn nâng cấp theme client, sau đó tắt đi để kích hoạt bảo mật tuyệt đối chống giả mạo và replay attack.', 'laca') . '
 					</div>'),
 
-				Field::make('text', 'laca_backup_max_age_days', __('Số ngày tối đa trước khi cảnh báo backup quá hạn', 'laca'))
-					->set_attribute('type', 'number')
-					->set_attribute('min', '1')
-					->set_attribute('max', '90')
-					->set_default_value('7')
-					->set_width(30),
-				Field::make('html', 'laca_backup_max_age_days_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>' . esc_html__('Mặc định: 7 ngày', 'laca') . '</strong><br>
-						<b>' . esc_html__('Tác dụng:', 'laca') . '</b> ' . esc_html__('Nếu website khách có thời điểm backup gần nhất cách hiện tại vượt quá số ngày này, hoặc trạng thái backup là chưa rõ (unknown) quá 7 ngày, hệ thống sẽ tự động tạo cảnh báo và gửi thông báo (tối đa 1 lần/ngày/site).', 'laca') . '
-					</div>'),
-
 				Field::make('separator', 'title_enhance_website_security', __('Tắt tính năng có nguy cơ bảo mật', 'laca')),
 
 				Field::make('checkbox', 'disable_rest_api', __('Disable REST API (cho khách)', 'laca'))
@@ -1311,83 +1298,6 @@ class AdminSettings
 					Field::make('checkbox', 'enable_slack_notify', __('Bật thông báo Slack', 'laca')),
 					Field::make('text', 'slack_webhook_url', __('Webhook URL', 'laca'))
 						->set_help_text('Nhập Webhook URL của kênh Slack để nhận cảnh báo.'),
-				])
-				->add_tab(__('Định tuyến thông báo', 'laca'), [
-					Field::make('html', 'notify_routing_desc', '')
-						->set_html('<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0">'
-							. '<p style="margin:0 0 6px;font-weight:600;color:#0369a1">' . esc_html__('📡 Bảng ma trận định tuyến thông báo (Notification Bus)', 'laca') . '</p>'
-							. '<p style="margin:0;font-size:13px;color:#374151">' . esc_html__('Tuỳ biến các kênh nhận thông báo (Email, Zalo, Telegram, Slack, Discord) cho từng loại sự kiện hệ thống. Hệ thống tự động khử trùng lặp (dedup) theo loại sự kiện.', 'laca') . '</p>'
-							. '</div>'),
-
-					Field::make('set', 'notify_route_project_alert', __('Cảnh báo dự án (project_alert)', 'laca'))
-						->set_options([
-							'email'    => 'Email',
-							'zalo'     => 'Zalo OA',
-							'telegram' => 'Telegram',
-							'slack'    => 'Slack',
-							'discord'  => 'Discord',
-						])
-						->set_default_value(['email', 'zalo', 'telegram', 'slack', 'discord']),
-
-					Field::make('set', 'notify_route_uptime_down', __('Website không truy cập được (uptime_down)', 'laca'))
-						->set_options([
-							'email'    => 'Email',
-							'zalo'     => 'Zalo OA',
-							'telegram' => 'Telegram',
-							'slack'    => 'Slack',
-							'discord'  => 'Discord',
-						])
-						->set_default_value(['email', 'zalo', 'telegram', 'slack', 'discord']),
-
-					Field::make('set', 'notify_route_uptime_up', __('Website hoạt động trở lại (uptime_up)', 'laca'))
-						->set_options([
-							'email'    => 'Email',
-							'zalo'     => 'Zalo OA',
-							'telegram' => 'Telegram',
-							'slack'    => 'Slack',
-							'discord'  => 'Discord',
-						])
-						->set_default_value(['email', 'zalo', 'telegram', 'slack', 'discord']),
-
-					Field::make('set', 'notify_route_cron_late', __('Cron hệ thống bị trễ (cron_late)', 'laca'))
-						->set_options([
-							'email'    => 'Email',
-							'zalo'     => 'Zalo OA',
-							'telegram' => 'Telegram',
-							'slack'    => 'Slack',
-							'discord'  => 'Discord',
-						])
-						->set_default_value(['discord']),
-
-					Field::make('set', 'notify_route_backup_outdated', __('Sao lưu quá hạn (backup_outdated)', 'laca'))
-						->set_options([
-							'email'    => 'Email',
-							'zalo'     => 'Zalo OA',
-							'telegram' => 'Telegram',
-							'slack'    => 'Slack',
-							'discord'  => 'Discord',
-						])
-						->set_default_value(['email', 'telegram', 'discord']),
-
-					Field::make('set', 'notify_route_deployment', __('Cập nhật từ xa thành công (deployment)', 'laca'))
-						->set_options([
-							'email'    => 'Email',
-							'zalo'     => 'Zalo OA',
-							'telegram' => 'Telegram',
-							'slack'    => 'Slack',
-							'discord'  => 'Discord',
-						])
-						->set_default_value(['slack', 'discord']),
-
-					Field::make('set', 'notify_route_client_request', __('Yêu cầu hỗ trợ từ khách hàng (client_request)', 'laca'))
-						->set_options([
-							'email'    => 'Email',
-							'zalo'     => 'Zalo OA',
-							'telegram' => 'Telegram',
-							'slack'    => 'Slack',
-							'discord'  => 'Discord',
-						])
-						->set_default_value(['email', 'zalo', 'telegram', 'slack', 'discord']),
 				]);
 
 			// Block Catalog Source — nơi hub lấy danh mục block để cho site
@@ -1400,12 +1310,12 @@ class AdminSettings
 				->add_fields([
 					Field::make('html', 'block_catalog_source_info', '')
 						->set_html(
-							'<div class="laca-alert laca-alert--info" role="status">'
-							. '<span class="dashicons dashicons-info laca-alert__icon"></span>'
-							. '<div class="laca-alert__content">'
-							. '<div class="laca-alert__title">🗂️ ' . esc_html__('Nguồn danh mục Block', 'laca') . '</div>'
-							. '<div class="laca-alert__description">' . esc_html__('Cấu hình DUY NHẤT 1 lần để hub đọc danh mục Gutenberg block từ clients.lacadev.com. Lấy Catalog Endpoint URL và Catalog Key từ trang Laca Theme → 🧩 LacaDev trên chính site clients.lacadev.com.', 'laca') . '</div>'
-							. '</div></div>'
+							'<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0">'
+							. '<p style="margin:0 0 8px;font-weight:600;color:#0369a1">🗂️ Nguồn danh mục Block</p>'
+							. '<p style="margin:0;font-size:13px;color:#374151">Cấu hình DUY NHẤT 1 lần để hub đọc danh mục Gutenberg block từ '
+							. '<strong>clients.lacadev.com</strong>. Lấy Catalog Endpoint URL và Catalog Key từ trang '
+							. '<strong>Laca Theme → 🧩 LacaDev</strong> trên chính site clients.lacadev.com.</p>'
+							. '</div>'
 						),
 
 					Field::make('text', 'laca_catalog_source_url', __('Catalog Endpoint URL', 'laca'))
@@ -1421,9 +1331,9 @@ class AdminSettings
 					Field::make('html', 'block_catalog_refresh', '')
 						->set_html(static function () {
 							$nonce = wp_create_nonce('laca_refresh_block_catalog');
-							return '<button type="button" id="laca-refresh-catalog-btn" class="laca-btn laca-btn--outline laca-btn--sm button" data-nonce="' . esc_attr($nonce) . '">🔄 ' . esc_html__('Làm mới danh mục ngay', 'laca') . '</button>'
-								. ' <span id="laca-refresh-catalog-status" class="laca-stat__help" style="margin-left:8px"></span>'
-								. '<p style="margin:8px 0 0;font-size:12px;color:#6b7280">' . esc_html__('Danh mục được cache 6 tiếng để đỡ tải clients.lacadev.com — bấm nút này nếu vừa thêm block mới bên đó và muốn site khách thấy ngay, không cần chờ.', 'laca') . '</p>'
+							return '<button type="button" id="laca-refresh-catalog-btn" class="button" data-nonce="' . esc_attr($nonce) . '">🔄 Làm mới danh mục ngay</button>'
+								. ' <span id="laca-refresh-catalog-status" style="font-size:12px;color:#888;margin-left:8px"></span>'
+								. '<p style="margin:8px 0 0;font-size:12px;color:#6b7280">Danh mục được cache 6 tiếng để đỡ tải clients.lacadev.com — bấm nút này nếu vừa thêm block mới bên đó và muốn site khách thấy ngay, không cần chờ.</p>'
 								. '<script>
 									document.getElementById("laca-refresh-catalog-btn")?.addEventListener("click", function () {
 										var btn = this, statusEl = document.getElementById("laca-refresh-catalog-status");

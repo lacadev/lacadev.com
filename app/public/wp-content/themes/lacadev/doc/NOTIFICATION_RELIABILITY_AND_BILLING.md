@@ -65,55 +65,14 @@
 
 **Test:** mở link Client Portal của 1 project đã điền `price_build` + ít nhất 1 dòng `payment_history` → xác nhận số liệu khớp với dữ liệu trong tab "Tài chính" khi sửa project. Gọi trực tiếp `curl "https://domain-hub/wp-json/laca/v1/portal/project?key=<secret_key_hoặc_alias>"` → xác nhận JSON có khối `payment` nhưng **không** có `finance_note`/`invoice_file`/`pay_note`.
 
-## 5. Event Bus thông báo hợp nhất (NotificationBus)
-
-**Vấn đề cũ:** Các sự kiện thông báo (cảnh báo dự án, cron trễ, sao lưu quá hạn, deploy) được gọi rời rạc qua nhiều kênh khác nhau, không có cơ chế khử trùng lặp (dedup) tập trung và khó kiểm soát kênh nhận thông báo cho từng loại sự kiện.
-
-**Đã sửa** (`app/src/Notifications/NotificationBus.php`):
-- `NotificationBus::emit(string $event, array $payload, ?int $projectId)`: Điểm vào duy nhất cho mọi thông báo hệ thống.
-- Bảng định tuyến (`laca_notification_routes`): Cấu hình kênh nhận (Email, Zalo, Telegram, Slack, Discord) cho từng sự kiện trong `Laca Admin → LacaDev PM & Bots → Định tuyến thông báo`.
-- Tự động khử trùng lặp (dedup) theo transient với thời gian cooldown cấu hình riêng cho từng loại sự kiện (project_alert: 30p, cron_late: 12h, backup_outdated: 24h, uptime: 30p, deployment: 5p).
-- Kênh Discord tích hợp chặt chẽ với DiscordHub (`Notifier::send()`), các kênh Email/Zalo/Telegram/Slack gọi qua `ProjectNotificationHandler::sendNotificationsFiltered()`.
-- Bỏ trùng thông báo "cron trễ": DiscordHub `CronHealthMonitor` phát sự kiện `cron_late` qua bus thay vì tự gửi tin trực tiếp.
-
-### Bảng định tuyến mặc định (DEFAULT_ROUTES)
-Bảo đảm tính tương thích ngược hoàn toàn với hệ thống thông báo trước Phase 10:
-
-| Sự kiện | Hằng sự kiện | Kênh nhận mặc định | Tương thích ngược |
-|---|---|---|---|
-| Cảnh báo dự án | `EVENT_PROJECT_ALERT` | Email, Zalo, Telegram, Slack, Discord | Tương thích 100% `handleRealtimeAlert` |
-| Cron hệ thống trễ | `EVENT_CRON_LATE` | Discord | Tương thích `CronHealthMonitor` (chỉ Discord) |
-| Sao lưu quá hạn | `EVENT_BACKUP_OUTDATED` | Email, Telegram, Discord | Cảnh báo sao lưu hằng ngày |
-| Website không truy cập được | `EVENT_UPTIME_DOWN` | Email, Zalo, Telegram, Slack, Discord | Tương thích 100% `handleRealtimeAlert` |
-| Website hoạt động trở lại | `EVENT_UPTIME_UP` | Email, Zalo, Telegram, Slack, Discord | Tương thích 100% `handleRealtimeAlert` |
-| Cập nhật từ xa thành công | `EVENT_DEPLOYMENT` | Slack, Discord | Thông báo devops |
-
-## 6. Giám sát Uptime song song & nhật ký phản hồi
-
-**Vấn đề cũ:** Uptime trước đây quét tuần tự từng site bằng `wp_remote_get()` và chỉ lưu trạng thái hiện tại (`up`/`down`) mà không có lịch sử đo độ trễ (response time ms), dễ nghẽn khi số lượng website khách tăng lớn.
-
-**Đã sửa** (`app/src/Settings/LacaTools/SiteHealthChecker.php` & `app/src/Databases/UptimeLogTable.php`):
-- Sử dụng `WpOrg\Requests\Requests::request_multiple()` (hoặc `Requests::request_multiple` fallback) kiểm tra song song theo từng lô 10 website, timeout 10s.
-- Hỗ trợ tuỳ chọn kiểm tra chứng chỉ SSL riêng từng project (`uptime_sslverify`, mặc định bật).
-- Lưu kết quả chi tiết (trạng thái, mã HTTP, `response_ms`, lỗi) vào custom table `wp_laca_uptime_log`. Tự động dọn dẹp (purge) log cũ hơn 30 ngày.
-- Cảnh báo lỗi thông minh: Chỉ phát cảnh báo critical khi website bị lỗi **2 lần kiểm tra liên tiếp**, tránh báo động giả khi mạng chập chờn nhất thời; tự động phát cảnh báo phục hồi khi site hoạt động trở lại sau sự cố.
-- Hiển thị tỷ lệ uptime và độ trễ phản hồi (ms) trung bình 24h trên cột Uptime trang **Fleet** và widget Uptime Monitor trong màn hình chi tiết dự án.
-
 ---
 
 ## Tổng hợp file đã sửa
 
 | Theme | File | Mục |
 |---|---|---|
-| hub | `app/src/Settings/LacaTools/ProjectNotificationHandler.php` | 1, 2, 3, 5 |
-| hub | `app/src/Notifications/NotificationBus.php` | 5 |
-| hub | `app/src/Databases/UptimeLogTable.php` | 6 |
-| hub | `app/src/Settings/LacaTools/SiteHealthChecker.php` | 6 |
-| hub | `app/src/Features/DiscordHub/Monitors/CronHealthMonitor.php` | 5 |
-| hub | `app/src/Features/ProjectManagement/ProjectFields.php` | 6 |
-| hub | `app/src/Features/ProjectManagement/FleetPage.php` | 6 |
-| hub | `app/src/Features/ProjectManagement/Views/meta-box-col1.php` | 6 |
-| hub | `app/src/Settings/AdminSettings.php` | 2, 5 |
+| hub | `app/src/Settings/LacaTools/ProjectNotificationHandler.php` | 1, 2, 3 |
+| hub | `app/src/Settings/AdminSettings.php` | 2 |
 | hub | `app/src/Features/ProjectManagement/LacaProjectsHub.php` | 1 |
 | hub | `app/src/Features/ProjectManagement/ProjectPaymentService.php` | 4 |
 | hub | `app/src/Settings/LacaTools/ClientPortalEndpoint.php` | 4 |

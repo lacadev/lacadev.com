@@ -129,7 +129,7 @@ class ProjectNotificationHandler
     }
 
     /**
-     * Đẩy ngay cảnh báo warning/critical vào các kênh Email/Zalo/Telegram/Slack/Discord
+     * Đẩy ngay cảnh báo warning/critical vào các kênh Email/Zalo/Telegram/Slack
      * thay vì chỉ chờ cron kiểm tra hết hạn hằng ngày. Được gọi qua
      * do_action('laca_project_alert_notify', $projectId, $level, $message)
      * từ TrackerEndpointHandler / ClientWebhook ngay sau khi tạo ProjectAlert mới.
@@ -137,16 +137,6 @@ class ProjectNotificationHandler
     public function handleRealtimeAlert(int $projectId, string $level, string $message): void
     {
         if (!in_array($level, ['warning', 'critical'], true)) {
-            return;
-        }
-
-        // Bọc qua NotificationBus để định tuyến linh hoạt và dedup
-        if (class_exists(\App\Notifications\NotificationBus::class)) {
-            \App\Notifications\NotificationBus::emit(
-                \App\Notifications\NotificationBus::EVENT_PROJECT_ALERT,
-                ['level' => $level, 'message' => $message],
-                $projectId
-            );
             return;
         }
 
@@ -268,17 +258,6 @@ class ProjectNotificationHandler
      */
     private function sendNotifications(array $messages): void
     {
-        $this->sendNotificationsFiltered($messages, ['email', 'zalo', 'telegram', 'slack']);
-    }
-
-    /**
-     * Gửi thông báo đến các kênh được chỉ định (gọi từ NotificationBus hoặc nội bộ)
-     *
-     * @param array<int, string> $messages
-     * @param array<int, string> $channels Danh sách các kênh được phép gửi (email, zalo, telegram, slack)
-     */
-    public function sendNotificationsFiltered(array $messages, array $channels): void
-    {
         $content = "Hệ thống LacaDev Project Manager phát hiện các cảnh báo sau:\n\n";
         foreach ($messages as $msg) {
             $content .= "- " . $msg . "\n";
@@ -286,86 +265,78 @@ class ProjectNotificationHandler
         $content .= "\nVui lòng truy cập admin để quản lý gia hạn.";
 
         // Thông báo qua Email
-        if (in_array('email', $channels, true)) {
-            $isEmailEnabled = carbon_get_theme_option('enable_email_notify');
-            if ($isEmailEnabled === 'yes' || $isEmailEnabled === true) {
-                $emailRaw = carbon_get_theme_option('project_admin_email');
-                if ($emailRaw) {
-                    $emails = array_map('trim', explode(',', $emailRaw));
-                    $subject = '[LacaDev PM] Cảnh báo dịch vụ sắp hết hạn';
-                    $this->lastMailError = '';
-                    $sent = wp_mail($emails, $subject, $content);
-                    $this->recordChannelResult('email', $sent, $this->lastMailError ?: 'wp_mail() trả về false');
-                }
+        $isEmailEnabled = carbon_get_theme_option('enable_email_notify');
+        if ($isEmailEnabled === 'yes' || $isEmailEnabled === true) {
+            $emailRaw = carbon_get_theme_option('project_admin_email');
+            if ($emailRaw) {
+                $emails = array_map('trim', explode(',', $emailRaw));
+                $subject = '[LacaDev PM] Cảnh báo dịch vụ sắp hết hạn';
+                $this->lastMailError = '';
+                $sent = wp_mail($emails, $subject, $content);
+                $this->recordChannelResult('email', $sent, $this->lastMailError ?: 'wp_mail() trả về false');
             }
         }
 
         // Thông báo qua Zalo
-        if (in_array('zalo', $channels, true)) {
-            $isZaloEnabled = carbon_get_theme_option('enable_zalo_notify');
-            if ($isZaloEnabled === 'yes' || $isZaloEnabled === true) {
-                // Access Token Zalo OA sống ~1h — refresh chủ động trước khi gửi
-                // nếu đã qua/sắp qua hạn (buffer 5 phút), tránh gửi thất bại vô ích.
-                $expiresAt = (int) get_option(self::OPT_ZALO_TOKEN_EXPIRES_AT, 0);
-                if ($expiresAt > 0 && $expiresAt - 300 < time()) {
-                    $this->refreshZaloToken();
-                }
+        $isZaloEnabled = carbon_get_theme_option('enable_zalo_notify');
+        if ($isZaloEnabled === 'yes' || $isZaloEnabled === true) {
+            // Access Token Zalo OA sống ~1h — refresh chủ động trước khi gửi
+            // nếu đã qua/sắp qua hạn (buffer 5 phút), tránh gửi thất bại vô ích.
+            $expiresAt = (int) get_option(self::OPT_ZALO_TOKEN_EXPIRES_AT, 0);
+            if ($expiresAt > 0 && $expiresAt - 300 < time()) {
+                $this->refreshZaloToken();
+            }
 
-                $oaToken = carbon_get_theme_option('zalo_oa_access_token');
-                $receiversRaw = carbon_get_theme_option('zalo_default_receiver');
-                if ($oaToken && $receiversRaw) {
-                    $receivers = array_map('trim', explode(',', $receiversRaw));
-                    $ok = true;
-                    $error = '';
-                    foreach ($receivers as $uid) {
+            $oaToken = carbon_get_theme_option('zalo_oa_access_token');
+            $receiversRaw = carbon_get_theme_option('zalo_default_receiver');
+            if ($oaToken && $receiversRaw) {
+                $receivers = array_map('trim', explode(',', $receiversRaw));
+                $ok = true;
+                $error = '';
+                foreach ($receivers as $uid) {
+                    $result = $this->sendZaloMessage($oaToken, $uid, $content);
+                    // Thất bại có thể do token hết hạn ngoài dự kiến — refresh
+                    // 1 lần rồi gửi lại đúng 1 lần, không lặp vô hạn.
+                    if (!$result['ok'] && $this->refreshZaloToken()) {
+                        $oaToken = carbon_get_theme_option('zalo_oa_access_token');
                         $result = $this->sendZaloMessage($oaToken, $uid, $content);
-                        // Thất bại có thể do token hết hạn ngoài dự kiến — refresh
-                        // 1 lần rồi gửi lại đúng 1 lần, không lặp vô hạn.
-                        if (!$result['ok'] && $this->refreshZaloToken()) {
-                            $oaToken = carbon_get_theme_option('zalo_oa_access_token');
-                            $result = $this->sendZaloMessage($oaToken, $uid, $content);
-                        }
-                        if (!$result['ok']) {
-                            $ok = false;
-                            $error = $result['error'];
-                        }
                     }
-                    $this->recordChannelResult('zalo', $ok, $error);
+                    if (!$result['ok']) {
+                        $ok = false;
+                        $error = $result['error'];
+                    }
                 }
+                $this->recordChannelResult('zalo', $ok, $error);
             }
         }
 
         // Thông báo qua Telegram
-        if (in_array('telegram', $channels, true)) {
-            $isTelegramEnabled = carbon_get_theme_option('enable_telegram_notify');
-            if ($isTelegramEnabled === 'yes' || $isTelegramEnabled === true) {
-                $telegramToken = carbon_get_theme_option('telegram_bot_token');
-                $chatIdsRaw = carbon_get_theme_option('telegram_chat_id');
-                if ($telegramToken && $chatIdsRaw) {
-                    $chatIds = array_map('trim', explode(',', $chatIdsRaw));
-                    $ok = true;
-                    $error = '';
-                    foreach ($chatIds as $chatId) {
-                        $result = $this->sendTelegramMessage($telegramToken, $chatId, $content);
-                        if (!$result['ok']) {
-                            $ok = false;
-                            $error = $result['error'];
-                        }
+        $isTelegramEnabled = carbon_get_theme_option('enable_telegram_notify');
+        if ($isTelegramEnabled === 'yes' || $isTelegramEnabled === true) {
+            $telegramToken = carbon_get_theme_option('telegram_bot_token');
+            $chatIdsRaw = carbon_get_theme_option('telegram_chat_id');
+            if ($telegramToken && $chatIdsRaw) {
+                $chatIds = array_map('trim', explode(',', $chatIdsRaw));
+                $ok = true;
+                $error = '';
+                foreach ($chatIds as $chatId) {
+                    $result = $this->sendTelegramMessage($telegramToken, $chatId, $content);
+                    if (!$result['ok']) {
+                        $ok = false;
+                        $error = $result['error'];
                     }
-                    $this->recordChannelResult('telegram', $ok, $error);
                 }
+                $this->recordChannelResult('telegram', $ok, $error);
             }
         }
 
         // Thông báo qua Slack
-        if (in_array('slack', $channels, true)) {
-            $isSlackEnabled = carbon_get_theme_option('enable_slack_notify');
-            if ($isSlackEnabled === 'yes' || $isSlackEnabled === true) {
-                $slackWebhook = carbon_get_theme_option('slack_webhook_url');
-                if ($slackWebhook) {
-                    $result = $this->sendSlackMessage($slackWebhook, $content);
-                    $this->recordChannelResult('slack', $result['ok'], $result['error']);
-                }
+        $isSlackEnabled = carbon_get_theme_option('enable_slack_notify');
+        if ($isSlackEnabled === 'yes' || $isSlackEnabled === true) {
+            $slackWebhook = carbon_get_theme_option('slack_webhook_url');
+            if ($slackWebhook) {
+                $result = $this->sendSlackMessage($slackWebhook, $content);
+                $this->recordChannelResult('slack', $result['ok'], $result['error']);
             }
         }
     }
