@@ -211,6 +211,11 @@ class ThemePerformance
     public static function register_service_worker()
     {
         if (!is_admin() && !is_user_logged_in()) {
+            // Chỉ đăng ký khi toggle trong Laca Admin > Optimization được bật
+            if (function_exists('carbon_get_theme_option') && !carbon_get_theme_option('enable_register_service_worker')) {
+                return;
+            }
+
             $sw_path = lacaDistDir('sw.js');
 
             // Only register if SW file exists
