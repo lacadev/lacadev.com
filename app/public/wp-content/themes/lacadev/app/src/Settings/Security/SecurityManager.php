@@ -578,23 +578,23 @@ class SecurityManager
     {
         $this->checkNonce();
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(__('Bạn không có quyền thực hiện thao tác này.', 'lacadev'));
+            wp_send_json_error(__('Bạn không có quyền thực hiện thao tác này.', 'laca'));
         }
 
         $file = sanitize_text_field($_POST['file'] ?? '');
         if (empty($file)) {
-            wp_send_json_error(__('Đường dẫn file không hợp lệ.', 'lacadev'));
+            wp_send_json_error(__('Đường dẫn file không hợp lệ.', 'laca'));
         }
 
         $base = wp_normalize_path(ABSPATH);
         $fullPath = $base . ltrim($file, '/');
         if (!file_exists($fullPath) || !is_file($fullPath)) {
-            wp_send_json_error(__('File không tồn tại trên hệ thống.', 'lacadev'));
+            wp_send_json_error(__('File không tồn tại trên hệ thống.', 'laca'));
         }
 
         $hash = @hash_file('sha256', $fullPath);
         if (!$hash) {
-            wp_send_json_error(__('Không thể tạo mã băm cho file.', 'lacadev'));
+            wp_send_json_error(__('Không thể tạo mã băm cho file.', 'laca'));
         }
 
         $whitelist = get_option('laca_malware_whitelist', []);
@@ -606,7 +606,7 @@ class SecurityManager
         update_option('laca_malware_whitelist', $whitelist);
 
         wp_send_json_success([
-            'message' => __('Đã thêm vào danh sách an toàn.', 'lacadev'),
+            'message' => __('Đã thêm vào danh sách an toàn.', 'laca'),
             'file'    => $file,
         ]);
     }
@@ -632,14 +632,14 @@ class SecurityManager
         $slug    = sanitize_title(trim(sanitize_text_field($_POST['slug'] ?? ''), '/'));
         $enabled = !empty($_POST['enabled']) ? 1 : 0;
         if ($enabled && empty($slug)) {
-            wp_send_json_error(__('Slug không được để trống khi bật tính năng.', 'lacadev'));
+            wp_send_json_error(__('Slug không được để trống khi bật tính năng.', 'laca'));
         }
         if ($enabled && $this->isForbiddenLoginSlug($slug)) {
-            wp_send_json_error(__('Slug trùng với query var hệ thống của WordPress, vui lòng chọn slug khác.', 'lacadev'));
+            wp_send_json_error(__('Slug trùng với query var hệ thống của WordPress, vui lòng chọn slug khác.', 'laca'));
         }
         update_option('laca_login_slug',          $slug);
         update_option('laca_enable_custom_login', $enabled);
-        wp_send_json_success(__('Cài đặt đã lưu. Tải lại trang để áp dụng.', 'lacadev'));
+        wp_send_json_success(__('Cài đặt đã lưu. Tải lại trang để áp dụng.', 'laca'));
     }
 
     /** Chặn các slug trùng public/private query var — nếu không site sẽ tự khoá truy cập admin. */

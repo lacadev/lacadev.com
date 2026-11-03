@@ -60,13 +60,13 @@ class ProjectReportsManager
 
         // Label map (thêm custom status nếu cần)
         $labels = [
-            'publish'     => __('Đã Publish', 'lacadev'),
-            'draft'       => __('Bản Nháp',   'lacadev'),
-            'private'     => __('Private',    'lacadev'),
-            'pending'     => __('Chờ Duyệt',  'lacadev'),
-            'in_progress' => __('Đang Làm',   'lacadev'),
-            'done'        => __('Hoàn Thành', 'lacadev'),
-            'cancelled'   => __('Đã Hủy',     'lacadev'),
+            'publish'     => __('Đã Publish', 'laca'),
+            'draft'       => __('Bản Nháp',   'laca'),
+            'private'     => __('Private',    'laca'),
+            'pending'     => __('Chờ Duyệt',  'laca'),
+            'in_progress' => __('Đang Làm',   'laca'),
+            'done'        => __('Hoàn Thành', 'laca'),
+            'cancelled'   => __('Đã Hủy',     'laca'),
         ];
 
         $result = [];
