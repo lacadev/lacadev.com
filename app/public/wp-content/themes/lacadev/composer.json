@@ -20,9 +20,7 @@
         "htmlburger/carbon-pagination": "^1.1.6",
         "htmlburger/carbon-fields": "^3.0",
         "intervention/image": "^2.5.1",
-        "jenssegers/agent": "^2.6",
         "guzzlehttp/guzzle": "^7.0",
-        "sunra/php-simple-html-dom-parser": "^1.5",
         "htmlburger/carbon-field-icon": "^3.0",
         "social-links/social-links": "^1.15",
         "illuminate/container": "^8.0",
@@ -31,8 +29,7 @@
         "illuminate/translation": "^8.0",
         "illuminate/validation": "^8.0",
         "overtrue/socialite": "^2.0",
-        "johnbillion/extended-cpts": "^5.0",
-        "phpoffice/phpspreadsheet": "^1.29"
+        "johnbillion/extended-cpts": "^5.0"
     },
     "require-dev": {
         "symfony/error-handler": "^6.4",

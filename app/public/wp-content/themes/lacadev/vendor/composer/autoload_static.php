@@ -18,7 +18,6 @@ class ComposerStaticInit599a9e4bc4652d5b3be4c44ffd052c71
         'e69f7f6ee287b969198c3c9d6777bd38' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/bootstrap.php',
         'f598d06aa772fa33d905e87be6398fb1' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/bootstrap.php',
         '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
-        '2cffec82183ee1cea088009cef9a6fc3' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         '8b0d424e6572b6620fcae6008af510ef' => __DIR__ . '/..' . '/htmlburger/wpemerge/config.php',
         '270cb6edcaac5923bab5c49ecf5fbd06' => __DIR__ . '/..' . '/htmlburger/wpemerge/src/functions.php',
@@ -41,10 +40,6 @@ class ComposerStaticInit599a9e4bc4652d5b3be4c44ffd052c71
         'v' =>
         array (
             'voku\\' => 5,
-        ),
-        'Z' =>
-        array (
-            'ZipStream\\' => 10,
         ),
         'W' =>
         array (
@@ -76,7 +71,6 @@ class ComposerStaticInit599a9e4bc4652d5b3be4c44ffd052c71
             'Psr\\Container\\' => 14,
             'Psr\\Clock\\' => 10,
             'PhpParser\\' => 10,
-            'PhpOffice\\PhpSpreadsheet\\' => 25,
             'PHPCSStandards\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\' => 57,
         ),
         'O' =>
@@ -86,12 +80,6 @@ class ComposerStaticInit599a9e4bc4652d5b3be4c44ffd052c71
         'M' =>
         array (
             'Mockery\\' => 8,
-            'Matrix\\' => 7,
-        ),
-        'J' =>
-        array (
-            'Jenssegers\\Agent\\' => 17,
-            'Jaybizzle\\CrawlerDetect\\' => 24,
         ),
         'I' =>
         array (
@@ -125,9 +113,7 @@ class ComposerStaticInit599a9e4bc4652d5b3be4c44ffd052c71
         ),
         'C' =>
         array (
-            'Composer\\Pcre\\' => 14,
             'Composer\\Installers\\' => 20,
-            'Complex\\' => 8,
             'Carbon_Fields\\' => 14,
             'Carbon_Field_Icon\\' => 18,
             'Carbon\\Doctrine\\' => 16,
@@ -148,10 +134,6 @@ class ComposerStaticInit599a9e4bc4652d5b3be4c44ffd052c71
         'voku\\' =>
         array (
             0 => __DIR__ . '/..' . '/voku/portable-ascii/src/voku',
-        ),
-        'ZipStream\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/maennchen/zipstream-php/src',
         ),
         'WPEmerge\\' =>
         array (
@@ -241,10 +223,6 @@ class ComposerStaticInit599a9e4bc4652d5b3be4c44ffd052c71
         array (
             0 => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser',
         ),
-        'PhpOffice\\PhpSpreadsheet\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/phpoffice/phpspreadsheet/src/PhpSpreadsheet',
-        ),
         'PHPCSStandards\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\' =>
         array (
             0 => __DIR__ . '/..' . '/dealerdirect/phpcodesniffer-composer-installer/src',
@@ -256,18 +234,6 @@ class ComposerStaticInit599a9e4bc4652d5b3be4c44ffd052c71
         'Mockery\\' =>
         array (
             0 => __DIR__ . '/..' . '/mockery/mockery/library/Mockery',
-        ),
-        'Matrix\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/markbaker/matrix/classes/src',
-        ),
-        'Jenssegers\\Agent\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/jenssegers/agent/src',
-        ),
-        'Jaybizzle\\CrawlerDetect\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/jaybizzle/crawler-detect/src',
         ),
         'Intervention\\Image\\' =>
         array (
@@ -343,17 +309,9 @@ class ComposerStaticInit599a9e4bc4652d5b3be4c44ffd052c71
         array (
             0 => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy',
         ),
-        'Composer\\Pcre\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/composer/pcre/src',
-        ),
         'Composer\\Installers\\' =>
         array (
             0 => __DIR__ . '/..' . '/composer/installers/src/Composer/Installers',
-        ),
-        'Complex\\' =>
-        array (
-            0 => __DIR__ . '/..' . '/markbaker/complex/classes/src',
         ),
         'Carbon_Fields\\' =>
         array (
@@ -386,32 +344,11 @@ class ComposerStaticInit599a9e4bc4652d5b3be4c44ffd052c71
     );
 
     public static $prefixesPsr0 = array (
-        'S' =>
-        array (
-            'Sunra\\PhpSimple\\HtmlDomParser' =>
-            array (
-                0 => __DIR__ . '/..' . '/sunra/php-simple-html-dom-parser/Src',
-            ),
-        ),
         'P' =>
         array (
             'Pimple' =>
             array (
                 0 => __DIR__ . '/..' . '/pimple/pimple/src',
-            ),
-        ),
-        'H' =>
-        array (
-            'HTMLPurifier' =>
-            array (
-                0 => __DIR__ . '/..' . '/ezyang/htmlpurifier/library',
-            ),
-        ),
-        'D' =>
-        array (
-            'Detection' =>
-            array (
-                0 => __DIR__ . '/..' . '/mobiledetect/mobiledetectlib/namespaced',
             ),
         ),
     );
@@ -487,7 +424,6 @@ class ComposerStaticInit599a9e4bc4652d5b3be4c44ffd052c71
         'Hamcrest\\Type\\IsString' => __DIR__ . '/..' . '/hamcrest/hamcrest-php/hamcrest/Hamcrest/Type/IsString.php',
         'Hamcrest\\Util' => __DIR__ . '/..' . '/hamcrest/hamcrest-php/hamcrest/Hamcrest/Util.php',
         'Hamcrest\\Xml\\HasXPath' => __DIR__ . '/..' . '/hamcrest/hamcrest-php/hamcrest/Hamcrest/Xml/HasXPath.php',
-        'Mobile_Detect' => __DIR__ . '/..' . '/mobiledetect/mobiledetectlib/Mobile_Detect.php',
         'Normalizer' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/Resources/stubs/Normalizer.php',
         'PHPCSUtils\\AbstractSniffs\\AbstractArrayDeclarationSniff' => __DIR__ . '/..' . '/phpcsstandards/phpcsutils/PHPCSUtils/AbstractSniffs/AbstractArrayDeclarationSniff.php',
         'PHPCSUtils\\BackCompat\\BCFile' => __DIR__ . '/..' . '/phpcsstandards/phpcsutils/PHPCSUtils/BackCompat/BCFile.php',
