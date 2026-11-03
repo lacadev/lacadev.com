@@ -132,7 +132,7 @@ class ContactFormAjaxHandler
         $formId = absint($atts['id']);
 
         if (!$formId) {
-            return '<p class="laca-cf-error">Thiếu ID form. Dùng: [laca_contact_form id="X"]</p>';
+            $formId = ContactFormTable::ensureDefaultForm();
         }
 
         $form = ContactFormTable::getForm($formId);

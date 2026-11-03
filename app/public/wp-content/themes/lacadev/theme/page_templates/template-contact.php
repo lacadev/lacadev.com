@@ -111,9 +111,10 @@ $site_key = carbon_get_theme_option('recaptcha_site_key');
                     <form id="laca-contact-form" method="POST"
                         action="<?php echo esc_url(admin_url('admin-ajax.php')); ?>" class="glass"
                         data-sitekey="<?php echo esc_attr($site_key); ?>" novalidate>
-                        <?php wp_nonce_field('laca_contact_nonce', 'nonce'); ?>
+                        <?php wp_nonce_field('laca_contact_submit_nonce', '_nonce'); ?>
                         <input type="hidden" name="action" value="laca_contact_submit">
-                        <input type="hidden" name="recaptcha_response" id="recaptcha-response">
+                        <input type="hidden" name="form_id" value="<?php echo esc_attr(\App\Databases\ContactFormTable::ensureDefaultForm()); ?>">
+                        <input type="hidden" name="laca_recaptcha_response" id="recaptcha-response">
 
                         <div class="form-row">
                             <div class="form-group">

@@ -94,6 +94,33 @@ class ContactFormTable
     // -------------------------------------------------------------------------
 
     /**
+     * Đảm bảo luôn có ít nhất 1 form mặc định (dùng cho shortcode không truyền id và template-contact.php)
+     */
+    public static function ensureDefaultForm(): int
+    {
+        $all = self::getAllForms();
+        if (!empty($all)) {
+            return (int) $all[0]['id'];
+        }
+
+        return self::insertForm([
+            'name'                   => 'Form Liên hệ',
+            'fields'                 => [
+                ['type' => 'text',     'name' => 'name',    'label' => 'Họ và tên',     'required' => true],
+                ['type' => 'phone',    'name' => 'phone',   'label' => 'Số điện thoại', 'required' => true],
+                ['type' => 'email',    'name' => 'email',   'label' => 'Email',         'required' => false],
+                ['type' => 'textarea', 'name' => 'message', 'label' => 'Nội dung',      'required' => true],
+            ],
+            'notify_email'           => '',
+            'email_admin_subject'    => 'Lời nhắn mới từ $name - $phone',
+            'email_admin_body'       => "<p><strong>Họ và tên:</strong> \$name</p><p><strong>Số điện thoại:</strong> \$phone</p><p><strong>Email:</strong> \$email</p><p><strong>Nội dung:</strong></p><p>\$message</p>",
+            'email_customer_subject' => 'Cảm ơn bạn đã liên hệ',
+            'email_customer_body'    => "<p>Chào \$name,</p><p>Chúng tôi đã nhận được lời nhắn của bạn và sẽ phản hồi sớm nhất.</p>",
+            'is_active'              => 1,
+        ]);
+    }
+
+    /**
      * Lấy tất cả forms (kèm submission count)
      */
     public static function getAllForms(): array
