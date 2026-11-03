@@ -492,7 +492,7 @@ msgstr ""
 
 #: theme/header.php:173
 msgid "Tìm kiếm"
-msgstr ""
+msgstr "Search"
 
 #: theme/header.php:179
 msgid "Tìm kiếm ..."
