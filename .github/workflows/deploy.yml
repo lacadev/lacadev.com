@@ -4,6 +4,12 @@ on:
   push:
     branches: [master]
 
+# Không cho 2 lượt FTP deploy chạy chồng nhau — chồng nhau làm file trạng thái
+# đồng bộ trên server lệch với file thật (sự cố 03/11: autoload_static.php cũ).
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -40,6 +46,10 @@ jobs:
           # local-dir làm gốc đồng bộ — bỏ hẳn tiền tố app/public/, server
           # chỉ có wp-content/... ở gốc (không có thư mục app/ trên server).
           local-dir: app/public/
+
+          # Đổi tên file trạng thái → buộc tải lại toàn bộ 1 lần, sửa các file
+          # bị lệch do các lượt deploy chồng nhau trước đây.
+          state-name: .ftp-deploy-sync-state-v2.json
 
           # Chỉ deploy 2 thư mục quan trọng (đường dẫn tính từ local-dir ở trên)
           include: |
