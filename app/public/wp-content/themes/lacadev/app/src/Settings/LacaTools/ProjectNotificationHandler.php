@@ -132,7 +132,7 @@ class ProjectNotificationHandler
      * Đẩy ngay cảnh báo warning/critical vào các kênh Email/Zalo/Telegram/Slack/Discord
      * thay vì chỉ chờ cron kiểm tra hết hạn hằng ngày. Được gọi qua
      * do_action('laca_project_alert_notify', $projectId, $level, $message)
-     * từ TrackerEndpointHandler / ClientWebhook ngay sau khi tạo ProjectAlert mới.
+     * từ TrackerEndpointHandler ngay sau khi tạo ProjectAlert mới.
      */
     public function handleRealtimeAlert(int $projectId, string $level, string $message): void
     {

@@ -32,7 +32,7 @@ Kế hoạch chia 3 giai đoạn (P0/P1/P2). Plan gốc đầy đủ được l�
 |---|---|---|
 | `app/src/Settings/LacaTools/ProjectNotificationHandler.php` | `init()` + method mới `handleRealtimeAlert()` | Đăng ký `add_action('laca_project_alert_notify', [$this, 'handleRealtimeAlert'], 10, 3)`. Method mới nhận `(int $projectId, string $level, string $message)`, chỉ xử lý khi `$level` là `warning`/`critical`, gọi lại `sendNotifications()` (method có sẵn, không đổi visibility — vì callback chạy trên cùng instance nên gọi `$this->` được dù `sendNotifications()` vẫn `private`). |
 | `app/src/Settings/LacaTools/TrackerEndpointHandler.php` | `createAlert()`, `createAlertByType()`, `createClientRequestAlert()` | Sau mỗi lần `ProjectAlert::add([...])` trả về khác `false` (tức tạo alert mới, không bị dedup chặn), gọi thêm `do_action('laca_project_alert_notify', (int) $projectId, $level, $msg)`. |
-| `app/src/Features/ProjectManagement/Api/ClientWebhook.php` | `maybeCreateAlert()` | Tương tự — gọi `do_action('laca_project_alert_notify', $projectId, $level, $message)` sau khi `ProjectAlert::add()` thành công. |
+| `app/src/Features/ProjectManagement/Api/ClientWebhook.php` | `maybeCreateAlert()` | (Legacy endpoint `/laca/v1/client-report` — đã gỡ đăng ký, hợp nhất vào `TrackerEndpointHandler`). |
 | `app/src/Features/ProjectManagement/ProjectFields.php` | `addTabHostingDomain()` | Thêm field mới `ssl_expiry` (date) + `ssl_notify_days` (text, mặc định `14`) vào tab "Hosting & Domain", đặt trước khối FTP. Logic cảnh báo hết hạn SSL đã có sẵn từ trước trong `ProjectNotificationHandler::checkExpirations()` (đọc `_ssl_expiry`/`_ssl_notify_days`) nhưng chưa từng có ô nhập liệu — giờ đã có. |
 
 ### Cơ chế mới hoạt động ra sao

@@ -8,7 +8,7 @@ Site hub quản lý dự án — theme `lacadev` chạy CPT `project`, CRM/dashb
 
 Trạng thái hiện tại: cả 3 giai đoạn (P0 nối cảnh báo real-time + field `ssl_expiry`; P1/P2 là thay đổi phía site khách) đều đã xong. Chỉ còn thao tác cấu hình + test thủ công (xem hướng dẫn test trong file trên).
 
-Các class liên quan chính: `App\Settings\LacaTools\ProjectNotificationHandler` (fan-out Email/Zalo/Telegram/Slack, tự refresh token Zalo, ghi log kênh thất bại, cron health-check), `App\Settings\LacaTools\TrackerEndpointHandler` (nhận `/laca/v1/tracker/log`), `App\Features\ProjectManagement\Api\ClientWebhook` (nhận `/laca/v1/client-report`), `App\Features\ProjectManagement\LacaProjectsHub` (dashboard CRM), `App\Settings\LacaTools\ClientPortalEndpoint` (Client Portal, có hiện trạng thanh toán).
+Các class liên quan chính: `App\Settings\LacaTools\ProjectNotificationHandler` (fan-out Email/Zalo/Telegram/Slack, tự refresh token Zalo, ghi log kênh thất bại, cron health-check), `App\Settings\LacaTools\TrackerEndpointHandler` (nhận `/laca/v1/tracker/log`), `App\Features\ProjectManagement\LacaProjectsHub` (dashboard CRM), `App\Settings\LacaTools\ClientPortalEndpoint` (Client Portal, có hiện trạng thanh toán).
 
 ## Trước khi đụng vào thông báo Zalo/Email/Telegram/Slack, cron health-check, hoặc thanh toán trên Client Portal
 
