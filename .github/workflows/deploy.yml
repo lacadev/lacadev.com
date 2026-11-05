@@ -108,15 +108,13 @@ jobs:
           # chỉ có wp-content/... ở gốc (không có thư mục app/ trên server).
           local-dir: app/public/
 
-          # Giữ tên file trạng thái v2 (đã đổi ngày 03/11 để buộc tải lại toàn bộ
-          # sau sự cố autoload cũ). Đổi về tên cũ sẽ gây thêm 1 lần tải lại toàn bộ.
-          state-name: .ftp-deploy-sync-state-v2.json
+          # v3 (05/11): danh sách exclude mới khiến action đòi xoá trên server các file
+          # nằm trong state cũ nhưng đã mất (553 No such file) → bắt đầu state mới.
+          # Đổi tên file này = buộc tải lại toàn bộ 1 lần.
+          state-name: .ftp-deploy-sync-state-v3.json
 
-          # Chỉ deploy 2 thư mục quan trọng (đường dẫn tính từ local-dir ở trên)
-          include: |
-            wp-content/themes/**
-            wp-content/plugins/**
-
+          # Lưu ý: FTP-Deploy-Action v4.3.4 KHÔNG có input `include` — phạm vi deploy
+          # chỉ được giới hạn bằng `exclude` bên dưới.
           # Loại trừ những thứ không cần
           # Quan trọng: exclude mới thực sự chặn xoá trên server (include chỉ ưu tiên
           # upload, không giới hạn phạm vi xoá) — nên các file core WP phải nằm ở đây,
