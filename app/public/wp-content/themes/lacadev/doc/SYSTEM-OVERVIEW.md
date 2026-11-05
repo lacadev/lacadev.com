@@ -427,7 +427,7 @@ sequenceDiagram
      cancel-in-progress: false
    ```
    *Ý nghĩa*: Đảm bảo không có 2 tiến trình deploy FTP chạy đè lên nhau, ngăn chặn hoàn toàn hiện tượng lệch file `autoload_static.php` trên production (bài học sự cố ngày 03/11).
-4. Tiến trình FTP Deploy tải các thư mục cần thiết lên hosting và thực hiện smoke test tự động qua `tools/smoke.sh`.
+4. Trước khi upload, CI kiểm tra cú pháp PHP 8.3 (lỗi là dừng deploy). Sau khi FTP xong, bước health check gọi `/` và `/wp-login.php`; nếu có cấu hình secret thì gửi manifest cho giám sát file của site và tóm tắt lên Discord.
 
 ---
 
@@ -503,12 +503,8 @@ sequenceDiagram
    ```
 4. GitHub Actions sẽ tự động biên dịch và tạo gói `lacadev-client.zip` phân phối qua Hub.
 
-### 8.2 Kiểm tra sau deploy (Smoke Test)
-Chạy script kiểm tra tự động trên terminal:
-```bash
-./tools/smoke.sh
-```
-Script sẽ gửi yêu cầu curl tới danh sách endpoint quan trọng (`tools/smoke-urls.txt`), xác nhận mã trả về HTTP 200 và không chứa bất kỳ chuỗi lỗi PHP Fatal/Critical Error nào.
+### 8.2 Kiểm tra sau deploy
+Bước **Kiểm tra site sau deploy** trong workflow tự gọi `/` và `/wp-login.php`; HTTP ≥ 500 hoặc trang có chuỗi `critical error`/`Fatal error` thì job báo lỗi (và báo Discord nếu có `DISCORD_DEPLOY_WEBHOOK`).
 
 ### 8.3 Bài học sự cố ngày 03/11/2026 (Lỗi 500 sau deploy Phase 9–12)
 - **Hiện tượng**: Site `lacadev.com` gặp lỗi HTTP 500 do ClassNotFound hoặc gọi class cũ sau một chuỗi deploy liên tiếp.
