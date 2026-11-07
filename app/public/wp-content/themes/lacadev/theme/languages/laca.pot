@@ -8944,3 +8944,11 @@ msgstr ""
 msgctxt "Space size name"
 msgid "24"
 msgstr ""
+
+#: app/src/Settings/Security/SecurityManager.php
+msgid "Xác thực 2 bước (2FA)"
+msgstr ""
+
+#: app/src/Settings/Security/SecurityManager.php
+msgid "Super User"
+msgstr ""
