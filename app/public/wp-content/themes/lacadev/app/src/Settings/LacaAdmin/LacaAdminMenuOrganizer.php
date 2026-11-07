@@ -40,13 +40,13 @@ class LacaAdminMenuOrganizer
             'label' => 'Bảo mật',
             'items' => [
                 'laca-security',
-                'laca-login-log',
             ],
         ],
         'users' => [
             'label' => 'Quản lý người dùng',
             'items' => [
                 'laca-2fa',
+                'laca-login-log',
             ],
         ],
         'superuser' => [
