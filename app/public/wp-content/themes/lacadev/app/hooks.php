@@ -448,6 +448,10 @@ add_action('init', function () {
     if (class_exists('\App\Settings\Security\SecurityManager')) {
         (new \App\Settings\Security\SecurityManager())->init();
     }
+    // Khoá cứng tài khoản mặc định 'lacadev': không ai xoá/đổi role được.
+    if (class_exists('\App\Settings\Security\SuperUserGuard')) {
+        (new \App\Settings\Security\SuperUserGuard())->init();
+    }
 });
 
 /**
