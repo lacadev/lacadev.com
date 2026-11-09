@@ -63,9 +63,6 @@ class ThemePerformance
             $settings['interval'] = 120; // 2 minutes instead of 15 seconds
             return $settings;
         });
-
-        // Remove login errors
-        add_filter('login_errors', '__return_null');
     }
 
     /**
