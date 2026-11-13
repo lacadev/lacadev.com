@@ -3,12 +3,13 @@ import './custom_thumbnail_support.js';
 import './project.js';
 import './ai-chat.js';
 import './project-charts.js';
-import './contact-form.js';
 import './global-alerts.js';
 import './media-library-infinite-scroll.js';
+import './contact-form.js';
 import { initReleaseChecklistAjax } from './release-checklist.js';
 import { initCarbonFieldsAutoSave } from './carbon-autosave.js';
 import { initListTableInlineEditor } from './list-table-inline.js';
+
 
 import Swal from 'sweetalert2';
 window.Swal = Swal;
@@ -142,13 +143,13 @@ document.addEventListener( 'click', function ( e ) {
 								? ajaxurl_params.nonce
 								: '' );
 						tdCell.innerHTML = `
-              <div style='position:relative;display:inline-block;'>
+              <div class='thumbnail-wrap'>
                 <a href='javascript:void(0)' data-trigger-change-thumbnail-id data-post-id='${ postId }' data-nonce='${ preservedNonce }'>
-                  <img src='${ originalImageUrl }' style='max-width:80px;max-height:80px;display:block;' alt='Thumbnail'/>
+                  <img src='${ originalImageUrl }' class='thumbnail-preview' alt='Thumbnail'/>
                 </a>
                 <a class='remove-thumbnail' href='javascript:void(0)' data-trigger-remove-thumbnail data-post-id='${ postId }' data-nonce='${ preservedNonce }' title='Remove thumbnail'>
 									<svg viewBox='0 0 12 12'>
-                    <path d='M11 1L1 11M1 1l10 10' stroke='currentColor' stroke-width='2' stroke-linecap='round'/>
+                    <path d='M10 2L2 10M2 2L10 10' stroke='#ffffff' stroke-width='2' stroke-linecap='round'/>
                 	</svg>
 								</a>
               </div>
@@ -221,7 +222,7 @@ document.addEventListener( 'click', function ( e ) {
 							: '' );
 					const container = removeBtn.closest( 'td' );
 					if ( container ) {
-						container.innerHTML = `<a href='javascript:void(0)' data-trigger-change-thumbnail-id data-post-id='${ postId }' data-nonce='${ preservedNonce }'><div class='no-image-text'>${ adminI18n.chooseImage }</div></a>`;
+						container.innerHTML = `<a href='javascript:void(0)' data-trigger-change-thumbnail-id data-post-id='${ postId }' data-nonce='${ preservedNonce }'><div class='no-image-text'><span>Choose</span><span>image</span></div></a>`;
 					}
 
 					// Show success message
@@ -261,7 +262,6 @@ document.addEventListener( 'DOMContentLoaded', function () {
 			body: new URLSearchParams( {
 				action: 'mm_get_attachment_url_thumbnail',
 				attachmentID: postIdInput.value,
-				nonce: window.ajaxurl_params?.attachmentNonce || '',
 			} ),
 		} );
 	}
@@ -270,6 +270,7 @@ document.addEventListener( 'DOMContentLoaded', function () {
 // Log fields support (Laca Admin)
 // My project.js now handles password toggle and copy functionality for all fields
 // with .laca-password-input and .laca-copyable-input classes.
+
 
 // ===== LacaDashboard - Vanilla JS conversion =====
 ( function () {

@@ -2,6 +2,7 @@
 namespace App\Settings;
 
 use PHPMailer\PHPMailer\PHPMailer;
+use App\Helpers\Crypto;
 
 class ThemeSettings {
     public function __construct() {
@@ -15,18 +16,11 @@ class ThemeSettings {
     }
 
     /**
-     * Tự động tăng lượt xem khi vào trang single (post/custom post type).
-     * Không đếm cho page — page không hiển thị cột Lượt xem ở admin nữa
-     * (xem ListTableEnhancements::addViewsColumn()), nên cũng không cần đếm.
+     * Tự động tăng lượt xem bài viết bất đồng bộ qua PostViewTracker.
+     * Không ghi DB trực tiếp trong request để hỗ trợ full-page cache.
      */
     public function trackPostViews() {
-        add_action('wp_head', function() {
-            if (is_single()) {
-                if (function_exists('updateViewCount')) {
-                    updateViewCount(get_the_ID());
-                }
-            }
-        });
+        // Đã được xử lý bất đồng bộ bởi \App\Features\Performance\PostViewTracker
     }
 
     public function useGmailSmtp() {
@@ -38,8 +32,36 @@ class ThemeSettings {
                 $phpmailer->SMTPSecure = get_option('_smtp_secure');
                 $phpmailer->Port       = get_option('_smtp_port');
                 $phpmailer->Username   = get_option('_smtp_username');
-                $phpmailer->Password   = get_option('_smtp_password');
-                $phpmailer->From       = get_option('_admin_email');
+
+                // Giải mã mật khẩu SMTP (hỗ trợ cả plaintext cũ lẫn tagged encryption)
+                $rawPassword = get_option('_smtp_password');
+                if (Crypto::isTagged($rawPassword)) {
+                    $password = Crypto::decryptTagged($rawPassword);
+                    if ($password === null) {
+                        // Giải mã thất bại — hiện admin notice
+                        add_action('admin_notices', static function () {
+                            echo '<div class="notice notice-error"><p>';
+                            echo esc_html__('Không thể giải mã mật khẩu SMTP. Vui lòng vào Laca Admin → Email để nhập lại.', 'laca');
+                            echo '</p></div>';
+                        });
+                        return; // Bỏ qua cấu hình SMTP
+                    }
+                } else {
+                    $password = $rawPassword;
+                }
+                $phpmailer->Password = $password;
+
+                // BUG THẬT đã gặp: "_admin_email" không phải option nào cả
+                // (option thật của WP là "admin_email", không gạch dưới —
+                // field admin thật trong màn hình Cài đặt cũng không tên
+                // "admin_email") nên luôn trả về rỗng, khiến PHPMailer báo
+                // "Invalid address: (From)" và HỦY gửi hoàn toàn dù cấu
+                // hình SMTP đúng — vì vậy form không bao giờ gửi được mail.
+                // Gmail SMTP còn bắt buộc "From" phải TRÙNG account đang
+                // authenticate (_smtp_username), nếu không Gmail sẽ từ chối
+                // hoặc tự ý thay đổi From — nên dùng đúng username đó thay
+                // vì admin_email chung chung (có thể không phải @gmail.com).
+                $phpmailer->From       = get_option('_smtp_username');
                 $phpmailer->FromName   = get_bloginfo('name');
             });
         }
@@ -70,10 +92,25 @@ class ThemeSettings {
      */
     public function AddActiveClassToCurrentMenu() {
         add_filter('nav_menu_css_class', static function ($classes) {
-            if (in_array('current-menu-item', $classes, true)) {
-                $classes[] = 'current-menu-item';
+            if (in_array('current-menu-item', $classes, true)
+                || in_array('current-menu-parent', $classes, true)
+                || in_array('current-menu-ancestor', $classes, true)
+                || in_array('current_page_item', $classes, true)
+                || in_array('current_page_parent', $classes, true)
+                || in_array('current_page_ancestor', $classes, true)
+            ) {
+                $classes[] = 'actived-menu';
             }
-            return $classes;
+
+            // Remove default WP current classes, keep only project active class.
+            return array_values(array_diff($classes, [
+                'current-menu-item',
+                'current-menu-parent',
+                'current-menu-ancestor',
+                'current_page_item',
+                'current_page_parent',
+                'current_page_ancestor',
+            ]));
         }, 10, 2);
     }
 
@@ -96,7 +133,8 @@ class ThemeSettings {
             echo '<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
                     <meta name="author" content="' . esc_attr(AUTHOR['name']) . '" />
                     <meta name="copyright" content="' . esc_attr(AUTHOR['name']) . ' [' . esc_attr(AUTHOR['email']) . '] [' . esc_attr(AUTHOR['website']) . ']" />
-                    <meta http-equiv="Content-Language" content="' . get_bloginfo('language') . '"/>';
+                    <meta http-equiv="Content-Language" content="' . get_bloginfo('language') . '"/>
+                    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>';
         }, PHP_INT_MAX);
     }
 

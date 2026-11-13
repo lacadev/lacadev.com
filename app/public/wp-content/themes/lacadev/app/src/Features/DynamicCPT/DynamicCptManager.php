@@ -17,10 +17,12 @@ class DynamicCptManager
      * Thư mục chứa meta files — luôn trỏ về child theme (hoặc parent nếu không có child).
      * Dùng method thay vì const để hỗ trợ get_stylesheet_directory() runtime.
      */
+    
     public static function getMetaDir(): string
     {
-        $dir = get_stylesheet_directory();
+        $dir = get_stylesheet_directory(); // filesystem path, e.g. .../lacadev-client-child/theme
         // WPEmerge child themes có style.css trong /theme subfolder.
+        // Strip /theme để về child theme root thực sự.
         if (basename($dir) === 'theme') {
             $dir = dirname($dir);
         }
@@ -42,7 +44,10 @@ class DynamicCptManager
     public static function getAll(): array
     {
         $raw  = get_option(self::OPTION_KEY, '[]');
-        $data = json_decode($raw, true);
+        if (is_array($raw)) {
+            return $raw;
+        }
+        $data = is_string($raw) ? json_decode($raw, true) : [];
         return is_array($data) ? $data : [];
     }
 
@@ -52,6 +57,23 @@ class DynamicCptManager
     public static function saveAll(array $cpts): void
     {
         update_option(self::OPTION_KEY, wp_json_encode($cpts), false);
+    }
+
+    /**
+     * ID của Page chứa nội dung hiển thị ở đầu trang archive của 1 CPT (do
+     * admin chọn trong màn hình Custom Post Types) — mô hình y hệt
+     * "Shop page" của WooCommerce. 0 nếu CPT chưa cấu hình hoặc không tồn tại.
+     *
+     * @see template_tags.php::laca_render_dynamic_cpt_archive_intro()
+     */
+    public static function getArchiveContentPageId(string $postType): int
+    {
+        foreach (self::getAll() as $cpt) {
+            if (($cpt['slug'] ?? '') === $postType) {
+                return (int)($cpt['archive_content_page_id'] ?? 0);
+            }
+        }
+        return 0;
     }
 
     /**

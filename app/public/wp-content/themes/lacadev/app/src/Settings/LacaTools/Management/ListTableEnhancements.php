@@ -28,8 +28,8 @@ class ListTableEnhancements
      */
     public function addViewsColumn(): void
     {
-        // Lượt xem chỉ áp dụng cho post và custom post type — page không có
-        // khái niệm "bài viết được xem nhiều", nên loại hẳn ra khỏi danh sách.
+        // Lượt xem chỉ áp dụng cho post/CPT — page không có khái niệm
+        // "bài viết được xem nhiều", nên loại page ra khỏi cột này.
         $post_types = array_diff($this->auditService->getDashboardPostTypes(), ['page']);
 
         foreach ($post_types as $post_type) {
@@ -60,6 +60,7 @@ class ListTableEnhancements
         };
 
         add_action('manage_posts_custom_column', $render_views_col, 10, 2);
+        add_action('manage_pages_custom_column', $render_views_col, 10, 2);
 
         add_action('pre_get_posts', function ($query) {
             if (!is_admin() || !$query->is_main_query() || $query->get('orderby') !== 'laca_views') {
@@ -113,6 +114,15 @@ class ListTableEnhancements
             return $columns;
         });
 
+        // Bảng bài viết có ~14 cột nên phải cuộn ngang: ẩn sẵn cột ít dùng,
+        // người dùng vẫn bật lại được ở Screen Options (chỉ áp khi họ chưa tự chỉnh).
+        add_filter('default_hidden_columns', function ($hidden, $screen) {
+            if ($screen instanceof \WP_Screen && $screen->id === 'edit-post') {
+                $hidden = array_merge((array) $hidden, ['post_id_val', 'laca_seo_links', 'comments']);
+            }
+            return $hidden;
+        }, 10, 2);
+
         add_action('manage_post_posts_custom_column', function ($column, $post_id) {
             if ($column === 'post_id_val') {
                 echo '<span style="color: #999;">' . esc_html($post_id) . '</span>';
@@ -132,11 +142,8 @@ class ListTableEnhancements
             return $actions;
         };
 
-        add_filter('post_row_actions',     $add_duplicate_link, 10, 2);
-        add_filter('page_row_actions',     $add_duplicate_link, 10, 2);
-        add_filter('service_row_actions',  $add_duplicate_link, 10, 2);
-        add_filter('project_row_actions',  $add_duplicate_link, 10, 2);
-        add_filter('template_row_actions', $add_duplicate_link, 10, 2);
+        add_filter('post_row_actions', $add_duplicate_link, 10, 2);
+        add_filter('page_row_actions', $add_duplicate_link, 10, 2);
 
         add_action('admin_post_lacadev_duplicate_post', function () {
             if (!isset($_GET['post']) || !current_user_can('edit_posts')) {
@@ -173,10 +180,7 @@ class ListTableEnhancements
                     }
                 }
 
-                $listUrl = $post->post_type === 'post'
-                    ? admin_url('edit.php')
-                    : admin_url('edit.php?post_type=' . $post->post_type);
-                wp_redirect($listUrl);
+                wp_redirect(admin_url('edit.php?post_type=' . $post->post_type));
                 exit;
             }
         });

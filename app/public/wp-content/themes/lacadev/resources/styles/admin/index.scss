@@ -35,6 +35,8 @@
 @use "admin-help";
 @use "contact-form";
 @use "project";
+@use "settings-screens";
+@use "laca-dashboard";
 
 html :where(.wp-block) {
   max-width: 95% !important;

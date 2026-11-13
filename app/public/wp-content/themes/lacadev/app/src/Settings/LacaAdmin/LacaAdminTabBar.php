@@ -13,7 +13,7 @@ class LacaAdminTabBar
      */
     private const TAB_GROUPS = [
         'performance' => [
-            'title' => 'Hiệu năng & bảo trì',
+            'title' => 'Hiệu năng & Bảo trì',
             'pages' => ['laca-tools', 'laca-db-cleaner', 'laca-email-log'],
             'tabs'  => [
                 'laca-tools' => [
@@ -52,8 +52,26 @@ class LacaAdminTabBar
                 ],
             ],
         ],
+        'sync' => [
+            'title' => 'Kết nối LacaDev',
+            'pages' => ['laca-block-sync', 'lacadev-block-categories', 'laca-tracker'],
+            'tabs'  => [
+                'laca-block-sync' => [
+                    'label' => 'Đồng bộ Block',
+                    'url'   => 'admin.php?page=laca-block-sync',
+                ],
+                'lacadev-block-categories' => [
+                    'label' => 'Danh mục Block',
+                    'url'   => 'admin.php?page=lacadev-block-categories',
+                ],
+                'laca-tracker' => [
+                    'label' => 'Site Tracker',
+                    'url'   => 'admin.php?page=laca-tracker',
+                ],
+            ],
+        ],
         'projects' => [
-            'title' => 'Dự án & thông báo',
+            'title' => 'Dự án & Thông báo',
             'pages' => ['laca-project-notifications', 'laca-discord-hub'],
             'tabs'  => [
                 'laca-project-notifications' => [
@@ -112,7 +130,9 @@ class LacaAdminTabBar
     private function outputTabs(array $tabs, string $currentPage, string $title): void
     {
         ?>
-        <div class="laca-shared-tabs-wrapper" style="margin: 12px 0 20px 0;">
+        <div class="laca-shared-tabs-wrapper">
+            <?php // Tiêu đề nhóm đứng trên tab, cùng thứ tự "tiêu đề → tab" với trang Bảo mật. ?>
+            <p class="laca-shared-tabs-wrapper__title"><?php echo esc_html($title); ?></p>
             <nav class="nav-tab-wrapper laca-shared-tabs" aria-label="<?php echo esc_attr($title); ?>">
                 <?php foreach ($tabs as $slug => $tab): ?>
                     <a

@@ -337,8 +337,87 @@ final class ReleaseChecklist
                             return is_file($file) ? [true, 'Có (' . size_format((int) filesize($file)) . ', ' . wp_date('d/m/Y', (int) filemtime($file)) . ')'] : [false, 'Chưa có dist/styles/critical.css'];
                         }],
                     ['id' => 'object_cache', 'title' => 'Object cache (Redis / Memcached)', 'type' => 'auto', 'skippable' => true,
-                        'guide' => 'Nếu hosting hỗ trợ: LiteSpeed Cache → Cache → Object, chọn Redis/LSMCD. Giảm truy vấn DB rõ rệt.',
+                        'guide' => 'Nếu hosting hỗ trợ: LiteSpeed Cache → Cache → Object, chọn Redis/LSMCD. Giảm truy vấn DB rõ rệt với WooCommerce.',
                         'check' => static fn () => wp_using_ext_object_cache() ? [true, 'Đang dùng'] : [false, 'Chưa bật']],
+                ],
+            ],
+            [
+                'key' => 'woocommerce',
+                'title' => 'WooCommerce',
+                'when' => static fn () => class_exists('WooCommerce'),
+                'items' => [
+                    ['id' => 'woo_coming_soon', 'title' => 'Tắt chế độ "Coming soon" của cửa hàng', 'type' => 'auto', 'high' => true,
+                        'guide' => 'WooCommerce → Settings → Site visibility: chọn "Live". Để "Coming soon" thì khách chỉ thấy trang sắp ra mắt, không mua được hàng.',
+                        'url' => admin_url('admin.php?page=wc-settings&tab=site-visibility'),
+                        'check' => static fn () => 'yes' === get_option('woocommerce_coming_soon') ? [false, 'Đang ở chế độ Coming soon'] : [true, 'Live']],
+                    ['id' => 'woo_pages', 'title' => 'Trang Cửa hàng / Giỏ hàng / Thanh toán / Tài khoản', 'type' => 'auto', 'high' => true,
+                        'guide' => 'WooCommerce → Settings → Advanced → Page setup: gán đủ 4 trang và các trang đó phải đang xuất bản.',
+                        'url' => admin_url('admin.php?page=wc-settings&tab=advanced'),
+                        'check' => static function () {
+                            $missing = [];
+                            foreach (['shop' => 'Cửa hàng', 'cart' => 'Giỏ hàng', 'checkout' => 'Thanh toán', 'myaccount' => 'Tài khoản'] as $page => $label) {
+                                $id = function_exists('wc_get_page_id') ? (int) wc_get_page_id($page) : 0;
+                                if ($id <= 0 || 'publish' !== get_post_status($id)) {
+                                    $missing[] = $label;
+                                }
+                            }
+                            return $missing ? [false, 'Thiếu/chưa xuất bản: ' . implode(', ', $missing)] : [true, 'Đủ 4 trang'];
+                        }],
+                    ['id' => 'woo_payment_live', 'title' => 'Cổng thanh toán ở chế độ thật (Live)', 'type' => 'manual', 'high' => true,
+                        'guide' => 'WooCommerce → Settings → Payments: PayPal tắt Sandbox và kết nối tài khoản Live; chuyển khoản/COD nhập đúng số tài khoản, hướng dẫn. Tắt mọi cổng không dùng.',
+                        'url' => admin_url('admin.php?page=wc-settings&tab=checkout'),
+                        'check' => [self::class, 'checkWooPayments']],
+                    ['id' => 'woo_store_info', 'title' => 'Thông tin cửa hàng, tiền tệ, vận chuyển, email đơn hàng', 'type' => 'manual',
+                        'guide' => 'Settings → General: địa chỉ, tiền tệ VND (0 số lẻ). Shipping: vùng và phí giao hàng. Emails: "New order" gửi tới email người xử lý đơn.',
+                        'url' => admin_url('admin.php?page=wc-settings'),
+                        'check' => static function () {
+                            $missing = [];
+                            if ('' === trim((string) get_option('woocommerce_store_address')) || '' === trim((string) get_option('woocommerce_store_city'))) {
+                                $missing[] = 'địa chỉ cửa hàng';
+                            }
+                            $hasShipping = false;
+                            if (class_exists('WC_Shipping_Zones')) {
+                                foreach (\WC_Shipping_Zones::get_zones() as $zone) {
+                                    $hasShipping = $hasShipping || !empty($zone['shipping_methods']);
+                                }
+                                $hasShipping = $hasShipping || (new \WC_Shipping_Zone(0))->get_shipping_methods(true);
+                            }
+                            if (!$hasShipping) {
+                                $missing[] = 'phương thức vận chuyển';
+                            }
+                            $newOrder = (array) get_option('woocommerce_new_order_settings', []);
+                            if ('no' === ($newOrder['enabled'] ?? 'yes')) {
+                                $missing[] = 'email "New order" đang tắt';
+                            }
+                            $currency = function_exists('get_woocommerce_currency') ? get_woocommerce_currency() : '?';
+                            $recipient = (string) (($newOrder['recipient'] ?? '') ?: get_option('admin_email'));
+                            return [!$missing, ($missing ? 'Thiếu: ' . implode(', ', $missing) . ' · ' : '') . 'tiền tệ ' . $currency . ' · đơn mới gửi tới ' . $recipient];
+                        }],
+                    ['id' => 'woo_test_order', 'title' => 'Đặt thử 1 đơn hàng thật từ đầu tới cuối', 'type' => 'manual', 'high' => true,
+                        'guide' => 'Ở tab ẩn danh: thêm vào giỏ → thanh toán bằng cổng thật (số tiền nhỏ) → khách nhận email xác nhận, cửa hàng nhận email đơn mới → hoàn tiền/huỷ đơn thử.',
+                        'check' => static function () {
+                            if (!function_exists('wc_get_orders')) {
+                                return [false, ''];
+                            }
+                            $ids = wc_get_orders(['limit' => 1, 'return' => 'ids', 'status' => ['processing', 'completed', 'on-hold', 'refunded', 'cancelled']]);
+                            if (!$ids) {
+                                return [false, 'Chưa có đơn hàng nào đi hết luồng thanh toán'];
+                            }
+                            $order = wc_get_order((int) $ids[0]);
+                            return [true, sprintf('Đã có đơn #%s (%s)', $order->get_order_number(), wc_get_order_status_name($order->get_status()))];
+                        }],
+                    ['id' => 'woo_scheduler', 'title' => 'Hàng đợi tác vụ WooCommerce không bị ứ', 'type' => 'auto',
+                        'guide' => 'Tools → Scheduled Actions → Pending. Nhiều tác vụ quá hạn = cron không chạy: email, đồng bộ tồn kho, gia hạn… bị treo. Xem mục "Cron thật".',
+                        'url' => admin_url('admin.php?page=wc-status&tab=action-scheduler&status=pending'),
+                        'check' => static function () {
+                            global $wpdb;
+                            $table = $wpdb->prefix . 'actionscheduler_actions';
+                            if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) !== $table) {
+                                return [true, 'Chưa có hàng đợi'];
+                            }
+                            $late = (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$table} WHERE status = 'pending' AND scheduled_date_gmt < %s", gmdate('Y-m-d H:i:s', time() - HOUR_IN_SECONDS))); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                            return [$late <= 20, $late . ' tác vụ quá hạn > 1 giờ'];
+                        }],
                 ],
             ],
             [
@@ -408,9 +487,6 @@ final class ReleaseChecklist
                         'guide' => 'Dán webhook từng kênh rồi bấm "Lưu & gửi thử" — dòng nào báo lỗi thì xử lý theo nội dung lỗi.',
                         'url' => $dh,
                         'check' => static function () {
-                            if (!class_exists('\App\Features\DiscordHub\Settings') || !class_exists('\App\Features\DiscordHub\DiscordWebhookSender')) {
-                                return [false, 'Chưa nạp module Discord Hub'];
-                            }
                             $missing = [];
                             foreach (['leads', 'audit', 'security'] as $ch) {
                                 if ('ok' !== \App\Features\DiscordHub\Settings::channelStatus($ch)['state']) {
@@ -433,15 +509,11 @@ final class ReleaseChecklist
                         'url' => $dh,
                         // Lần deploy đầu tiên ký đúng HMAC chứng minh LACA_DEPLOY_KEY trên GitHub khớp key ở đây.
                         'check' => static function () {
-                            if (!class_exists('\App\Features\DiscordHub\Settings')) {
-                                return [false, 'Chưa nạp module Discord Hub'];
-                            }
                             $meta = \App\Features\DiscordHub\Settings::deployKeyMeta();
                             if (null === $meta) {
                                 return [false, 'Chưa tạo deploy key'];
                             }
-                            $opt = class_exists('\App\Features\DiscordHub\FileWatch\DeployReceiver') ? \App\Features\DiscordHub\FileWatch\DeployReceiver::LAST_DEPLOY_OPTION : 'laca_dh_last_deploy';
-                            $last = (int) get_option($opt, 0);
+                            $last = (int) get_option(\App\Features\DiscordHub\FileWatch\DeployReceiver::LAST_DEPLOY_OPTION, 0);
                             return $last
                                 ? [true, 'Đã nhận deploy hợp lệ từ GitHub lúc ' . wp_date('d/m/Y H:i', $last)]
                                 : [false, 'Đã tạo key · chờ lần deploy kế tiếp từ GitHub Actions để xác nhận secrets đúng'];
@@ -494,12 +566,10 @@ final class ReleaseChecklist
                             if (preg_match('/\b(G-[A-Z0-9]{6,}|GTM-[A-Z0-9]{4,}|UA-\d+-\d+)\b/', $scripts, $m)) {
                                 return [true, 'Mã ' . $m[1] . ' trong Header/Footer scripts'];
                             }
-                            if (class_exists('\App\Features\LacaSeo\Core\Settings')) {
-                                $laca_ga = \App\Features\LacaSeo\Core\Settings::get('general.ga4_measurement_id', '');
-                                $laca_gtm = \App\Features\LacaSeo\Core\Settings::get('general.gtm_container_id', '');
-                                if (!empty($laca_ga) || !empty($laca_gtm)) {
-                                    return [true, 'Laca SEO chèn mã ' . ($laca_ga ?: $laca_gtm)];
-                                }
+                            $laca_ga = \App\Features\LacaSeo\Core\Settings::get('general.ga4_measurement_id', '');
+                            $laca_gtm = \App\Features\LacaSeo\Core\Settings::get('general.gtm_container_id', '');
+                            if (!empty($laca_ga) || !empty($laca_gtm)) {
+                                return [true, 'Laca SEO chèn mã ' . ($laca_ga ?: $laca_gtm)];
                             }
                             $rm = (array) get_option('rank_math_google_analytic_options', []);
                             if (!empty($rm['install_code']) && !empty($rm['measurement_id'])) {
@@ -515,7 +585,7 @@ final class ReleaseChecklist
                         'url' => admin_url('admin.php?page=laca-seo'),
                         'check' => static function () {
                             // Check Laca SEO first
-                            if (class_exists('\App\Features\LacaSeo\Core\Settings') && class_exists('\App\Features\LacaSeo\Core\Modules')) {
+                            if (class_exists('\App\Features\LacaSeo\Core\Settings')) {
                                 $laca_author_disabled = \App\Features\LacaSeo\Core\Settings::get('titles.disable_author_archives', 'off') === 'on';
                                 $laca_google_verify = !empty(\App\Features\LacaSeo\Core\Settings::get('general.google_verify', ''));
                                 $laca_sitemap_on = \App\Features\LacaSeo\Core\Modules::isActive('sitemap');
@@ -656,6 +726,62 @@ final class ReleaseChecklist
         ];
 
         return (array) apply_filters('laca_release_checklist_groups', $groups);
+    }
+
+    /**
+     * Cổng thanh toán Live: chỉ tự đạt khi MỌI cổng đang bật đều xác định được là chạy thật —
+     * cổng lạ (VNPay, MoMo…) không đọc được chế độ thì để tick tay, thà sót còn hơn báo đạt nhầm.
+     */
+    public static function checkWooPayments(): array
+    {
+        if (!function_exists('WC') || !WC()->payment_gateways()) {
+            return [false, ''];
+        }
+        $live = [];
+        $issues = [];
+        foreach (WC()->payment_gateways()->payment_gateways() as $id => $gateway) {
+            if ('yes' !== $gateway->enabled) {
+                continue;
+            }
+            $name = wp_strip_all_tags((string) $gateway->get_method_title()) ?: $id;
+            if ('bacs' === $id) {
+                $accounts = array_filter((array) get_option('woocommerce_bacs_accounts', []), static fn ($a) => !empty($a['account_number']));
+                $accounts ? $live[] = $name : $issues[] = $name . ': chưa nhập số tài khoản';
+            } elseif (in_array($id, ['cod', 'cheque'], true)) {
+                $live[] = $name;
+            } elseif (str_starts_with($id, 'ppcp')) {
+                $mode = self::paypalMode();
+                'live' === $mode ? $live[] = $name : $issues[] = $name . ('sandbox' === $mode ? ': đang SANDBOX' : ': chưa kết nối tài khoản');
+            } elseif ('yes' === $gateway->get_option('testmode') || 'yes' === $gateway->get_option('sandbox') || 'yes' === $gateway->get_option('test_mode')) {
+                $issues[] = $name . ': đang chế độ test';
+            } else {
+                $issues[] = $name . ': không đọc được chế độ — kiểm tra tay';
+            }
+        }
+        if (!$live && !$issues) {
+            return [false, 'Chưa bật cổng thanh toán nào'];
+        }
+        return [!$issues, implode(' · ', array_merge($live ? ['Live: ' . implode(', ', $live)] : [], $issues))];
+    }
+
+    /**
+     * @return string live | sandbox | unknown
+     */
+    private static function paypalMode(): string
+    {
+        // Tên option đổi qua các bản WooCommerce PayPal Payments (settings cũ → data-* mới): đọc cả hai.
+        $data = array_merge(
+            (array) get_option('woocommerce-ppcp-settings', []),
+            (array) get_option('woocommerce-ppcp-data-general', []),
+            (array) get_option('woocommerce-ppcp-data-common', [])
+        );
+        foreach (['sandbox_on', 'use_sandbox', 'is_sandbox'] as $key) {
+            if (!empty($data[$key])) {
+                return 'sandbox';
+            }
+        }
+        $merchant = $data['merchant_id'] ?? $data['live_merchant_id'] ?? $data['merchant_email'] ?? '';
+        return '' !== (string) $merchant || !empty($data['merchant_connected']) ? 'live' : 'unknown';
     }
 
     /**
@@ -980,6 +1106,18 @@ final class ReleaseChecklist
                 </p>
             </header>
 
+            <?php // Thu gọn mặc định để form cài đặt của trang không bị đẩy xuống; mở lại khi vừa tick 1 mục. ?>
+            <details class="laca-rc__more" <?php echo '' !== $openId ? 'open' : ''; ?>>
+                <summary class="laca-rc__more-head">
+                    <span>
+                        <?php
+                        /* translators: %d: số nhóm trong checklist phát hành */
+                        echo esc_html(sprintf(__('Xem chi tiết %d nhóm', 'laca'), count($r['groups'])));
+                        ?>
+                    </span>
+                    <?php echo self::icon('chevron'); // phpcs:ignore WordPress.Security.EscapeOutput ?>
+                </summary>
+
             <?php foreach ($r['groups'] as $group) :
                 $gDone = count(array_filter($group['items'], static fn ($i) => 'done' === $i['status']));
                 $gTotal = count(array_filter($group['items'], static fn ($i) => 'skipped' !== $i['status']));
@@ -1000,6 +1138,7 @@ final class ReleaseChecklist
                     </ul>
                 </details>
             <?php endforeach; ?>
+            </details>
         </section>
         <?php
     }
