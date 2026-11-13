@@ -29,7 +29,8 @@
         "illuminate/translation": "^8.0",
         "illuminate/validation": "^8.0",
         "overtrue/socialite": "^2.0",
-        "johnbillion/extended-cpts": "^5.0"
+        "johnbillion/extended-cpts": "^5.0",
+        "enshrined/svg-sanitize": "^1.1"
     },
     "require-dev": {
         "symfony/error-handler": "^6.4",
@@ -45,6 +46,12 @@
         }
     },
     "scripts": {
+        "post-install-cmd": [
+            "@php scripts/patch-vendor.php"
+        ],
+        "post-update-cmd": [
+            "@php scripts/patch-vendor.php"
+        ],
         "test": "php -d auto_prepend_file=tests/wp-stubs.php vendor/bin/phpunit",
         "install-test-env": [
             "WPEmerge\\Cli\\App::createConfigJson"

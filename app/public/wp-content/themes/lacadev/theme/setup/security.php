@@ -9,9 +9,6 @@ if (!defined('ABSPATH')) {
  * @package LacaDev
  */
 
-
-
-
 /**
  * Hardening mặc định: luôn tắt XML-RPC và xoá wp_generator
  */
@@ -36,41 +33,11 @@ add_filter('wp_xmlrpc_server_class', function ($class) {
 
 /**
  * Add HTTP Security Headers
+ * Chuyển sang dùng SecurityHeaders class có toggle — giữ nguyên hành vi mặc định.
  */
-add_action('send_headers', function() {
-    // Prevent clickjacking
-    header('X-Frame-Options: SAMEORIGIN');
-    
-    // Prevent MIME-sniffing
-    header('X-Content-Type-Options: nosniff');
-    
-    // Referrer policy
-    header('Referrer-Policy: strict-origin-when-cross-origin');
-    
-    // XSS Protection (legacy browsers)
-    header('X-XSS-Protection: 1; mode=block');
-    
-    if ( ! is_admin() ) {
-        // Content Security Policy
-        // Lưu ý: không dùng nonce trong script-src vì khi có nonce, trình duyệt sẽ
-        // vô hiệu hóa 'unsafe-inline', chặn các inline script của plugin bên thứ 3.
-        $csp  = "default-src 'self'; ";
-        $csp .= "script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://www.googletagmanager.com https://www.google-analytics.com https://images.dmca.com https://apis.google.com blob:; ";
-        $csp .= "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; ";
-        $csp .= "font-src 'self' https://fonts.gstatic.com data:; ";
-        $csp .= "connect-src 'self' https://www.google.com https://www.gstatic.com https://www.youtube.com https://www.google-analytics.com https://stats.g.doubleclick.net https://apis.google.com ws: wss:; ";
-        $csp .= "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://docs.google.com https://www.google.com https://www.gstatic.com; ";
-        $csp .= "media-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com; ";
-        $csp .= "img-src 'self' data: https: http:; ";
-        $csp .= "worker-src 'self' blob:; ";
-        $csp .= "frame-ancestors 'self';";
-
-        header( "Content-Security-Policy: {$csp}" );
-
-        // Permissions Policy
-        header( 'Permissions-Policy: geolocation=(), microphone=(), camera=()' );
-    }
-});
+if (class_exists('\App\Settings\Security\SecurityHeaders')) {
+    (new \App\Settings\Security\SecurityHeaders())->register();
+}
 
 /**
  * Remove WP version from RSS feeds

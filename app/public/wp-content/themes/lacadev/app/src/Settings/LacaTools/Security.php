@@ -5,44 +5,54 @@ namespace App\Settings\LacaTools;
 class Security
 {
     protected $currentUser;
-
     protected $errorMessage = '';
 
     public function __construct()
     {
-        add_action('carbon_fields_fields_registered', [$this, 'applyOptions']);
+        $this->currentUser = wp_get_current_user();
+        $this->applyOptions();
+    }
+
+    private function isEnabled(string $name): bool
+    {
+        $val = get_option('_' . $name);
+        if ($val === 'yes' || $val === '1' || $val === 1 || $val === true) {
+            return true;
+        }
+        // Class được khởi tạo lúc nạp theme — trước khi Carbon Fields đăng ký field thì gọi carbon_get_* sẽ fatal
+        if (did_action('carbon_fields_fields_registered') && function_exists('carbon_get_theme_option')) {
+            return (bool) carbon_get_theme_option($name);
+        }
+        return false;
     }
 
     public function applyOptions(): void
     {
-        // Checkbox_Field::get_formatted_value() trả về boolean (true/false),
-        // KHÔNG phải chuỗi 'yes' — so sánh === 'yes' luôn false, khiến mọi
-        // toggle ở đây không bao giờ có hiệu lực. Dùng truthy check thay thế.
-        if (carbon_get_theme_option('disable_rest_api')) {
+        if ($this->isEnabled('disable_rest_api')) {
             $this->disableRestApi();
         }
 
-        if (carbon_get_theme_option('disable_xml_rpc')) {
+        if ($this->isEnabled('disable_xml_rpc')) {
             $this->disableXmlRpc();
         }
 
-        if (carbon_get_theme_option('disable_wp_embed')) {
+        if ($this->isEnabled('disable_wp_embed')) {
             $this->disableWpEmbed();
         }
 
-        if (carbon_get_theme_option('disable_x_pingback')) {
+        if ($this->isEnabled('disable_x_pingback')) {
             $this->disableXPingback();
         }
 
-        if (carbon_get_theme_option('enable_remove_wordpress_bloat')) {
+        if ($this->isEnabled('enable_remove_wordpress_bloat')) {
             $this->removeWordPressBloat();
         }
 
-        if (carbon_get_theme_option('enable_optimize_database_queries')) {
+        if ($this->isEnabled('enable_optimize_database_queries')) {
             $this->optimizeDatabaseQueries();
         }
 
-        if (carbon_get_theme_option('enable_optimize_memory_usage')) {
+        if ($this->isEnabled('enable_optimize_memory_usage')) {
             $this->optimizeMemoryUsage();
         }
     }
@@ -53,20 +63,23 @@ class Security
             if (true === $result || is_wp_error($result)) {
                 return $result;
             }
+
             if (!is_user_logged_in()) {
                 return new \WP_Error('rest_not_logged_in', __('You are not logged in', 'laca'), ['status' => 401]);
             }
+
             return $result;
         });
     }
 
     public function disableXmlRpc()
     {
-        // Chỉ filter này là đủ và an toàn. KHÔNG thêm filter
-        // 'wp_xmlrpc_server_class' => false — xmlrpc.php core gọi thẳng
-        // `new $wp_xmlrpc_server_class()` (xem wp-includes/../xmlrpc.php),
-        // nên trả về false sẽ gây Fatal Error khi có request tới /xmlrpc.php.
+        // KHÔNG filter 'wp_xmlrpc_server_class' => false — core xmlrpc.php
+        // gọi thẳng `new $wp_xmlrpc_server_class()`, trả false sẽ gây
+        // Fatal Error khi có request tới /xmlrpc.php.
         add_filter('xmlrpc_enabled', '__return_false');
+        add_filter('pre_update_option_enable_xmlrpc', '__return_false');
+        add_filter('pre_option_enable_xmlrpc', '__return_zero');
     }
 
     public function disableWpEmbed()
@@ -75,13 +88,16 @@ class Security
             wp_deregister_script('wp-embed');
             remove_action('wp_head', 'wp_oembed_add_discovery_links');
             remove_action('wp_head', 'wp_oembed_add_host_js');
+            remove_filter('the_content', [GLOBALS['wp_embed'] ?? null, 'autoembed'], 8);
         });
     }
 
     public function disableXPingback()
     {
         add_filter('wp_headers', function (array $headers): array {
-            unset($headers['X-Pingback']);
+            if (isset($headers['X-Pingback'])) {
+                unset($headers['X-Pingback']);
+            }
             return $headers;
         });
     }
@@ -112,8 +128,30 @@ class Security
             define('WP_POST_REVISIONS', 3);
         }
         if (!defined('AUTOSAVE_INTERVAL')) {
-            define('AUTOSAVE_INTERVAL', 300);
+            define('AUTOSAVE_INTERVAL', 300); // 5 phút
         }
+        if (function_exists('wp_cache_set')) {
+            wp_cache_set('performance_optimized', true, 'theme', 3600);
+        }
+    }
+
+    /**
+     * Log các truy vấn SQL chậm để phát hiện truy vấn bất thường
+     */
+    public function optimizeSqlQueries($query)
+    {
+        if (strpos($query, 'SELECT') === 0) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                $start_time = microtime(true);
+                register_shutdown_function(function () use ($start_time, $query) {
+                    $execution_time = microtime(true) - $start_time;
+                    if ($execution_time > 0.5) {
+                        error_log("Slow query detected: {$execution_time}s - {$query}");
+                    }
+                });
+            }
+        }
+        return $query;
     }
 
     /**
@@ -121,11 +159,21 @@ class Security
      */
     public function optimizeMemoryUsage()
     {
-        if (function_exists('ini_set')) {
+        if (function_exists('ini_get') && (int) ini_get('memory_limit') < 256) {
             @ini_set('memory_limit', '256M');
         }
         if (function_exists('gc_enable')) {
             gc_enable();
+        }
+    }
+
+    /**
+     * Dọn dẹp bộ nhớ cuối trang
+     */
+    public function cleanupMemory()
+    {
+        if (function_exists('gc_collect_cycles')) {
+            gc_collect_cycles();
         }
     }
 }

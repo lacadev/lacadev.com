@@ -7,6 +7,7 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'voku\\' => array($vendorDir . '/voku/portable-ascii/src/voku'),
+    'enshrined\\svgSanitize\\' => array($vendorDir . '/enshrined/svg-sanitize/src'),
     'WPEmerge\\' => array($vendorDir . '/htmlburger/wpemerge/src'),
     'WPEmergeTheme\\' => array($vendorDir . '/htmlburger/wpemerge-theme-core/src'),
     'WPEmergeTestTools\\' => array($vendorDir . '/htmlburger/wpemerge/tests/tools'),

@@ -41,6 +41,10 @@ class ComposerStaticInit599a9e4bc4652d5b3be4c44ffd052c71
         array (
             'voku\\' => 5,
         ),
+        'e' =>
+        array (
+            'enshrined\\svgSanitize\\' => 22,
+        ),
         'W' =>
         array (
             'WPEmerge\\' => 9,
@@ -134,6 +138,10 @@ class ComposerStaticInit599a9e4bc4652d5b3be4c44ffd052c71
         'voku\\' =>
         array (
             0 => __DIR__ . '/..' . '/voku/portable-ascii/src/voku',
+        ),
+        'enshrined\\svgSanitize\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/enshrined/svg-sanitize/src',
         ),
         'WPEmerge\\' =>
         array (

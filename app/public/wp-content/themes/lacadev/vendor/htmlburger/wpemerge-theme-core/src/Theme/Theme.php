@@ -98,10 +98,10 @@ class Theme {
 		$templates = [];
 
 		if ( $child ) {
-			$templates[] = "partials/${partial}-${child}.php";
+			$templates[] = "partials/{$partial}-{$child}.php";
 		}
 
-		$templates[] = "partials/${partial}.php";
+		$templates[] = "partials/{$partial}.php";
 
 		WPEmerge\render( $templates, $context );
 	}
