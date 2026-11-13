@@ -5,60 +5,74 @@ namespace App\Settings\LacaTools;
 class Optimize
 {
     protected $currentUser;
-
     protected $errorMessage = '';
 
     public function __construct()
     {
-        // carbon_get_theme_option() requires CF to be fully booted.
-        // Defer all option reads until carbon_fields_fields_registered fires.
-        add_action('carbon_fields_fields_registered', [$this, 'applyOptions']);
+        $this->currentUser = wp_get_current_user();
+        $this->applyOptions();
+    }
+
+    private function isEnabled(string $name): bool
+    {
+        $val = get_option('_' . $name);
+        if ($val === 'yes' || $val === '1' || $val === 1 || $val === true) {
+            return true;
+        }
+        // Class được khởi tạo lúc nạp theme — trước khi Carbon Fields đăng ký field thì gọi carbon_get_* sẽ fatal
+        if (did_action('carbon_fields_fields_registered') && function_exists('carbon_get_theme_option')) {
+            return (bool) carbon_get_theme_option($name);
+        }
+        return false;
     }
 
     public function applyOptions(): void
     {
-        // Checkbox_Field::get_formatted_value() trả về boolean (true/false),
-        // KHÔNG phải chuỗi 'yes' — so sánh === 'yes' luôn false, khiến mọi
-        // toggle ở đây không bao giờ có hiệu lực. Dùng truthy check thay thế.
-        if (carbon_get_theme_option('disable_use_jquery_migrate')) {
+        if ($this->isEnabled('disable_use_jquery_migrate')) {
             $this->disableUseJqueryMigrate();
         }
 
-        if (carbon_get_theme_option('disable_gutenberg_css')) {
+        if ($this->isEnabled('disable_gutenberg_css')) {
             $this->disableGutenbergCss();
         }
 
-        if (carbon_get_theme_option('disable_classic_css')) {
+        if ($this->isEnabled('disable_classic_css')) {
             $this->disableClassicCss();
         }
 
-        if (carbon_get_theme_option('disable_emoji')) {
+        if ($this->isEnabled('disable_emoji')) {
             $this->disableEmoji();
         }
 
-        if (carbon_get_theme_option('enable_instant_page')) {
+        if ($this->isEnabled('enable_instant_page')) {
             $this->enableInstantPage();
         }
 
-        if (carbon_get_theme_option('enable_smooth_scroll')) {
+        if ($this->isEnabled('enable_smooth_scroll')) {
             $this->enableSmoothScroll();
         }
 
-        if (carbon_get_theme_option('remove_comments')) {
+        if ($this->isEnabled('remove_comments')) {
             $this->removeHtmlComments();
         }
 
-        if (carbon_get_theme_option('enable_advanced_resource_hints')) {
+        if ($this->isEnabled('enable_advanced_resource_hints')) {
             $this->enableAdvancedResourceHints();
         }
 
-        if (carbon_get_theme_option('enable_optimize_images')) {
+        if ($this->isEnabled('enable_optimize_images')) {
             $this->optimizeImageAttributes();
         }
 
-        if (carbon_get_theme_option('enable_optimize_content_images')) {
+        if ($this->isEnabled('enable_optimize_content_images')) {
             $this->optimizeContentImages();
         }
+
+        // Giới hạn Revisions
+        $this->applyRevisionLimit();
+
+        // Heartbeat control
+        $this->applyHeartbeatControl();
     }
 
     public function disableUseJqueryMigrate()
@@ -76,16 +90,20 @@ class Optimize
     public function disableGutenbergCss()
     {
         add_action('wp_enqueue_scripts', function () {
-            wp_dequeue_style('wp-block-library');
-            wp_dequeue_style('wp-block-library-theme');
-            wp_dequeue_style('wc-blocks-style');
+            if (is_front_page()) {
+                wp_dequeue_style('wp-block-library');
+                wp_dequeue_style('wp-block-library-theme');
+                wp_dequeue_style('wc-blocks-style');
+            }
         });
     }
 
     public function disableClassicCss()
     {
         add_action('wp_enqueue_scripts', function () {
-            wp_dequeue_style('classic-theme-styles');
+            if (is_front_page()) {
+                wp_dequeue_style('classic-theme-styles');
+            }
         });
     }
 
@@ -105,14 +123,22 @@ class Optimize
     public function enableInstantPage()
     {
         add_action('wp_enqueue_scripts', function () {
-            wp_enqueue_script('instantpage', \lacaDistUrl('instantpage.js'), array(), '5.7.0', true);
+            $dir = function_exists('lacaThemeRootDir') ? \lacaThemeRootDir() . '/dist/' : dirname(get_stylesheet_directory()) . '/dist/';
+            $uri = function_exists('lacaDistUrl') ? \lacaDistUrl('instantpage.js') : dirname(get_stylesheet_directory_uri()) . '/dist/instantpage.js';
+            if (file_exists($dir . 'instantpage.js')) {
+                wp_enqueue_script('instantpage', $uri, [], '5.7.0', true);
+            }
         });
     }
 
     public function enableSmoothScroll()
     {
         add_action('wp_enqueue_scripts', function () {
-            wp_enqueue_script('smooth-scroll', \lacaDistUrl('smooth-scroll.min.js'), array(), '1.4.16', true);
+            $dir = function_exists('lacaThemeRootDir') ? \lacaThemeRootDir() . '/dist/' : dirname(get_stylesheet_directory()) . '/dist/';
+            $uri = function_exists('lacaDistUrl') ? \lacaDistUrl('smooth-scroll.min.js') : dirname(get_stylesheet_directory_uri()) . '/dist/smooth-scroll.min.js';
+            if (file_exists($dir . 'smooth-scroll.min.js')) {
+                wp_enqueue_script('smooth-scroll', $uri, [], '1.4.16', true);
+            }
         });
     }
 
@@ -171,5 +197,65 @@ class Optimize
                 $content
             ) ?: $content;
         });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  REVISION LIMIT
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Giới hạn số revision giữ lại.
+     * Option `_revision_limit`: -1 = không giới hạn (mặc định WP), 0 = tắt revision, N = giữ N bản.
+     */
+    private function applyRevisionLimit(): void
+    {
+        $limit = get_option('_revision_limit', -1);
+        if ($limit === '' || $limit === false) {
+            return; // Không cấu hình → giữ hành vi WP mặc định
+        }
+        $limit = (int) $limit;
+        if ($limit < 0) {
+            return; // -1 = không giới hạn
+        }
+
+        add_filter('wp_revisions_to_keep', function () use ($limit) {
+            return $limit;
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  HEARTBEAT CONTROL
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Điều khiển Heartbeat API.
+     * Option `_heartbeat_mode`: '' = mặc định WP, 'slow' = 60s, 'editor_only' = tắt ngoài editor.
+     */
+    private function applyHeartbeatControl(): void
+    {
+        $mode = get_option('_heartbeat_mode', '');
+        if (empty($mode)) {
+            return; // Giữ mặc định WP
+        }
+
+        switch ($mode) {
+            case 'slow':
+                // Giảm tần suất xuống 60 giây
+                add_filter('heartbeat_settings', function (array $settings): array {
+                    $settings['interval'] = 60;
+                    return $settings;
+                });
+                break;
+
+            case 'editor_only':
+                // Tắt heartbeat ngoài trang soạn bài
+                add_action('admin_enqueue_scripts', function (string $hook) {
+                    $editorPages = ['post.php', 'post-new.php'];
+                    if (!in_array($hook, $editorPages, true)) {
+                        wp_deregister_script('heartbeat');
+                    }
+                }, 1);
+                break;
+        }
     }
 }

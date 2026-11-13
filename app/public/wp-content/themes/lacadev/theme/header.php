@@ -44,12 +44,12 @@ if (!defined('ABSPATH')) {
     if (file_exists($critical_css_path)) {
         echo '<style id="critical-css">' . file_get_contents($critical_css_path) . '</style>';
     }
-    $primary_color = lacaSanitizeCssColor(carbon_get_theme_option('primary_color'), '#0ea5e9');
-    $secondary_color = lacaSanitizeCssColor(carbon_get_theme_option('secondary_color'), '#f59e0b');
-    $bg_color = lacaSanitizeCssColor(carbon_get_theme_option('bg_color'), '#ffffff');
-    $primary_color_dark = lacaSanitizeCssColor(carbon_get_theme_option('primary_color_dark'), '#0284c7');
-    $secondary_color_dark = lacaSanitizeCssColor(carbon_get_theme_option('secondary_color_dark'), '#d97706');
-    $bg_color_dark = lacaSanitizeCssColor(carbon_get_theme_option('bg_color_dark'), '#0f172a');
+    $primary_color = lacaSanitizeCssColor(function_exists('laca_theme_option') ? laca_theme_option('primary_color', '#0ea5e9') : (function_exists('carbon_get_theme_option') ? carbon_get_theme_option('primary_color') : '#0ea5e9'), '#0ea5e9');
+    $secondary_color = lacaSanitizeCssColor(function_exists('laca_theme_option') ? laca_theme_option('secondary_color', '#f59e0b') : (function_exists('carbon_get_theme_option') ? carbon_get_theme_option('secondary_color') : '#f59e0b'), '#f59e0b');
+    $bg_color = lacaSanitizeCssColor(function_exists('laca_theme_option') ? laca_theme_option('bg_color', '#ffffff') : (function_exists('carbon_get_theme_option') ? carbon_get_theme_option('bg_color') : '#ffffff'), '#ffffff');
+    $primary_color_dark = lacaSanitizeCssColor(function_exists('laca_theme_option') ? laca_theme_option('primary_color_dark', '#0284c7') : (function_exists('carbon_get_theme_option') ? carbon_get_theme_option('primary_color_dark') : '#0284c7'), '#0284c7');
+    $secondary_color_dark = lacaSanitizeCssColor(function_exists('laca_theme_option') ? laca_theme_option('secondary_color_dark', '#d97706') : (function_exists('carbon_get_theme_option') ? carbon_get_theme_option('secondary_color_dark') : '#d97706'), '#d97706');
+    $bg_color_dark = lacaSanitizeCssColor(function_exists('laca_theme_option') ? laca_theme_option('bg_color_dark', '#0f172a') : (function_exists('carbon_get_theme_option') ? carbon_get_theme_option('bg_color_dark') : '#0f172a'), '#0f172a');
     ?>
     <style>
         :root {
@@ -150,8 +150,8 @@ if (!defined('ABSPATH')) {
 
                     <!-- Logo -->
                     <?php
-                    $logo_id = carbon_get_theme_option('logo');
-                    $logo_dark_id = carbon_get_theme_option('logo_dark');
+                    $logo_id = function_exists('laca_theme_option') ? laca_theme_option('logo') : (function_exists('carbon_get_theme_option') ? carbon_get_theme_option('logo') : 0);
+                    $logo_dark_id = function_exists('laca_theme_option') ? laca_theme_option('logo_dark') : (function_exists('carbon_get_theme_option') ? carbon_get_theme_option('logo_dark') : 0);
                     $logo_url = wp_get_attachment_image_url($logo_id, 'full');
                     $logo_dark_url = wp_get_attachment_image_url($logo_dark_id, 'full');
                     ?>

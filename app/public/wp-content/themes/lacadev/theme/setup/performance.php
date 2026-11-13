@@ -4,7 +4,7 @@
  * 
  * Comprehensive performance enhancements for maximum PageSpeed Insights scores
  *
- * @package MoomsDev
+ * @package lacadev
  * @since 1.0.0
  */
 
@@ -19,8 +19,10 @@ class ThemePerformance
         // Core WordPress optimizations
         add_action('init', [self::class, 'remove_wordpress_bloat']);
 
-        // Advanced caching
-        add_action('template_redirect', [self::class, 'set_cache_headers']);
+        // KHÔNG tự set Cache-Control cho HTML và KHÔNG ob_start('ob_gzhandler'):
+        // header/nén do web server (LiteSpeed) + plugin cache quản lý. Theme can
+        // thiệp vào 2 tầng này từng làm trình duyệt giữ trang lỗi 1h và đưa dữ
+        // liệu gzip nhị phân vào buffer của plugin cache.
 
         // Database optimizations
         add_action('init', [self::class, 'optimize_database_queries']);
@@ -35,10 +37,10 @@ class ThemePerformance
         add_filter('the_content', [self::class, 'optimize_content_images']);
 
         // Service Worker
-        add_action('wp_enqueue_scripts', [self::class, 'register_service_worker']);
+        add_action('wp_footer', [self::class, 'register_service_worker']);
 
         // Performance monitoring
-        add_action('wp_enqueue_scripts', [self::class, 'add_performance_monitoring']);
+        add_action('wp_footer', [self::class, 'add_performance_monitoring']);
     }
 
     /**
@@ -58,34 +60,25 @@ class ThemePerformance
         remove_action('wp_head', 'index_rel_link');
         remove_action('wp_head', 'parent_post_rel_link');
 
-        // Optimize heartbeat
+        // Optimize heartbeat (chỉ áp dụng 120s mặc định khi admin chưa chọn chế độ riêng trong trang Tối ưu)
         add_filter('heartbeat_settings', function ($settings) {
+            $mode = get_option('_heartbeat_mode', '');
+            if (!empty($mode)) {
+                return $settings;
+            }
             $settings['interval'] = 120; // 2 minutes instead of 15 seconds
             return $settings;
         });
+
+        // Ẩn thông báo lỗi đăng nhập CHI TIẾT (tránh dò email/username hợp
+        // lệ) nhưng vẫn phải trả về 1 câu chung — __return_null() xoá trắng
+        // hoàn toàn, khiến form "shake" báo có lỗi mà không hiển thị gì,
+        // trông như bug thay vì cố ý ẩn thông tin.
+        add_filter('login_errors', function () {
+            return __('That key doesn\'t seem to work. Please check and try again.', 'laca');
+        });
     }
 
-    /**
-     * Set advanced cache headers
-     */
-    public static function set_cache_headers()
-    {
-        if (!is_admin() && !is_user_logged_in()) {
-            // Cache static assets for 1 year
-            if (preg_match('/\.(css|js|png|jpg|jpeg|gif|webp|svg|woff|woff2|ttf|eot|ico)$/', $_SERVER['REQUEST_URI'])) {
-                header('Cache-Control: public, max-age=31536000, immutable');
-                header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 31536000) . ' GMT');
-                header('Pragma: public');
-            }
-
-            // Cache HTML for 1 hour
-            else {
-                header('Cache-Control: public, max-age=3600, must-revalidate');
-                header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 3600) . ' GMT');
-                header('Vary: Accept-Encoding');
-            }
-        }
-    }
 
     /**
      * Optimize database queries
@@ -150,9 +143,17 @@ class ThemePerformance
      */
     public static function optimize_images($attr, $attachment, $size)
     {
-        // Add loading and decoding attributes
-        $attr['loading'] = 'lazy';
-        $attr['decoding'] = 'async';
+        // Add loading and decoding attributes (không ghi đè nếu đã chỉ định loading hoặc fetchpriority="high")
+        if (empty($attr['loading'])) {
+            if (isset($attr['fetchpriority']) && $attr['fetchpriority'] === 'high') {
+                $attr['loading'] = 'eager';
+            } else {
+                $attr['loading'] = 'lazy';
+            }
+        }
+        if (empty($attr['decoding'])) {
+            $attr['decoding'] = 'async';
+        }
 
         // Add better alt text if missing
         if (empty($attr['alt'])) {
@@ -176,8 +177,23 @@ class ThemePerformance
      */
     public static function optimize_content_images($content)
     {
-        // Add lazy loading to content images
-        $content = preg_replace('/<img((?![^>]*loading)[^>]*)>/', '<img$1 loading="lazy" decoding="async">', $content);
+        // Add lazy loading to content images (không ghi đè nếu đã có loading hoặc fetchpriority="high")
+        $content = preg_replace_callback('/<img([^>]+)>/i', function ($matches) {
+            $tag = $matches[0];
+            $attrs = $matches[1];
+
+            // Nếu đã có loading="..." thì giữ nguyên
+            if (stripos($attrs, 'loading=') !== false) {
+                return $tag;
+            }
+
+            // Nếu có fetchpriority="high" thì gắn loading="eager"
+            if (stripos($attrs, 'fetchpriority="high"') !== false || stripos($attrs, "fetchpriority='high'") !== false) {
+                return '<img' . $attrs . ' loading="eager" decoding="async">';
+            }
+
+            return '<img' . $attrs . ' loading="lazy" decoding="async">';
+        }, $content);
 
         // Add responsive images if missing
         $content = preg_replace_callback('/<img([^>]+)>/', function ($matches) {
@@ -192,15 +208,6 @@ class ThemePerformance
         return $content;
     }
 
-    /**
-     * Enable compression
-     */
-    public static function enable_compression()
-    {
-        // Compression belongs at the server/cache layer. Keeping this method as a
-        // no-op avoids conflicts with page caches, REST responses, and web server
-        // gzip/brotli settings if older code calls it.
-    }
 
     /**
      * Register service worker for caching
@@ -208,33 +215,31 @@ class ThemePerformance
     public static function register_service_worker()
     {
         if (!is_admin() && !is_user_logged_in()) {
-            // Chỉ đăng ký khi toggle trong Laca Admin > Optimization được bật
-            if (function_exists('carbon_get_theme_option') && !carbon_get_theme_option('enable_register_service_worker')) {
-                return;
-            }
-
-            $sw_path = lacaDistDir('sw.js');
+            // get_template_directory() luôn trỏ vào theme PARENT (lacadev-client)
+            // — theme này KHÔNG có thư mục dist/. File dist/sw.js thật đã build
+            // đúng chỉ nằm ở theme CHILD (get_stylesheet_directory()) — dùng
+            // get_template_directory() khiến file_exists() luôn false, toàn bộ
+            // Service Worker (cache/offline/PWA) chết hoàn toàn trên mọi site.
+            $sw_path = get_stylesheet_directory() . '/dist/sw.js';
 
             // Only register if SW file exists
             if (!file_exists($sw_path)) {
                 return;
             }
 
-            if (wp_script_is('laca-sw-register', 'enqueued')) {
-                return;
-            }
-
-            wp_enqueue_script(
-                'laca-sw-register',
-                lacaResourceUrl('scripts/theme/service-worker-register.js'),
-                [],
-                wp_get_theme()->get('Version'),
-                true
-            );
-            wp_localize_script('laca-sw-register', 'swConfig', [
-                'swUrl' => lacaDistUrl('sw.js'),
-                'debug' => defined('WP_DEBUG') && WP_DEBUG ? 'true' : 'false',
-            ]);
+            add_action('wp_enqueue_scripts', function () {
+                wp_enqueue_script(
+                    'laca-sw-register',
+                    get_template_directory_uri() . '/resources/scripts/theme/service-worker-register.js',
+                    [],
+                    wp_get_theme()->get('Version'),
+                    true
+                );
+                wp_localize_script('laca-sw-register', 'swConfig', [
+                    'swUrl' => get_stylesheet_directory_uri() . '/dist/sw.js',
+                    'debug' => defined('WP_DEBUG') && WP_DEBUG ? 'true' : 'false',
+                ]);
+            });
         }
     }
 
@@ -244,14 +249,16 @@ class ThemePerformance
      */
     public static function add_performance_monitoring()
     {
-        if ( ! is_admin() && defined('WP_DEBUG') && WP_DEBUG ) {
-            wp_enqueue_script(
-                'laca-web-vitals',
-                lacaResourceUrl('scripts/theme/web-vitals.js'),
-                [],
-                wp_get_theme()->get('Version'),
-                true
-            );
+        if (!is_admin() && defined('WP_DEBUG') && WP_DEBUG) {
+            add_action('wp_enqueue_scripts', function () {
+                wp_enqueue_script(
+                    'laca-web-vitals',
+                    get_template_directory_uri() . '/resources/scripts/theme/web-vitals.js',
+                    [],
+                    wp_get_theme()->get('Version'),
+                    true
+                );
+            });
         }
     }
 }

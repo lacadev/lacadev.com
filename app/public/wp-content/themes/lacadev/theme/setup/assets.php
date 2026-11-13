@@ -7,7 +7,6 @@
 
 use WPEmergeTheme\Facades\Theme;
 use WPEmergeTheme\Facades\Assets;
-use App\Contracts\AssetHandles;
 
 /**
  * Enhanced asset loading with performance optimizations
@@ -15,8 +14,8 @@ use App\Contracts\AssetHandles;
 function app_action_theme_enqueue_assets()
 {
     $version = wp_get_theme()->get('Version');
-    $theme_root_dir = dirname(get_template_directory());
-    $theme_root_uri = dirname(get_template_directory_uri());
+    $theme_root_dir = dirname(get_stylesheet_directory());
+    $theme_root_uri = dirname(get_stylesheet_directory_uri());
     
     $dist_path = $theme_root_dir . '/dist/';
     $dist_url  = $theme_root_uri . '/dist/';
@@ -32,11 +31,14 @@ function app_action_theme_enqueue_assets()
      * Critical JS (inline or very small) - load in head for critical functionality
      */
     if (file_exists($dist_path . 'critical.js')) {
-        wp_enqueue_script(AssetHandles::CRITICAL_JS, $dist_url . 'critical.js', [], $version, false);
+        wp_enqueue_script('theme-critical-js', $dist_url . 'critical.js', [], $version, false);
     }
 
+    /**
+     * Vendors bundle
+     */
     $vendor_chunks = [
-        AssetHandles::VENDORS_JS      => 'vendors.js',
+        'theme-vendors-js'      => 'vendors.js',
         'theme-vendor-gsap-js'  => 'vendor-gsap.js',
         'theme-vendor-swiper-js'=> 'vendor-swiper.js',
         'theme-vendor-swal-js'  => 'vendor-swal.js',
@@ -53,46 +55,46 @@ function app_action_theme_enqueue_assets()
     /**
      * Main JavaScript bundle (deferred)
      */
-    Assets::enqueueScript(AssetHandles::THEME_JS, $dist_url . 'theme.js', $vendors_deps, true);
+    Assets::enqueueScript('theme-js-bundle', $dist_url . 'theme.js', $vendors_deps, true);
 
     /**
      * Conditional assets based on page type
      */
     if (is_home() || is_archive() || is_search()) {
         if (file_exists($dist_path . 'archive.js')) {
-            wp_enqueue_script(AssetHandles::ARCHIVE_JS, $dist_url . 'archive.js', [AssetHandles::THEME_JS], $version, true);
+            wp_enqueue_script('theme-archive-js', $dist_url . 'archive.js', ['theme-js-bundle'], $version, true);
         }
     }
 
     if (is_single() && comments_open()) {
         if (file_exists($dist_path . 'comments.js')) {
-            wp_enqueue_script(AssetHandles::COMMENTS_JS, $dist_url . 'comments.js', [AssetHandles::THEME_JS], $version, true);
+            wp_enqueue_script('theme-comments-js', $dist_url . 'comments.js', ['theme-js-bundle'], $version, true);
         }
     }
 
     /**
      * Enqueue styles with preload optimization
      */
-    Assets::enqueueStyle(AssetHandles::THEME_CSS, $dist_url . 'styles/theme.css');
+    Assets::enqueueStyle('theme-css-bundle', $dist_url . 'styles/theme.css');
 
     /**
      * Conditional CSS based on page type
      */
     if (is_single()) {
         if (file_exists($dist_path . 'styles/single.css')) {
-            wp_enqueue_style(AssetHandles::SINGLE_CSS, $dist_url . 'styles/single.css', [AssetHandles::THEME_CSS], $version);
+            wp_enqueue_style('theme-single-css', $dist_url . 'styles/single.css', ['theme-css-bundle'], $version);
         }
     }
 
     /**
      * Enqueue theme's style.css file to allow overrides for the bundled styles.
      */
-    Assets::enqueueStyle(AssetHandles::THEME_STYLES, get_template_directory_uri() . '/style.css');
+    Assets::enqueueStyle('theme-styles', get_template_directory_uri() . '/style.css');
 
     /**
      * Localize script with minimal data
      */
-    wp_localize_script(AssetHandles::THEME_JS, 'themeData', [
+    wp_localize_script('theme-js-bundle', 'themeData', [
         'ajaxurl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('theme_nonce'),
         'isHome' => is_home(),
@@ -108,47 +110,44 @@ function app_action_theme_enqueue_assets()
  */
 function app_action_admin_enqueue_assets()
 {
-    $template_dir = Theme::uri();
+    // dist/ nằm ở .../lacadev-client/dist/ nên cần dirname() để lên 1 level
+    $template_dir = dirname(get_stylesheet_directory_uri());
 
     /**
      * Enqueue styles.
      */
     Assets::enqueueStyle(
-        AssetHandles::ADMIN_CSS,
+        'theme-admin-css-bundle',
         $template_dir . '/dist/styles/admin.css'
     );
     Assets::enqueueStyle(
-        AssetHandles::EDITOR_CSS,
+        'theme-editor-css-bundle',
         $template_dir . '/dist/styles/editor.css'
     );
 
     /**
-     * Admin vendor chunks — load in <head> (false) để đảm bảo Swal/Chart available trước admin.js
+     * Enqueue vendors.js if exists (same fix as frontend)
+     * CRITICAL: Load in head (false) to ensure it's available before admin.js
      */
     $admin_deps = [];
-    $theme_root = dirname(get_template_directory());
-    $base_uri   = dirname(get_template_directory_uri());
-    $admin_theme_dist_path = $theme_root . '/dist/';
-    $admin_theme_dist_url  = $base_uri . '/dist/';
-    $admin_version = wp_get_theme()->get('Version');
-
-    $admin_vendor_chunks = [
-        AssetHandles::VENDORS_JS       => 'vendors.js',
-        'theme-vendor-swal-js'   => 'vendor-swal.js',
-        'theme-vendor-chart-js'  => 'vendor-chart.js',
-    ];
-    foreach ($admin_vendor_chunks as $handle => $file) {
-        if (file_exists($admin_theme_dist_path . $file)) {
-            wp_enqueue_script($handle, $admin_theme_dist_url . $file, [], $admin_version, false);
-            $admin_deps[] = $handle;
-        }
+    $theme_root = dirname(get_stylesheet_directory());
+    $vendors_path = $theme_root . '/dist/vendors.js';
+    
+    if (file_exists($vendors_path)) {
+        $base_uri = get_stylesheet_directory_uri();
+        $theme_uri = dirname($base_uri);
+        $vendors_url = $theme_uri . '/dist/vendors.js';
+        
+        // Load in <head> without defer to ensure Swal is available
+        wp_enqueue_script('theme-vendors-js', $vendors_url, [], wp_get_theme()->get('Version'), false);
+        $admin_deps = ['theme-vendors-js'];
     }
 
     /**
      * Enqueue scripts.
      */
     Assets::enqueueScript(
-        AssetHandles::ADMIN_JS,
+        'theme-admin-js-bundle',
         $template_dir . '/dist/admin.js',
         $admin_deps,
         true
@@ -157,16 +156,15 @@ function app_action_admin_enqueue_assets()
     /**
      * Localize admin script data with nonce for AJAX requests and i18n strings
      */
-    wp_localize_script(AssetHandles::ADMIN_JS, 'ajaxurl_params', [
+    wp_localize_script('theme-admin-js-bundle', 'ajaxurl_params', [
         'ajaxurl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('update_post_thumbnail'),  // Must match backend check_ajax_referer
-        'attachmentNonce' => wp_create_nonce('laca_get_attachment_url'),
     ]);
 
     /**
      * Localize i18n strings for admin JavaScript
      */
-    wp_localize_script(AssetHandles::ADMIN_JS, 'adminI18n', [
+    wp_localize_script('theme-admin-js-bundle', 'adminI18n', [
         // Thumbnail removal
         'removeThumbnailTitle' => __('Remove Thumbnail?', 'laca'),
         'removeThumbnailText' => __('Are you sure you want to remove this featured image?', 'laca'),
@@ -248,8 +246,8 @@ function app_action_admin_enqueue_assets()
             ];
         }
 
-        wp_localize_script(AssetHandles::ADMIN_JS, 'lacaProjectCharts', [
-            'primary'  => '#18181b',
+        wp_localize_script('theme-admin-js-bundle', 'lacaProjectCharts', [
+            'primary'  => '#18181b', // Token --laca-accent đơn sắc
             'byStatus' => $by_status,
             'byMonth'  => $by_month,
         ]);
@@ -260,18 +258,21 @@ function app_action_admin_enqueue_assets()
  * Preload critical assets in admin_head
  */
 add_action('admin_head', function() {
-    $theme_root_uri = dirname(get_template_directory_uri());
+    $theme_root_dir = dirname(get_stylesheet_directory());
+    $theme_root_uri = dirname(get_stylesheet_directory_uri());
+    $dist_path = $theme_root_dir . '/dist/';
     $dist_url = $theme_root_uri . '/dist/';
     
-    // Preload important fonts
-    $fonts = [
-        'fonts/BeVietnamPro-Regular.bbe77399f9.ttf',
-        'fonts/BeVietnamPro-SemiBold.fbc3f74acb.ttf',
-        'fonts/Quicksand-Regular.61504eaec8.ttf',
-    ];
+    // Preload important fonts (qua filter lacadev_preload_fonts)
+    $fonts = apply_filters('lacadev_preload_fonts', []);
 
-    foreach ($fonts as $font) {
-        echo '<link rel="preload" href="' . $dist_url . $font . '" as="font" type="font/ttf" crossorigin>' . "\n";
+    foreach ($fonts as $font_rel) {
+        $font_path = $dist_path . ltrim($font_rel, '/');
+        if (file_exists($font_path)) {
+            $ext = pathinfo($font_rel, PATHINFO_EXTENSION);
+            $type = $ext === 'woff2' ? 'font/woff2' : ($ext === 'woff' ? 'font/woff' : 'font/ttf');
+            echo '<link rel="preload" href="' . $dist_url . ltrim($font_rel, '/') . '" as="font" type="' . esc_attr($type) . '" crossorigin>' . "\n";
+        }
     }
 }, 1);
 
@@ -282,7 +283,7 @@ add_action('admin_head', function() {
  */
 function app_action_login_enqueue_assets()
 {
-    $template_dir = Theme::uri();
+    $template_dir = dirname(get_stylesheet_directory_uri());
     $resolveLogoUrl = static function ($rawValue): string {
         // Carbon Fields image can return ID, URL string, or array.
         if (empty($rawValue)) {
@@ -326,22 +327,30 @@ function app_action_login_enqueue_assets()
         return '';
     };
 
+    $login_logo_raw = function_exists('laca_theme_option') ? laca_theme_option('login_logo') : (function_exists('carbon_get_theme_option') ? carbon_get_theme_option('login_logo') : '');
+    $login_logo_url = $resolveLogoUrl($login_logo_raw);
+    if (empty($login_logo_url)) {
+        $login_logo_url = $resolveLogoUrl(function_exists('laca_theme_option') ? laca_theme_option('logo') : (function_exists('carbon_get_theme_option') ? carbon_get_theme_option('logo') : ''));
+    }
     // Ô ghi đè trong Theme Options theo ngôn ngữ đang xem (vd login_user_label_en),
     // rồi ô chung; trống thì rơi về câu __() — dịch bằng file .po của theme.
     $login_lang = strpos(determine_locale(), 'en') === 0 ? 'en' : 'vi';
     $pickLoginText = static function (string $key, string $default) use ($login_lang): string {
-        $value = carbon_get_theme_option("{$key}_{$login_lang}");
+        $value = function_exists('laca_theme_option') ? laca_theme_option("{$key}_{$login_lang}") : (function_exists('carbon_get_theme_option') ? carbon_get_theme_option("{$key}_{$login_lang}") : '');
         if (empty($value)) {
-            $value = carbon_get_theme_option($key);
+            $value = function_exists('laca_theme_option') ? laca_theme_option($key) : (function_exists('carbon_get_theme_option') ? carbon_get_theme_option($key) : '');
         }
         return !empty($value) ? (string) $value : $default;
     };
 
-    $login_logo_raw = carbon_get_theme_option('login_logo');
-    $login_logo_url = $resolveLogoUrl($login_logo_raw);
-    if (empty($login_logo_url)) {
-        $login_logo_url = $resolveLogoUrl(carbon_get_theme_option('logo'));
-    }
+    $pickLoginI18n = static function (string $key, string $lang, string $fallback) {
+        $value = function_exists('laca_theme_option') ? laca_theme_option("{$key}_{$lang}") : (function_exists('carbon_get_theme_option') ? carbon_get_theme_option("{$key}_{$lang}") : '');
+        if (empty($value)) {
+            // Backward compatibility with old single-language keys.
+            $value = function_exists('laca_theme_option') ? laca_theme_option($key) : (function_exists('carbon_get_theme_option') ? carbon_get_theme_option($key) : '');
+        }
+        return !empty($value) ? $value : $fallback;
+    };
 
     $loginStrings = [
         'userLabel'       => $pickLoginText('login_user_label', __('Ai đang ghé trạm?', 'laca')),
@@ -360,13 +369,13 @@ function app_action_login_enqueue_assets()
      * Enqueue scripts.
      */
     Assets::enqueueScript(
-        AssetHandles::LOGIN_JS,
+        'theme-login-js-bundle',
         $template_dir . '/dist/login.js',
         [],
         true
     );
 
-    wp_localize_script(AssetHandles::LOGIN_JS, 'loginI18n', [
+    wp_localize_script('theme-login-js-bundle', 'loginI18n', [
         'logoUrl' => $login_logo_url,
         'strings' => $loginStrings,
         'homeUrl' => home_url('/'),
@@ -376,7 +385,7 @@ function app_action_login_enqueue_assets()
      * Enqueue styles.
      */
     Assets::enqueueStyle(
-        AssetHandles::LOGIN_CSS,
+        'theme-login-css-bundle',
         $template_dir . '/dist/styles/login.css'
     );
 
@@ -384,7 +393,7 @@ function app_action_login_enqueue_assets()
     if (!empty($login_logo_url)) {
         $safe_logo_url = esc_url_raw($login_logo_url);
         $login_logo_css = "#login h1 a{background-image:url('{$safe_logo_url}') !important;}";
-        wp_add_inline_style(AssetHandles::LOGIN_CSS, $login_logo_css);
+        wp_add_inline_style('theme-login-css-bundle', $login_logo_css);
     }
 }
 
@@ -395,15 +404,20 @@ function app_action_login_enqueue_assets()
  */
 function app_action_editor_enqueue_assets()
 {
-    $template_dir = Theme::uri();
+    $template_dir = dirname(get_stylesheet_directory_uri());
 
     /**
      * Enqueue scripts.
      */
     Assets::enqueueScript(
-        AssetHandles::EDITOR_JS,
+        'theme-editor-js-bundle',
         $template_dir . '/dist/editor.js',
-        [],
+        // Khai báo rõ phụ thuộc wp-* — bundle này import @wordpress/* qua
+        // externals map (xem resources/build/webpack/externals.js) nên cần
+        // các global window.wp.* tương ứng đã sẵn sàng TRƯỚC khi chạy. Luôn
+        // an toàn khai báo (dù không dùng hết) vì đang ở màn hình Block
+        // Editor, các handle này chắc chắn đã được core đăng ký sẵn.
+        ['wp-element', 'wp-components', 'wp-compose', 'wp-block-editor', 'wp-data', 'wp-hooks', 'wp-i18n'],
         true
     );
 
@@ -411,7 +425,7 @@ function app_action_editor_enqueue_assets()
     * Enqueue styles.
     */
     Assets::enqueueStyle(
-        AssetHandles::EDITOR_CSS,
+        'theme-editor-css-bundle',
         $template_dir . '/dist/styles/editor.css'
     );
 
@@ -438,7 +452,7 @@ function app_action_editor_enqueue_assets()
             font-family: 'Quicksand', sans-serif !important;
         }
     ";
-    wp_add_inline_style(AssetHandles::EDITOR_CSS, $custom_css);
+    wp_add_inline_style('theme-editor-css-bundle', $custom_css);
 }
 
 /**
@@ -456,35 +470,41 @@ function app_action_add_favicon()
  * Advanced script optimization with defer/async/preload
  */
 add_filter('script_loader_tag', function ($tag, $handle, $src) {
-    // Scripts to defer (non-critical, loaded in footer)
-    // NOTE: admin vendor chunks (swal, chart) are NOT deferred — loaded in <head> blocking
-    $defer_scripts = [
-        AssetHandles::VENDORS_JS,
-        'theme-vendor-gsap-js',
-        'theme-vendor-swiper-js',
-        'theme-vendor-swal-js',
-        'theme-vendor-836-js',
-        AssetHandles::THEME_JS,
-        AssetHandles::ADMIN_JS,
-        AssetHandles::LOGIN_JS,
-        AssetHandles::EDITOR_JS,
-        AssetHandles::ARCHIVE_JS,
-        AssetHandles::COMMENTS_JS,
+    // Scripts to defer (non-critical)
+    // NOTE: theme-vendors-js is NOT deferred - it must load blocking to ensure Swal/dependencies are available
+    $default_defer = [
+        'theme-js-bundle',
+        'theme-admin-js-bundle',
+        'theme-login-js-bundle',
+        'theme-editor-js-bundle',
+        'theme-archive-js',
+        'theme-comments-js',
+        'child-theme-js',
+        'sourcebuster-js',
+        'wc-order-attribution',
     ];
+    $defer_scripts = apply_filters('lacadev_defer_scripts', $default_defer);
 
     // Scripts to async (tracking, analytics)
-    $async_scripts = [
+    $default_async = [
         'google-analytics',
         'facebook-pixel',
         'hotjar'
     ];
+    $async_scripts = apply_filters('lacadev_async_scripts', $default_async);
 
-    if (in_array($handle, $defer_scripts)) {
-        return str_replace('<script ', '<script defer ', $tag);
+    if (in_array($handle, $defer_scripts, true)) {
+        if (strpos($tag, ' defer') === false) {
+            return str_replace('<script ', '<script defer ', $tag);
+        }
+        return $tag;
     }
 
-    if (in_array($handle, $async_scripts)) {
-        return str_replace('<script ', '<script async ', $tag);
+    if (in_array($handle, $async_scripts, true)) {
+        if (strpos($tag, ' async') === false) {
+            return str_replace('<script ', '<script async ', $tag);
+        }
+        return $tag;
     }
 
     return $tag;
@@ -494,56 +514,105 @@ add_filter('script_loader_tag', function ($tag, $handle, $src) {
  * Advanced style optimization
  */
 add_filter('style_loader_tag', function ($tag, $handle, $href) {
-    // Non-critical styles to load asynchronously
-    $non_critical_styles = [
-        AssetHandles::SINGLE_CSS,
-        'fontawesome',
-        'google-fonts'
+    if (is_admin() || is_customize_preview() || wp_is_json_request() || (function_exists('is_feed') && is_feed())) {
+        return $tag;
+    }
+
+    // Chỉ chuyển sang async tải bất đồng bộ khi Critical CSS đã được in ở request này
+    if (empty($GLOBALS['lacadev_critical_css_inlined'])) {
+        return $tag;
+    }
+
+    $default_async = [
+        'theme-css-bundle',
+        'theme-styles',
     ];
+    $async_handles = apply_filters('lacadev_async_style_handles', $default_async);
 
-    // If critical CSS file exists (inlined in header), load main bundle asynchronously
-    if (file_exists(lacaDistDir('styles/critical.css'))) {
-        $non_critical_styles[] = AssetHandles::THEME_CSS;
+    // Kiểm tra khớp handle chính xác hoặc tiền tố (ví dụ block-block-*)
+    $is_async = false;
+    foreach ($async_handles as $async_handle) {
+        if ($handle === $async_handle || (str_ends_with($async_handle, '*') && str_starts_with($handle, rtrim($async_handle, '*')))) {
+            $is_async = true;
+            break;
+        }
     }
 
-    if (in_array($handle, $non_critical_styles)) {
-        // Load non-critical CSS asynchronously
-        return '<link rel="preload" href="' . $href . '" as="style" onload="this.onload=null;this.rel=\'stylesheet\'" id="' . $handle . '">' .
-            '<noscript><link rel="stylesheet" href="' . $href . '"></noscript>';
+    if (!$is_async) {
+        return $tag;
     }
 
-    return $tag;
+    // Lấy media attribute gốc (nếu có, ví dụ woocommerce-smallscreen: only screen and (max-width: 768px))
+    $media = 'all';
+    if (preg_match('/media=[\'"]([^\'"]+)[\'"]/', $tag, $matches)) {
+        $media = esc_attr($matches[1]);
+    }
+
+    // CSP có 'unsafe-inline' và không có nonce trên frontend nên onload inline chạy an toàn
+    $async_tag = preg_replace(
+        '/<link\s+([^>]*?)media=[\'"][^\'"]*[\'"]([^>]*?)>/',
+        '<link $1media="print" onload="this.media=\'' . $media . '\';this.onload=null;"$2>',
+        $tag
+    );
+
+    if ($async_tag === $tag) {
+        $async_tag = str_replace('<link ', '<link media="print" onload="this.media=\'' . $media . '\';this.onload=null;" ', $tag);
+    }
+
+    return $async_tag . '<noscript>' . $tag . '</noscript>' . "\n";
 }, 10, 3);
 
 /**
- * FIXED: Preload critical assets in wp_head (Agent Skills: Performance)
+ * Inline Critical CSS + Preload assets in wp_head
+ *
+ * When critical.css exists (generated by `yarn critical`), its contents are
+ * inlined directly into <head> so layout-essential rules (.container, body, etc.)
+ * are available immediately — even though theme.css loads async.
  */
 add_action('wp_head', function() {
-    $theme_root_dir = dirname(get_template_directory());
-    $theme_root_uri = dirname(get_template_directory_uri());
+    $theme_root_dir = dirname(get_stylesheet_directory());
+    $theme_root_uri = dirname(get_stylesheet_directory_uri());
     
     $dist_path = $theme_root_dir . '/dist/';
     $dist_url  = $theme_root_uri . '/dist/';
     
-    // 1. Preload Critical JS
+    // 1. Inline Critical CSS (prevents FOUC when theme.css is loaded async)
+    // Child có thể trả file critical riêng theo loại trang (nhỏ + đúng hơn 1 file chung).
+    $critical_path = apply_filters('lacadev_critical_css_path', $dist_path . 'styles/critical.css', $dist_path);
+    if (!file_exists($critical_path)) {
+        $critical_path = $dist_path . 'styles/critical.css';
+    }
+    // Tool sinh critical (yarn critical) cần CSS gốc dạng blocking để trích đủ rule —
+    // ?lacadev_no_critical=1 tắt inline + async cho request đó (chỉ ảnh hưởng tốc độ, không lộ dữ liệu).
+    $skip_critical = isset($_GET['lacadev_no_critical']); // phpcs:ignore WordPress.Security.NonceVerification
+    if (!$skip_critical && file_exists($critical_path)) {
+        $critical_css = file_get_contents($critical_path);
+        if ($critical_css) {
+            $GLOBALS['lacadev_critical_css_inlined'] = true;
+            echo '<style id="critical-css">' . $critical_css . '</style>' . "\n";
+        }
+    }
+
+    // 2. Preload Critical JS
     if (file_exists($dist_path . 'critical.js')) {
         echo '<link rel="preload" href="' . $dist_url . 'critical.js" as="script">' . "\n";
     }
 
-    // 2. Preload Main CSS Bundle (if not using Critical CSS inline)
-    if (!file_exists($dist_path . 'styles/critical.css')) {
+    // 3. Preload Main CSS Bundle (if NOT using Critical CSS)
+    if (empty($GLOBALS['lacadev_critical_css_inlined'])) {
          echo '<link rel="preload" href="' . $dist_url . 'styles/theme.css" as="style">' . "\n";
     }
 
-    // 3. Preload important fonts (Agent Skills: Performance)
-    $fonts = [
-        'fonts/BeVietnamPro-Regular.bbe77399f9.ttf',
-        'fonts/BeVietnamPro-SemiBold.fbc3f74acb.ttf',
-        'fonts/Quicksand-Regular.61504eaec8.ttf',
-    ];
+    // 4. Preload important fonts (qua filter lacadev_preload_fonts)
+    $fonts = apply_filters('lacadev_preload_fonts', []);
 
-    foreach ($fonts as $font) {
-        echo '<link rel="preload" href="' . $dist_url . $font . '" as="font" type="font/ttf" crossorigin>' . "\n";
+    foreach ($fonts as $font_rel) {
+        $font_path = $dist_path . ltrim($font_rel, '/');
+        if (file_exists($font_path)) {
+            $ext = pathinfo($font_rel, PATHINFO_EXTENSION);
+            $type = $ext === 'woff2' ? 'font/woff2' : ($ext === 'woff' ? 'font/woff' : 'font/ttf');
+            echo '<link rel="preload" href="' . $dist_url . ltrim($font_rel, '/') . '" as="font" type="' . esc_attr($type) . '" crossorigin>' . "\n";
+        }
     }
 }, 1);
 
@@ -551,6 +620,11 @@ add_action('wp_head', function() {
  * Enhanced resource hints for performance
  */
 add_filter('wp_resource_hints', function ($hints, $relation_type) {
+    $custom_hints = apply_filters('lacadev_resource_hints', null, $relation_type);
+    if (is_array($custom_hints)) {
+        return $custom_hints;
+    }
+
     if ('preconnect' === $relation_type) {
         $hints[] = 'https://fonts.gstatic.com';
         $hints[] = 'https://ajax.googleapis.com';
@@ -562,9 +636,13 @@ add_filter('wp_resource_hints', function ($hints, $relation_type) {
     }
 
     if ('prefetch' === $relation_type && (is_home() || is_front_page())) {
-        // Prefetch likely next pages
-        $hints[] = get_permalink(get_option('page_for_posts'));
+        $page_for_posts = get_option('page_for_posts');
+        if ($page_for_posts) {
+            $hints[] = get_permalink($page_for_posts);
+        }
     }
 
     return $hints;
 }, 10, 2);
+
+// NOTE: Các hooks được đăng ký trong app/hooks.php — không thêm lại ở đây để tránh duplicate.

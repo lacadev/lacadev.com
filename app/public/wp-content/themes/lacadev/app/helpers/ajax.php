@@ -207,8 +207,10 @@ function mms_ajax_search() {
     // Rate limiting: 20 requests per minute
     lacadev_check_rate_limit('ajax_search', 20, 60);
     
-    // Security check
-    check_ajax_referer('theme_search_nonce', 'nonce');
+    // Thao tác chỉ đọc: hỗ trợ full-page cache (không chặn nếu HTML cache giữ nonce cũ)
+    if (!empty($_REQUEST['nonce'])) {
+        wp_verify_nonce((string) $_REQUEST['nonce'], 'theme_search_nonce');
+    }
 
     // Get search query
     $search_query = isset($_GET['s']) ? sanitize_text_field($_GET['s']) : '';
@@ -434,8 +436,212 @@ function lacadev_check_submission_status() {
 }
 
 // -----------------------------------------------------------------------------
-// AJAX: Form liên hệ (Contact Form) — đã được chuyển sang App\Features\ContactForm
+// AJAX: Gửi form liên hệ (Contact Form) — form legacy của page template "Liên hệ" (template-contact.php).
+// KHÔNG gộp vào ContactFormAjaxHandler: khác nonce (laca_contact_nonce/field "nonce") và khác cấu trúc field.
 // -----------------------------------------------------------------------------
+add_action('wp_ajax_nopriv_laca_contact_submit', 'lacadev_handle_contact_submit');
+add_action('wp_ajax_laca_contact_submit', 'lacadev_handle_contact_submit');
+
+function lacadev_handle_contact_submit() {
+    // 1. Security check
+    check_ajax_referer('laca_contact_nonce', 'nonce');
+
+    // 2. Rate Limiting Check
+    $ip = lacadev_get_real_ip();
+    $transient_key = 'laca_contact_' . md5($ip);
+    $last_submission = get_transient($transient_key);
+    
+    // If they haven't explicitly confirmed they want to resubmit
+    if ($last_submission && !isset($_POST['resubmit_confirmed'])) {
+         laca_send_json_error([
+             'code' => 'recently_submitted',
+             'time' => date_i18n('H:i - d/m/Y', $last_submission),
+             'message' => sprintf(__('Bạn vừa gửi tin nhắn vào lúc %s. Đợi một chút rồi gửi tiếp nhé!', 'laca'), date_i18n('H:i - d/m/Y', $last_submission))
+         ], 429);
+    }
+
+    // 3. Verify reCAPTCHA v3
+    $recaptcha_response = isset($_POST['recaptcha_response']) ? sanitize_text_field($_POST['recaptcha_response']) : '';
+    $secret_key = carbon_get_theme_option('recaptcha_secret_key');
+    $score_threshold = (float) carbon_get_theme_option('recaptcha_score') ?: 0.5;
+
+    // Bypass reCAPTCHA check entirely for local development environments
+    // Chỉ dựa vào cấu hình server: Host header do client tự đặt được, còn IP 127.0.0.1 là IP của MỌI request khi có reverse proxy
+    $is_localhost = wp_get_environment_type() === 'local';
+
+    if (!empty($secret_key) && !$is_localhost) {
+        // Debug: Check if token is empty
+        if (empty($recaptcha_response)) {
+            laca_send_json_error([
+                'message' => __('Token reCAPTCHA không được gửi. Vui lòng thử lại.', 'laca'),
+                'debug' => [
+                    'token_empty' => true,
+                    'secret_key_length' => strlen($secret_key)
+                ]
+            ], 400);
+        }
+
+        $response = wp_remote_post('https://www.google.com/recaptcha/api/siteverify', [
+            'body' => [
+                'secret'   => $secret_key,
+                'response' => $recaptcha_response,
+                'remoteip' => $ip
+            ],
+            'timeout' => 10
+        ]);
+
+        if (is_wp_error($response)) {
+             laca_send_json_error([
+                 'message' => __('Không thể kết nối với Google reCAPTCHA.', 'laca'),
+                 'debug' => [
+                     'error' => $response->get_error_message()
+                 ]
+             ], 500);
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+        
+        // Debug: Log full response for troubleshooting
+        if (!$data['success']) {
+            $error_codes = isset($data['error-codes']) ? $data['error-codes'] : [];
+            $readable_errors = [];
+            
+            // Translate error codes
+            foreach ($error_codes as $code) {
+                switch ($code) {
+                    case 'missing-input-secret':
+                        $readable_errors[] = 'Secret Key bị thiếu';
+                        break;
+                    case 'invalid-input-secret':
+                        $readable_errors[] = 'Secret Key không đúng';
+                        break;
+                    case 'missing-input-response':
+                        $readable_errors[] = 'Token reCAPTCHA bị thiếu';
+                        break;
+                    case 'invalid-input-response':
+                        $readable_errors[] = 'Token reCAPTCHA không hợp lệ hoặc đã hết hạn';
+                        break;
+                    case 'bad-request':
+                        $readable_errors[] = 'Request không hợp lệ';
+                        break;
+                    case 'timeout-or-duplicate':
+                        $readable_errors[] = 'Token đã được sử dụng hoặc timeout';
+                        break;
+                    default:
+                        $readable_errors[] = $code;
+                }
+            }
+            
+            laca_send_json_error([
+                'message' => __('Xác thực reCAPTCHA thất bại: ', 'laca') . implode(', ', $readable_errors),
+                'debug' => [
+                    'error_codes' => $error_codes,
+                    'hostname' => isset($data['hostname']) ? $data['hostname'] : '',
+                    'token_length' => strlen($recaptcha_response)
+                ]
+            ], 403);
+        }
+        
+        if ($data['score'] < $score_threshold) {
+             laca_send_json_error([
+                 'message' => sprintf(__('Hệ thống nghi ngờ bạn là bot (Điểm: %s/%s).', 'laca'), $data['score'], $score_threshold),
+                 'debug' => [
+                     'score' => $data['score'],
+                     'threshold' => $score_threshold,
+                     'action' => isset($data['action']) ? $data['action'] : ''
+                 ]
+             ], 403);
+        }
+    }
+
+    // 4. Sanitize Input
+    $name    = isset($_POST['name']) ? sanitize_text_field($_POST['name']) : '';
+    $phone   = isset($_POST['phone']) ? sanitize_text_field($_POST['phone']) : '';
+    $email   = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+    $message = isset($_POST['message']) ? sanitize_textarea_field($_POST['message']) : '';
+
+    if (empty($name) || empty($phone) || empty($message)) {
+        laca_send_json_error([
+            'message' => __('Vui lòng điền đầy đủ các thông tin bắt buộc.', 'laca')
+        ], 400);
+    }
+
+    if (!preg_match('/^(03|05|07|08|09|01[2|6|8|9])+([0-9]{8})$/', $phone)) {
+        laca_send_json_error([
+            'message' => __('Số điện thoại không hợp lệ.', 'laca')
+        ], 400);
+    }
+
+    if (!empty($email) && !is_email($email)) {
+        laca_send_json_error([
+            'message' => __('Địa chỉ email không hợp lệ.', 'laca')
+        ], 400);
+    }
+
+    // 5. Prepare Email Data
+    $admin_email = carbon_get_theme_option('email') ?: get_option('admin_email');
+    $site_name = get_bloginfo('name');
+    $author_name = 'La cà dev';
+    
+    // 6. Send Email to Admin (Notification)
+    $admin_subject = sprintf('[%s] Lời nhắn mới từ %s', $site_name, $name);
+
+    $admin_headers = [
+        'Content-Type: text/html; charset=UTF-8',
+    ];
+    
+    if (!empty($email)) {
+        $admin_headers[] = 'Reply-To: ' . $name . ' <' . $email . '>';
+    }
+
+    $admin_body = lacadev_get_admin_email_template($name, $email, $phone, $message, $site_name);
+    $admin_sent = wp_mail($admin_email, $admin_subject, $admin_body, $admin_headers);
+
+    // 7. Send Confirmation Email to Customer
+    $customer_subject = sprintf('Cảm ơn bạn đã liên hệ với %s!', $site_name);
+    
+    $customer_headers = [
+        'Content-Type: text/html; charset=UTF-8',
+        'From: ' . $author_name . ' <' . $admin_email . '>',
+        'Reply-To: ' . $admin_email
+    ];
+
+    $customer_body = lacadev_get_customer_email_template($name, $email, $phone, $message);
+    $customer_sent = false;
+    
+    if (!empty($email)) {
+        $customer_sent = wp_mail($email, $customer_subject, $customer_body, $customer_headers);
+    } else {
+        $customer_sent = true; // No email provided, but we don't consider it an error
+    }
+
+    // 8. Handle Results
+    $sent = ($admin_sent && $customer_sent);
+
+    if ($sent) {
+        // Both emails sent successfully
+        set_transient($transient_key, time(), 30 * MINUTE_IN_SECONDS);
+        laca_send_json_success([
+            'message' => __('Lời nhắn đã được gửi thành công! Vui lòng kiểm tra email để xác nhận.', 'laca')
+        ], 200);
+    } elseif ($admin_sent && !$customer_sent) {
+        // Admin email OK, customer confirmation failed (still success)
+        set_transient($transient_key, time(), 30 * MINUTE_IN_SECONDS);
+        laca_send_json_success([
+            'message' => __('Lời nhắn đã được gửi. Email xác nhận có thể bị lỗi, nhưng tôi sẽ phản hồi sớm!', 'laca')
+        ], 200);
+    } else {
+        // Failed to send admin email (critical)
+        laca_send_json_error([
+            'message' => __('Đã có lỗi xảy ra khi gửi email. Vui lòng thử lại sau hoặc liên hệ: 0776.41.00.43', 'laca'),
+            'debug' => [
+                'admin_sent' => $admin_sent,
+                'customer_sent' => $customer_sent
+            ]
+        ], 500);
+    }
+}
 
 /**
  * Get Admin Email Template
@@ -496,7 +702,10 @@ function lacadev_get_customer_email_template($name, $email, $phone, $message) {
     $author_name = 'La cà dev';
     $author_title = 'WordPress Developer';
     $author_phone = '0776.41.00.43';
-    $author_email = carbon_get_theme_option('email') ?: get_option('admin_email');
+    $author_email = function_exists('laca_theme_option') ? laca_theme_option('email') : (function_exists('carbon_get_theme_option') ? carbon_get_theme_option('email') : '');
+    if (empty($author_email)) {
+        $author_email = get_option('admin_email');
+    }
     
     return "
     <!DOCTYPE html>
@@ -553,8 +762,10 @@ add_action('wp_ajax_nopriv_get_page', 'ajaxGetPage');
 add_action('wp_ajax_get_page', 'ajaxGetPage');
 
 function ajaxGetPage() {
-    // Security check
-    check_ajax_referer('theme_nonce', 'nonce');
+    // Thao tác chỉ đọc: hỗ trợ full-page cache
+    if (!empty($_REQUEST['nonce'])) {
+        wp_verify_nonce((string) $_REQUEST['nonce'], 'theme_nonce');
+    }
 
     $post_id = isset($_POST['post_id']) ? absint($_POST['post_id']) : 0;
     
@@ -595,8 +806,10 @@ add_action('wp_ajax_nopriv_load_more_search', 'lacadev_load_more_search');
 add_action('wp_ajax_load_more_search', 'lacadev_load_more_search');
 
 function lacadev_load_more_search() {
-    // Security check
-    check_ajax_referer('theme_search_nonce', 'nonce');
+    // Thao tác chỉ đọc: hỗ trợ full-page cache
+    if (!empty($_REQUEST['nonce'])) {
+        wp_verify_nonce((string) $_REQUEST['nonce'], 'theme_search_nonce');
+    }
     
     // Get parameters
     $post_type = isset($_POST['post_type']) ? sanitize_text_field($_POST['post_type']) : '';
@@ -629,9 +842,13 @@ function lacadev_load_more_search() {
     }
     
     // Map post_type to template part
-    // Pages use 'post' template since loop-page.php doesn't exist
+    // Pages use 'post' template since loop-page.php doesn't exist. Cùng lý
+    // do, Dynamic CPT tạo qua DynamicCptManager chỉ tự sinh archive/single,
+    // KHÔNG sinh template-parts/loop-{slug}.php — fallback về 'post' cho
+    // MỌI post type thiếu file loop riêng, để "Xem thêm" không âm thầm trả
+    // về rỗng với các CPT mới tạo sau này.
     $template_slug = $post_type;
-    if ($post_type === 'page') {
+    if (!locate_template("template-parts/loop-{$template_slug}.php")) {
         $template_slug = 'post';
     }
     
