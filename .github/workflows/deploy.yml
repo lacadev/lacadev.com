@@ -151,6 +151,7 @@ jobs:
             wp-content/plugins/**/node_modules/**
             wp-content/plugins/**/.DS_Store
             wp-content/uploads/**
+            theme-updates/**
             wp-admin/**
             wp-includes/**
             wp-content/upgrade/**

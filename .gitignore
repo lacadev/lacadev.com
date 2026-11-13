@@ -9,3 +9,7 @@ conf/
 .agent/
 .envrc
 .DS_Store
+app/public/theme-updates/
+app/public/theme-updates/private/
+laca-sync.yml
+
