@@ -13,7 +13,7 @@ class ContactFormTable
 {
     const FORMS_TABLE       = 'laca_contact_forms';
     const SUBMISSIONS_TABLE = 'laca_contact_submissions';
-    const TABLE_VERSION     = '1.1.0';
+    const TABLE_VERSION     = '1.2.0';
     const VERSION_KEY       = 'laca_contact_form_table_version';
 
     // -------------------------------------------------------------------------
@@ -36,55 +36,75 @@ class ContactFormTable
     // Install / Upgrade
     // -------------------------------------------------------------------------
 
-    public static function install(): void
+    public static function install(bool $force = false): void
     {
         global $wpdb;
 
-        $currentVersion = get_option(self::VERSION_KEY, '0');
-        // Force run dbDelta to ensure tables exist in case they were dropped but option remained
-        // if (version_compare($currentVersion, self::TABLE_VERSION, '>=')) {
-        //     return;
-        // }
+        if (!$force) {
+            $installedVersion = get_option(self::VERSION_KEY);
+            if ($installedVersion === self::TABLE_VERSION) {
+                // Tự chữa trường hợp bảng bị xoá mà option còn
+                if (is_admin()) {
+                    $checked = get_transient('laca_cf_table_check');
+                    if ($checked === false) {
+                        $formsTable       = self::getFormsTable();
+                        $submissionsTable = self::getSubmissionsTable();
+                        $existingForms = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($formsTable)));
+                        $existingSubs  = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->esc_like($submissionsTable)));
+                        if ($existingForms === $formsTable && $existingSubs === $submissionsTable) {
+                            set_transient('laca_cf_table_check', 1, 12 * HOUR_IN_SECONDS);
+                            return;
+                        }
+                    } else {
+                        return;
+                    }
+                } else {
+                    return;
+                }
+            }
+        }
 
         $charsetCollate = $wpdb->get_charset_collate();
+        $formsTable       = self::getFormsTable();
+        $submissionsTable = self::getSubmissionsTable();
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-        // --- Table: laca_contact_forms ---
-        $formsTable = self::getFormsTable();
-        $sqlForms   = "CREATE TABLE {$formsTable} (
+        // Table 1: wp_laca_contact_forms
+        $sqlForms = "CREATE TABLE {$formsTable} (
             id                   BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             name                 VARCHAR(255) NOT NULL DEFAULT '',
             fields               LONGTEXT NOT NULL COMMENT 'JSON array of field definitions',
-            notify_email         VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'Email nhận thông báo admin. Rỗng = dùng admin_email',
+            notify_email         VARCHAR(500) NOT NULL DEFAULT '' COMMENT 'Email nhận thông báo admin (hỗ trợ nhiều email phân cách dấu phẩy). Rỗng = dùng admin_email',
             email_admin_subject  VARCHAR(500) NOT NULL DEFAULT 'Đăng kí tư vấn [\$name - \$phone_number]',
             email_admin_body     LONGTEXT NOT NULL,
             email_customer_subject VARCHAR(500) NOT NULL DEFAULT 'Cảm ơn bạn đã liên hệ',
             email_customer_body  LONGTEXT NOT NULL,
-            style_settings       LONGTEXT NULL COMMENT 'JSON: custom CSS variables (primary_color, border_radius, etc.)',
-            is_active            TINYINT(1) UNSIGNED NOT NULL DEFAULT 1,
+            style_settings       LONGTEXT NULL COMMENT 'JSON object of form styling',
+            is_active            TINYINT(1) NOT NULL DEFAULT 1,
             created_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
+            PRIMARY KEY  (id),
             KEY is_active (is_active)
         ) {$charsetCollate};";
-        dbDelta($sqlForms);
 
-        // --- Table: laca_contact_submissions ---
-        $subTable = self::getSubmissionsTable();
-        $sqlSubs  = "CREATE TABLE {$subTable} (
-            id         BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            form_id    BIGINT(20) UNSIGNED NOT NULL,
-            data       LONGTEXT NOT NULL COMMENT 'JSON key-value của toàn bộ fields submit',
-            ip_address VARCHAR(45) NOT NULL DEFAULT '',
-            is_read    TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            KEY form_id   (form_id),
-            KEY is_read   (is_read),
+        // Table 2: wp_laca_contact_submissions
+        $sqlSubmissions = "CREATE TABLE {$submissionsTable} (
+            id           BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            form_id      BIGINT(20) UNSIGNED NOT NULL,
+            data         LONGTEXT NOT NULL COMMENT 'JSON object {field_name: value}',
+            ip_address   VARCHAR(45) NOT NULL DEFAULT '',
+            user_agent   VARCHAR(500) NOT NULL DEFAULT '',
+            is_read      TINYINT(1) NOT NULL DEFAULT 0,
+            created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            KEY form_id (form_id),
+            KEY is_read (is_read),
             KEY created_at (created_at)
         ) {$charsetCollate};";
-        dbDelta($sqlSubs);
+
+        dbDelta($sqlForms);
+        dbDelta($sqlSubmissions);
 
         update_option(self::VERSION_KEY, self::TABLE_VERSION);
     }
@@ -158,16 +178,17 @@ class ContactFormTable
     public static function getAllForms(): array
     {
         global $wpdb;
-        $formsTable = self::getFormsTable();
-        $subTable   = self::getSubmissionsTable();
+        $formsTable       = self::getFormsTable();
+        $submissionsTable = self::getSubmissionsTable();
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         return $wpdb->get_results(
             "SELECT f.*,
-                    (SELECT COUNT(*) FROM {$subTable} s WHERE s.form_id = f.id) AS submission_count,
-                    (SELECT COUNT(*) FROM {$subTable} s WHERE s.form_id = f.id AND s.is_read = 0) AS unread_count
+                    COUNT(s.id) AS submission_count,
+                    SUM(CASE WHEN s.is_read = 0 THEN 1 ELSE 0 END) AS unread_count
              FROM {$formsTable} f
-             ORDER BY f.created_at DESC",
+             LEFT JOIN {$submissionsTable} s ON s.form_id = f.id
+             GROUP BY f.id
+             ORDER BY f.id DESC",
             ARRAY_A
         ) ?: [];
     }
@@ -178,12 +199,35 @@ class ContactFormTable
     public static function getForm(int $id): ?array
     {
         global $wpdb;
-        $formsTable = self::getFormsTable();
         $row = $wpdb->get_row(
-            $wpdb->prepare("SELECT * FROM {$formsTable} WHERE id = %d", $id), // phpcs:ignore
+            $wpdb->prepare("SELECT * FROM " . self::getFormsTable() . " WHERE id = %d", $id),
             ARRAY_A
         );
         return $row ?: null;
+    }
+
+    /**
+     * Làm sạch danh sách email nhận thông báo (hỗ trợ nhập nhiều email,
+     * phân tách bởi dấu phẩy, chấm phẩy hoặc khoảng trắng).
+     */
+    public static function sanitizeEmailList($emails, ?array &$invalid = null): string
+    {
+        if (is_array($emails)) {
+            $emails = implode(',', $emails);
+        }
+        $parts = preg_split('/[\s,;]+/', (string) $emails, -1, PREG_SPLIT_NO_EMPTY);
+        $valid = [];
+        foreach ($parts as $part) {
+            $clean = sanitize_email($part);
+            if ($clean && is_email($clean)) {
+                if (!in_array($clean, $valid, true)) {
+                    $valid[] = $clean;
+                }
+            } elseif ($invalid !== null) {
+                $invalid[] = $part;
+            }
+        }
+        return implode(', ', $valid);
     }
 
     /**
@@ -195,84 +239,87 @@ class ContactFormTable
         $wpdb->insert(self::getFormsTable(), [
             'name'                   => sanitize_text_field($data['name']),
             'fields'                 => wp_json_encode($data['fields'] ?? []),
-            'notify_email'           => sanitize_email($data['notify_email'] ?? ''),
+            'notify_email'           => self::sanitizeEmailList($data['notify_email'] ?? ''),
             'email_admin_subject'    => sanitize_text_field($data['email_admin_subject'] ?? ''),
             'email_admin_body'       => wp_kses_post($data['email_admin_body'] ?? ''),
             'email_customer_subject' => sanitize_text_field($data['email_customer_subject'] ?? ''),
             'email_customer_body'    => wp_kses_post($data['email_customer_body'] ?? ''),
             'style_settings'         => wp_json_encode($data['style_settings'] ?? []),
-            'is_active'              => 1,
+            // Manager không gửi is_active → mặc định bật
+            'is_active'              => array_key_exists('is_active', $data) ? (!empty($data['is_active']) ? 1 : 0) : 1,
         ]);
         return (int) $wpdb->insert_id;
     }
 
     /**
-     * Update form theo ID
+     * Update form
      */
     public static function updateForm(int $id, array $data): bool
     {
         global $wpdb;
-        $result = $wpdb->update(
-            self::getFormsTable(),
-            [
-                'name'                   => sanitize_text_field($data['name']),
-                'fields'                 => wp_json_encode($data['fields'] ?? []),
-                'notify_email'           => sanitize_email($data['notify_email'] ?? ''),
-                'email_admin_subject'    => sanitize_text_field($data['email_admin_subject'] ?? ''),
-                'email_admin_body'       => wp_kses_post($data['email_admin_body'] ?? ''),
-                'email_customer_subject' => sanitize_text_field($data['email_customer_subject'] ?? ''),
-                'email_customer_body'    => wp_kses_post($data['email_customer_body'] ?? ''),
+        $row = [
+            'name'                   => sanitize_text_field($data['name']),
+            'fields'                 => wp_json_encode($data['fields'] ?? []),
+            'notify_email'           => self::sanitizeEmailList($data['notify_email'] ?? ''),
+            'email_admin_subject'    => sanitize_text_field($data['email_admin_subject'] ?? ''),
+            'email_admin_body'       => wp_kses_post($data['email_admin_body'] ?? ''),
+            'email_customer_subject' => sanitize_text_field($data['email_customer_subject'] ?? ''),
+            'email_customer_body'    => wp_kses_post($data['email_customer_body'] ?? ''),
                 'style_settings'         => wp_json_encode($data['style_settings'] ?? []),
-            ],
-            ['id' => $id]
-        );
-        return $result !== false;
+        ];
+        // Chỉ đổi is_active khi nơi gọi gửi rõ — tránh lưu form là tự tắt form
+        if (array_key_exists('is_active', $data)) {
+            $row['is_active'] = !empty($data['is_active']) ? 1 : 0;
+        }
+        return false !== $wpdb->update(self::getFormsTable(), $row, ['id' => $id]);
     }
 
     /**
-     * Xoá form và toàn bộ submissions liên quan
+     * Xóa form và toàn bộ submissions của form đó
      */
-    public static function deleteForm(int $id): void
+    public static function deleteForm(int $id): bool
     {
         global $wpdb;
         $wpdb->delete(self::getSubmissionsTable(), ['form_id' => $id]);
-        $wpdb->delete(self::getFormsTable(), ['id' => $id]);
+        return false !== $wpdb->delete(self::getFormsTable(), ['id' => $id]);
     }
 
     // -------------------------------------------------------------------------
-    // CRUD — Submissions
+    // Submissions
     // -------------------------------------------------------------------------
 
     /**
-     * Lưu submission mới, trả về ID
+     * Insert submission mới
      */
-    public static function insertSubmission(int $formId, array $data, string $ip): int
+    public static function insertSubmission(int $formId, array $data, string $ip = '', string $userAgent = ''): int
     {
         global $wpdb;
         $wpdb->insert(self::getSubmissionsTable(), [
             'form_id'    => $formId,
             'data'       => wp_json_encode($data),
             'ip_address' => sanitize_text_field($ip),
+            'user_agent' => sanitize_text_field(substr($userAgent, 0, 500)),
             'is_read'    => 0,
         ]);
         return (int) $wpdb->insert_id;
     }
 
     /**
-     * Lấy submissions theo form_id với phân trang
+     * Lấy submissions của 1 form (phân trang)
      */
     public static function getSubmissions(int $formId, int $page = 1, int $perPage = 20): array
     {
         global $wpdb;
-        $subTable = self::getSubmissionsTable();
-        $offset   = ($page - 1) * $perPage;
-
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $limit  = max(1, $perPage);
+        $offset = (max(1, $page) - 1) * $limit;
         return $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$subTable} WHERE form_id = %d ORDER BY created_at DESC LIMIT %d OFFSET %d",
+                "SELECT * FROM " . self::getSubmissionsTable() . "
+                 WHERE form_id = %d
+                 ORDER BY id DESC
+                 LIMIT %d OFFSET %d",
                 $formId,
-                $perPage,
+                $limit,
                 $offset
             ),
             ARRAY_A
@@ -285,53 +332,77 @@ class ContactFormTable
     public static function countSubmissions(int $formId): int
     {
         global $wpdb;
-        $subTable = self::getSubmissionsTable();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         return (int) $wpdb->get_var(
-            $wpdb->prepare("SELECT COUNT(*) FROM {$subTable} WHERE form_id = %d", $formId)
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM " . self::getSubmissionsTable() . " WHERE form_id = %d",
+                $formId
+            )
         );
     }
 
     /**
-     * Đếm tổng submissions chưa đọc của tất cả forms
+     * Đếm tổng unread submissions trên TOÀN BỘ hệ thống (dùng cho badge menu)
      */
     public static function countAllUnread(): int
     {
         global $wpdb;
-        $subTable = self::getSubmissionsTable();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$subTable} WHERE is_read = 0");
+        return (int) $wpdb->get_var(
+            "SELECT COUNT(*) FROM " . self::getSubmissionsTable() . " WHERE is_read = 0"
+        );
     }
 
     /**
-     * Đánh dấu 1 submission đã đọc
+     * Đánh dấu submission đã đọc
      */
-    public static function markRead(int $submissionId): void
+    public static function markRead(int $submissionId): bool
     {
         global $wpdb;
-        $wpdb->update(self::getSubmissionsTable(), ['is_read' => 1], ['id' => $submissionId]);
+        return false !== $wpdb->update(
+            self::getSubmissionsTable(),
+            ['is_read' => 1],
+            ['id' => $submissionId]
+        );
     }
 
     /**
-     * Xoá 1 submission
+     * Đánh dấu toàn bộ submissions của 1 form là đã đọc
      */
-    public static function deleteSubmission(int $submissionId): void
+    public static function markAllRead(int $formId): bool
     {
         global $wpdb;
-        $wpdb->delete(self::getSubmissionsTable(), ['id' => $submissionId]);
+        return false !== $wpdb->update(
+            self::getSubmissionsTable(),
+            ['is_read' => 1],
+            ['form_id' => $formId]
+        );
     }
 
-    // -------------------------------------------------------------------------
-    // Uninstall
-    // -------------------------------------------------------------------------
-
-    public static function uninstall(): void
+    /**
+     * Xóa 1 submission
+     */
+    public static function deleteSubmission(int $submissionId): bool
     {
         global $wpdb;
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $wpdb->query('DROP TABLE IF EXISTS ' . self::getSubmissionsTable());
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $wpdb->query('DROP TABLE IF EXISTS ' . self::getFormsTable());
-        delete_option(self::VERSION_KEY);
+        return false !== $wpdb->delete(
+            self::getSubmissionsTable(),
+            ['id' => $submissionId]
+        );
+    }
+
+    /**
+     * Lấy tất cả submissions của 1 form để export CSV
+     */
+    public static function getAllSubmissionsForExport(int $formId): array
+    {
+        global $wpdb;
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM " . self::getSubmissionsTable() . "
+                 WHERE form_id = %d
+                 ORDER BY id DESC",
+                $formId
+            ),
+            ARRAY_A
+        ) ?: [];
     }
 }

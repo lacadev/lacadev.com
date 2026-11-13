@@ -267,7 +267,7 @@ class ContactFormManager
         // Convert old flat format
         return array_map(function ($field) {
             $span = in_array((int) ($field['col_width'] ?? 12), self::ALLOWED_SPANS, true)
-                ? (int) $field['col_width']
+                ? (int) ($field['col_width'] ?? 12)
                 : 12;
             unset($field['col_width']);
             return [
@@ -909,7 +909,7 @@ class ContactFormManager
         <div class="wrap laca-cf-wrap">
             <div class="laca-cf-header">
                 <div>
-                    <h1>📥 Submissions — <?php echo esc_html($form['name']); ?></h1>
+                    <h1>Submissions — <?php echo esc_html($form['name']); ?></h1>
                     <p class="laca-cf-subtitle"><a href="<?php echo esc_url($pageUrl); ?>">← Quay lại danh sách</a></p>
                 </div>
                 <div class="lcf-sub-header">
