@@ -92,7 +92,11 @@ class FleetPage
                         <select id="laca-fleet-bulk-action" class="laca-input" style="min-width:200px;">
                             <option value=""><?php echo esc_html__('— Hành động hàng loạt —', 'laca'); ?></option>
                             <option value="update_theme"><?php echo esc_html__('Cập nhật theme cha', 'laca'); ?></option>
-                            <option value="update_plugin"><?php echo esc_html__('Cập nhật plugin', 'laca'); ?></option>
+                            <option value="rollback_theme"><?php echo esc_html__('Rollback theme cha', 'laca'); ?></option>
+                            <?php
+                            // Ẩn tạm bulk `update_plugin` vì hiện tại giao diện chưa có bước chọn slug plugin cụ thể
+                            // nên gửi `update_slug` rỗng sang client và luôn bị từ chối 400.
+                            ?>
                         </select>
                         <button type="button" id="laca-fleet-btn-apply" class="button button-primary">
                             <?php echo esc_html__('Áp dụng', 'laca'); ?>
@@ -240,6 +244,7 @@ class FleetPage
                                         <?php if ($childVer !== ''): ?>
                                             <br><small style="color:#64748b;">Child: v<?php echo esc_html($childVer); ?></small>
                                         <?php endif; ?>
+                                        <?php echo $this->renderThemeUpdateStateBadge($item['theme_update_state'] ?? null); // phpcs:ignore WordPress.Security.EscapeOutput ?>
                                     </td>
                                     <td>
                                         <?php echo $backupSummary['html']; // phpcs:ignore WordPress.Security.EscapeOutput ?>
@@ -504,9 +509,16 @@ class FleetPage
             return $cached;
         }
 
-        $response = wp_remote_get(self::LATEST_THEME_URL, [
+        $defaultUrl = (function_exists('wp_get_environment_type') && wp_get_environment_type() === 'local')
+            ? 'http://lacadev.local/theme-updates/lacadev-client.json'
+            : self::LATEST_THEME_URL;
+        $manifestUrl = (string) apply_filters('laca_theme_update_json_url', $defaultUrl);
+        $host        = strtolower(rtrim((string) parse_url($manifestUrl, PHP_URL_HOST), '.'));
+        $sslVerify   = ($host === '' || !str_ends_with($host, '.local'));
+
+        $response = wp_remote_get($manifestUrl, [
             'timeout'   => 5,
-            'sslverify' => true,
+            'sslverify' => $sslVerify,
         ]);
 
         if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
@@ -564,6 +576,12 @@ class FleetPage
                 }
             }
 
+            $updateState = get_post_meta($post->ID, '_laca_theme_update_state', true);
+            $updateState = is_array($updateState) ? $updateState : null;
+            if (empty($meta['theme_version_parent']) && is_array($updateState) && !empty($updateState['to']) && in_array($updateState['result'] ?? '', ['success', 'rolled_back'], true)) {
+                $meta['theme_version_parent'] = (string) $updateState['to'];
+            }
+
             $results[] = [
                 'id'                     => $post->ID,
                 'title'                  => get_the_title($post),
@@ -573,6 +591,7 @@ class FleetPage
                 'legacy_auth_last_seen'  => (int) get_post_meta($post->ID, '_laca_legacy_auth_last_seen', true),
                 'backup'                 => $backup,
                 'meta'                   => $meta,
+                'theme_update_state'     => $updateState,
                 'pending_plugins_count'  => $pendingCount,
             ];
         }
@@ -778,6 +797,46 @@ class FleetPage
             esc_attr($tooltip),
             esc_html((string) $pct),
             (int) $stats['avg_ms']
+        );
+    }
+
+    /**
+     * Render badge trạng thái lần cập nhật/rollback theme cha gần nhất từ `_laca_theme_update_state`.
+     *
+     * @param array<string, mixed>|null $state
+     */
+    private function renderThemeUpdateStateBadge(?array $state): string
+    {
+        if (empty($state) || empty($state['result'])) {
+            return '';
+        }
+
+        $result = (string) $state['result'];
+        $at     = isset($state['at']) ? (int) $state['at'] : 0;
+
+        [$label, $badgeClass] = match ($result) {
+            'success'          => [__('Thành công', 'laca'), 'laca-badge--success'],
+            'rolled_back'      => [__('Đã rollback', 'laca'), 'laca-badge--warning'],
+            'integrity_failed' => [__('Toàn vẹn lỗi', 'laca'), 'laca-badge--danger'],
+            'failed'           => [__('Lỗi', 'laca'), 'laca-badge--danger'],
+            default            => [$result, 'laca-badge--subtle'],
+        };
+
+        $timeLabel = $at > 0 ? wp_date('d/m H:i', $at) : '';
+        $titleParts = array_filter([
+            !empty($state['from']) || !empty($state['to'])
+                ? sprintf('%s -> %s', (string) ($state['from'] ?? '?'), (string) ($state['to'] ?? '?'))
+                : '',
+            !empty($state['source']) ? '[' . (string) $state['source'] . ']' : '',
+            !empty($state['error']) ? (string) $state['error'] : '',
+        ]);
+
+        return sprintf(
+            '<br><span class="laca-badge %s" style="margin-top:4px;font-size:11px;" title="%s">%s%s</span>',
+            esc_attr($badgeClass),
+            esc_attr(implode(' ', $titleParts)),
+            esc_html($label),
+            $timeLabel !== '' ? ' &bull; ' . esc_html($timeLabel) : ''
         );
     }
 }

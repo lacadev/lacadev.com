@@ -5,6 +5,7 @@ namespace App\Settings;
 use Carbon_Fields\Container;
 use Carbon_Fields\Field;
 use Intervention\Image\ImageManagerStatic as Image;
+use App\Helpers\Crypto;
 
 class AdminSettings
 {
@@ -31,9 +32,14 @@ class AdminSettings
 			$this->removeUnnecessaryMenus();
 		}
 
+		// Super User thêm qua UI (khác tài khoản dev gốc 'lacadev') chỉ được
+		// vào 1 số trang Laca Admin nhất định — tự kiểm tra isExtraSuperUser()
+		// bên trong nên gọi không điều kiện ở đây là an toàn.
 		$this->restrictExtraSuperUserAccess();
+
+		$this->addTrackerConfigParserScript();
 		$this->addDashboardContactWidget();
-		$this->addProjectManagerWidget(); // NEW: Project Manager Widget
+		$this->addProjectManagerWidget();
 		$this->removeDefaultWidgets();
 		$this->removeDashboardWidgets();
 		$this->changeHeaderUrl();
@@ -43,6 +49,7 @@ class AdminSettings
 		$this->resizeOriginalImageAfterUpload();
 		$this->renameUploadFileName();
 		$this->addCustomExtensionsInMediaUpload();
+		$this->encryptSmtpPasswordOnSave();
 
 		if (get_option('_disable_admin_confirm_email') === 'yes') {
 			$this->disableChangeAdminEmailRequireConfirm();
@@ -64,32 +71,59 @@ class AdminSettings
 	public function addCustomExtensionsInMediaUpload()
 	{
 		add_filter('upload_mimes', static function ($mimes) {
+			// SVG được quản lý bởi SvgUploadGuard (lọc XSS + phân quyền)
 			return array_merge($mimes, [
 				'ac3' => 'audio/ac3',
 				'mpa' => 'audio/MPA',
 				'flv' => 'video/x-flv',
-				'svg' => 'image/svg+xml',
 			]);
 		});
 
 		add_action('wp_ajax_mm_get_attachment_url_thumbnail', static function () {
+			// Dùng lại đúng nonce "update_post_thumbnail" đã localize sẵn
+			// (window.ajaxurl_params.nonce, theme/setup/assets.php) thay vì
+			// thêm 1 localize riêng — trước đây KHÔNG có check_ajax_referer()/
+			// current_user_can() nào cả, bất kỳ role nào đã đăng nhập đều dò
+			// được URL file đính kèm theo ID bất kỳ, và không có CSRF token
+			// nên cũng dễ bị trang khác điều khiển trình duyệt nạn nhân gọi hộ.
+			check_ajax_referer('update_post_thumbnail', 'nonce');
 			if (!current_user_can('upload_files')) {
-				wp_send_json_error(['message' => __('Insufficient permissions.', 'laca')], 403);
+				die();
 			}
 
-			if (!check_ajax_referer('laca_get_attachment_url', 'nonce', false)) {
-				wp_send_json_error(['message' => __('Invalid nonce.', 'laca')], 403);
+			$url = '';
+			$attachmentID = isset($_REQUEST['attachmentID']) ? absint($_REQUEST['attachmentID']) : 0;
+			if ($attachmentID) {
+				$url = wp_get_attachment_url($attachmentID);
 			}
-
-			$attachmentID = isset($_REQUEST['attachmentID']) ? absint(wp_unslash($_REQUEST['attachmentID'])) : 0;
-			$url = $attachmentID ? wp_get_attachment_url($attachmentID) : '';
-
-			if (!$url) {
-				wp_send_json_error(['message' => __('Attachment not found.', 'laca')], 404);
-			}
-
-			wp_send_json_success(['url' => esc_url_raw($url)]);
+			die($url ? esc_url_raw($url) : '');
 		});
+	}
+
+	/**
+	 * Mã hoá mật khẩu SMTP khi lưu option — tự động chuyển đổi plaintext → tagged encryption.
+	 * Chạy ở `updated_option` thay vì Carbon Fields hook để bắt mọi cách lưu (CLI, direct update).
+	 */
+	public function encryptSmtpPasswordOnSave(): void
+	{
+		$encrypt = static function (string $option, $newValue): void {
+			if ($option !== '_smtp_password') {
+				return;
+			}
+			// Đã tagged → không encrypt lại (update_option bên dưới bắn lại hook này và dừng ở đây)
+			if (!is_string($newValue) || $newValue === '' || Crypto::isTagged($newValue)) {
+				return;
+			}
+			$encrypted = Crypto::encryptTagged($newValue);
+			if (!empty($encrypted)) {
+				update_option('_smtp_password', $encrypted, false);
+			}
+		};
+		// Lần lưu đầu tiên đi qua added_option, các lần sau qua updated_option
+		add_action('added_option', $encrypt, 10, 2);
+		add_action('updated_option', static function (string $option, $oldValue, $newValue) use ($encrypt) {
+			$encrypt($option, $newValue);
+		}, 10, 3);
 	}
 
 	public function disableCheckboxUseWeakPassword()
@@ -105,7 +139,7 @@ class AdminSettings
 		add_action('login_enqueue_scripts', function () {
 			wp_enqueue_script(
 				'laca-remove-pw-weak',
-				\lacaResourceUrl('scripts/login/remove-pw-weak.js'),
+				get_template_directory_uri() . '/resources/scripts/login/remove-pw-weak.js',
 				[],
 				wp_get_theme()->get('Version'),
 				true
@@ -118,21 +152,28 @@ class AdminSettings
 		add_action('wp_dashboard_setup', static function () {
 			wp_add_dashboard_widget('custom_help_widget', 'Giới thiệu', static function () { ?>
 				<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 0;">
-					<a target="_blank" href="<?php echo esc_url(AUTHOR['website']); ?>" title="<?php echo esc_attr(AUTHOR['name']); ?>" style="opacity: 0.9; transition: opacity 0.2s;">
-						<img style="max-width: 160px; height: auto; display: block;" src="<?php echo esc_url(\lacaResourceUrl('images/dev/moomsdev-black.png')); ?>" alt="<?php echo esc_attr(AUTHOR['name']); ?>">
+					<a target="_blank" href="<?php echo AUTHOR['website'] ?>" title="<?php echo AUTHOR['name'] ?>"
+						style="opacity: 0.9; transition: opacity 0.2s;">
+						<img style="max-width: 160px; height: auto; display: block;"
+							src="<?php echo esc_url(get_template_directory_uri() . '/../resources/images/dev/moomsdev-black.png') ?>"
+							alt="<?php echo AUTHOR['name'] ?>">
 					</a>
 					<div style="margin-top: 20px; text-align: center;">
-						
-						<p style="margin: 0 0 15px; font-size: 16px; font-style: italic; color: #b5b5b5; font-family: 'Quicksand', sans-serif; font-weight: 500;">
+
+						<p
+							style="margin: 0 0 15px; font-size: 16px; font-style: italic; color: #b5b5b5; font-family: 'Quicksand', sans-serif; font-weight: 500;">
 							"Coding amidst the journeys"
 						</p>
 
-						<div style="display: flex; gap: 12px; justify-content: center; align-items: center; font-size: 14px; color: #848383; font-family: 'Quicksand', sans-serif; font-weight: 600;">
-							<a style="color: inherit; text-decoration: none;" href="tel:<?php echo str_replace(['.', ',', ' '], '', AUTHOR['phone_number']); ?>" target="_blank">
+						<div
+							style="display: flex; gap: 12px; justify-content: center; align-items: center; font-size: 14px; color: #848383; font-family: 'Quicksand', sans-serif; font-weight: 600;">
+							<a style="color: inherit; text-decoration: none;"
+								href="tel:<?php echo str_replace(['.', ',', ' '], '', AUTHOR['phone_number']); ?>" target="_blank">
 								<?php echo AUTHOR['phone_number'] ?>
 							</a>
 							<span style="color: #dcdcde;">|</span>
-							<a style="color: inherit; text-decoration: none;" href="mailto:<?php echo AUTHOR['email'] ?>" target="_blank">
+							<a style="color: inherit; text-decoration: none;" href="mailto:<?php echo AUTHOR['email'] ?>"
+								target="_blank">
 								<?php echo AUTHOR['email'] ?>
 							</a>
 							<span style="color: #dcdcde;">|</span>
@@ -142,12 +183,17 @@ class AdminSettings
 						</div>
 					</div>
 				</div>
-<?php });
+			<?php });
 		});
 	}
 
+
 	public function addProjectManagerWidget()
 	{
+		if (!post_type_exists('project') && !class_exists('\\App\\Features\\ProjectManagement\\LacaProjectsHub')) {
+			return;
+		}
+
 		add_action('wp_dashboard_setup', static function () {
 			if (!current_user_can('edit_posts')) {
 				return;
@@ -155,7 +201,7 @@ class AdminSettings
 
 			wp_add_dashboard_widget(
 				'laca_project_manager_widget',
-				'LacaDev | Quản lý dự án',
+				__('LacaDev | Quản lý dự án', 'laca'),
 				static function () {
 					global $wpdb;
 					
@@ -167,7 +213,7 @@ class AdminSettings
 								 GROUP BY meta_value";
 					$statusCounts = $wpdb->get_results($sqlCount, OBJECT_K) ?: [];
 					
-					$total      = wp_count_posts('project')->publish;
+					$total      = wp_count_posts('project')->publish ?? 0;
 					$inProgress = $statusCounts['in_progress']->count ?? 0;
 					$done       = $statusCounts['done']->count ?? 0;
 					$maintenance= $statusCounts['maintenance']->count ?? 0;
@@ -176,7 +222,7 @@ class AdminSettings
 					$expirySql = "SELECT post_id, meta_key, meta_value FROM {$wpdb->postmeta} 
 								  WHERE meta_key IN ('_domain_expiry', '_hosting_expiry', '_ssl_expiry')
 								  AND meta_value != ''";
-					$expiries = $wpdb->get_results($expirySql);
+					$expiries = $wpdb->get_results($expirySql) ?: [];
 					
 					$expiringSoon = 0;
 					$expiringCritical = 0;
@@ -200,44 +246,43 @@ class AdminSettings
 						}
 					}
 
-					// Đếm cảnh báo từ custom table
-					$alertsCount = class_exists('\App\Models\ProjectAlert') ? \App\Models\ProjectAlert::countActive() : 0;
+					$alertsCount = class_exists('\\App\\Models\\ProjectAlert') ? \App\Models\ProjectAlert::countActive() : 0;
 					?>
 					<div style="display:flex;gap:15px;margin-bottom:15px;">
 						<div style="flex:1;background:#fafbfc;padding:15px;border-radius:6px;text-align:center;border:1px solid #e8ecf0;">
 							<div style="font-size:24px;font-weight:700;color:#8aadf7;"><?php echo esc_html($total); ?></div>
-							<div style="font-size:13px;color:#8b95a5;">Tổng dự án</div>
+							<div style="font-size:13px;color:#8b95a5;"><?php esc_html_e('Tổng dự án', 'laca'); ?></div>
 						</div>
 						<div style="flex:1;background:#fafbfc;padding:15px;border-radius:6px;text-align:center;border:1px solid #e8ecf0;">
 							<div style="font-size:24px;font-weight:700;color:#f5c97a;"><?php echo esc_html($inProgress); ?></div>
-							<div style="font-size:13px;color:#8b95a5;">Đang làm</div>
+							<div style="font-size:13px;color:#8b95a5;"><?php esc_html_e('Đang làm', 'laca'); ?></div>
 						</div>
 						<div style="flex:1;background:#fafbfc;padding:15px;border-radius:6px;text-align:center;border:1px solid #e8ecf0;">
 							<div style="font-size:24px;font-weight:700;color:#7dd3a8;"><?php echo esc_html($done); ?></div>
-							<div style="font-size:13px;color:#8b95a5;">Hoàn thành</div>
+							<div style="font-size:13px;color:#8b95a5;"><?php esc_html_e('Hoàn thành', 'laca'); ?></div>
 						</div>
 					</div>
 
 					<div style="background:#fff;border:1px solid #ccd0d4;padding:10px 15px;border-radius:8px;margin-bottom:15px;">
-						<h4 style="margin-top:0;margin-bottom:10px;">Cần chú ý</h4>
+						<h4 style="margin-top:0;margin-bottom:10px;"><?php esc_html_e('Cần chú ý', 'laca'); ?></h4>
 						<ul style="margin:0;padding-left:20px;">
 							<?php if ($expiringCritical > 0): ?>
-								<li style="color:#c0392b;font-weight:600;">Có <?php echo esc_html($expiringCritical); ?> dịch vụ sắp/đã hết hạn (&le; 7 ngày)</li>
+								<li style="color:#c0392b;font-weight:600;"><?php printf(esc_html__('Có %d dịch vụ sắp/đã hết hạn (≤ 7 ngày)', 'laca'), $expiringCritical); ?></li>
 							<?php endif; ?>
 							<?php if ($expiringSoon > 0): ?>
-								<li style="color:#b7770d;">Có <?php echo esc_html($expiringSoon); ?> dịch vụ sắp gia hạn (&le; 30 ngày)</li>
+								<li style="color:#b7770d;"><?php printf(esc_html__('Có %d dịch vụ sắp gia hạn (≤ 30 ngày)', 'laca'), $expiringSoon); ?></li>
 							<?php endif; ?>
 							<?php if ($alertsCount > 0): ?>
-								<li style="color:#c0392b;">Có <?php echo esc_html($alertsCount); ?> cảnh báo lỗi/bảo mật chưa xử lý</li>
+								<li style="color:#c0392b;"><?php printf(esc_html__('Có %d cảnh báo lỗi/bảo mật chưa xử lý', 'laca'), $alertsCount); ?></li>
 							<?php endif; ?>
 							<?php if ($expiringCritical == 0 && $expiringSoon == 0 && $alertsCount == 0): ?>
-								<li style="color:#2e7d52;">Mọi thứ đều ổn, không có cảnh báo nào.</li>
+								<li style="color:#2e7d52;"><?php esc_html_e('Mọi thứ đều ổn, không có cảnh báo nào.', 'laca'); ?></li>
 							<?php endif; ?>
 						</ul>
 					</div>
 
 					<div style="text-align:right;">
-						<a href="<?php echo esc_url(admin_url('edit.php?post_type=project')); ?>" class="button button-primary">Xem tất cả dự án</a>
+						<a href="<?php echo esc_url(admin_url('edit.php?post_type=project')); ?>" class="button button-primary"><?php esc_html_e('Xem tất cả dự án', 'laca'); ?></a>
 					</div>
 					<?php
 				}
@@ -320,10 +365,10 @@ class AdminSettings
 
 		add_action('admin_bar_menu', static function ($wp_admin_bar) use ($author) {
 			$args = [
-				'id'    => 'logo_author',
-				'title' => '<img src="' . get_site_url() . "/wp-content/themes/lacadev/resources/images/dev/moomsdev-white.png" . '" class="logo-admin-bar" alt="' . AUTHOR['name'] . '">',
-				'href'  => $author['website'],
-				'meta'  => [
+				'id' => 'logo_author',
+				'title' => '<img src="' . esc_url(get_template_directory_uri() . '/../resources/images/dev/moomsdev-white.png') . '" class="logo-admin-bar" alt="' . AUTHOR['name'] . '">',
+				'href' => $author['website'],
+				'meta' => [
 					'target' => '_blank',
 				],
 			];
@@ -334,10 +379,10 @@ class AdminSettings
 	public function renameUploadFileName()
 	{
 		add_filter('sanitize_file_name', function ($filename) {
-			$info        = pathinfo($filename);
-			$ext         = empty($info['extension']) ? '' : '.' . $info['extension'];
+			$info = pathinfo($filename);
+			$ext = empty($info['extension']) ? '' : '.' . $info['extension'];
 			$newFileName = str_replace($ext, '', date('YmdHi') . '-' . $filename);
-			$unicode     = [
+			$unicode = [
 				'a' => 'á|à|ả|ã|ạ|ă|ắ|ặ|ằ|ẳ|ẵ|â|ấ|ầ|ẩ|ẫ|ậ',
 				'd' => 'đ',
 				'e' => 'é|è|ẻ|ẽ|ẹ|ê|ế|ề|ể|ễ|ệ',
@@ -389,10 +434,10 @@ class AdminSettings
 		add_filter('wp_generate_attachment_metadata', static function ($image_data) {
 			try {
 				$upload_dir = wp_upload_dir();
-				$imgPath    = $upload_dir['basedir'] . '/' . $image_data['file'];
-				$image      = Image::make($imgPath);
-				$imgWidth   = $image->width();
-				$imgHeight  = $image->height();
+				$imgPath = $upload_dir['basedir'] . '/' . $image_data['file'];
+				$image = Image::make($imgPath);
+				$imgWidth = $image->width();
+				$imgHeight = $image->height();
 				$image->resize(null, null, static function ($constraint) {
 					$constraint->aspectRatio();
 				});
@@ -431,8 +476,11 @@ class AdminSettings
 	}
 
 	/**
-	 * Danh sách login của mọi Super User hiện tại: mặc định 'lacadev' + những
-	 * user được thêm qua option laca_extra_super_user_logins.
+	 * Danh sách login của mọi Super User hiện tại: mặc định 'lacadev' (không
+	 * thể xoá khỏi danh sách này qua UI, chỉ sửa được trong code) + những
+	 * user được thêm qua trang quản lý "Super User" (Bảo mật → Super User).
+	 * Static để SecurityManager (trang quản lý) và SuperUserGuard dùng chung,
+	 * không phải tự tính lại danh sách này ở nơi khác.
 	 *
 	 * @return string[]
 	 */
@@ -450,7 +498,7 @@ class AdminSettings
 
 	/**
 	 * Check if current user is a super user (Developer)
-	 * 
+	 *
 	 * @return bool
 	 */
 	protected function isSuperUser()
@@ -461,7 +509,12 @@ class AdminSettings
 	}
 
 	/**
-	 * Super User được thêm qua UI (option laca_extra_super_user_logins)
+	 * Super User được thêm qua UI (Bảo mật → Super User, option
+	 * laca_extra_super_user_logins) — KHÔNG tính login mặc định cố định
+	 * trong code (vd 'lacadev', filter lacadev_super_user_logins). Chỉ nhóm
+	 * "extra" này mới bị giới hạn chỉ vào được 1 số trang nhất định
+	 * (xem restrictExtraSuperUserAccess()) — tài khoản dev gốc vẫn full
+	 * quyền như cũ, không ảnh hưởng.
 	 *
 	 * @return bool
 	 */
@@ -476,6 +529,16 @@ class AdminSettings
 	}
 
 	/**
+	 * Slug các trang trong Laca Admin mà Super User (extra, thêm qua UI)
+	 * KHÔNG được vào — 2 nhóm "Bảo mật & đăng nhập" và "Kết nối LacaDev"
+	 * (xem LacaAdminMenuOrganizer::GROUPS). 'laca-security' chặn luôn TẤT
+	 * CẢ tab con của nó (Kiểm tra bảo mật/Giám sát file/Quét mã độc/User
+	 * ẩn/URL đăng nhập/2FA TOTP/Super User) vì các tab này chỉ là
+	 * admin.php?page=laca-security&tab=X, không phải slug riêng.
+	 *
+	 * Lọc qua filter để dễ tuỳ biến riêng từng site mà không cần sửa trực
+	 * tiếp file này.
+	 *
 	 * @return string[]
 	 */
 	public static function getExtraSuperUserDeniedLacaSlugs()
@@ -486,11 +549,19 @@ class AdminSettings
 			'laca-super-user',
 			'laca-recaptcha',
 			'laca-login-socials',
+			'laca-block-sync',
+			'lacadev-block-categories',
+			'laca-tracker',
 			'laca-discord-hub',
 		]);
 	}
 
 	/**
+	 * pagenow (WP core, không thuộc Laca Admin) mà Super User (extra) KHÔNG
+	 * được vào — Giao diện > Theme (themes.php) và Theme File Editor
+	 * (theme-editor.php). KHÔNG chặn cả menu "Giao diện" (Customize/
+	 * Widgets/Menus vẫn vào được bình thường).
+	 *
 	 * @return string[]
 	 */
 	public static function getExtraSuperUserDeniedPagenow()
@@ -501,12 +572,39 @@ class AdminSettings
 		]);
 	}
 
+	/**
+	 * Super User thêm qua UI được vào HẦU HẾT mọi menu như administrator
+	 * thật, CHỈ trừ: Giao diện > Theme, Theme File Editor, và trong Laca
+	 * Admin thì trừ nhóm "Bảo mật & đăng nhập" + "Kết nối LacaDev"
+	 * (getExtraSuperUserDeniedLacaSlugs()/getExtraSuperUserDeniedPagenow()).
+	 *
+	 * Đây là giới hạn ĐIỀU HƯỚNG (ẩn menu + chặn truy cập trực tiếp bằng URL
+	 * vào trang xem), KHÔNG đổi role/capability thật của tài khoản —
+	 * admin-post.php/admin-ajax.php/options.php (nơi các trang này xử lý
+	 * submit form) vẫn luôn cho qua, vì bản thân handler nào cũng đã tự
+	 * check capability riêng và nhiều tính năng khác dùng chung các endpoint
+	 * này (chặn nhầm sẽ làm hỏng cả những tính năng không liên quan).
+	 */
 	public function restrictExtraSuperUserAccess()
 	{
 		add_action('admin_init', [$this, 'maybeBlockDisallowedAdminPage']);
+		// Priority 999 — chạy SAU khi Carbon Fields/các feature khác đã tự
+		// add_menu_page()/add_submenu_page() xong (vd createAdminOptions()
+		// đăng ký 'laca-admin' qua carbon_fields_register_fields, bản thân
+		// hook đó cũng add_action('admin_menu') ở priority mặc định) — phải
+		// lọc SAU CÙNG mới chắc chắn còn giữ nguyên. LacaAdminMenuOrganizer
+		// tự đọc lại $submenu['laca-admin'] ở priority PHP_INT_MAX (sau khi
+		// mình lọc xong) nên "navigation dock" đẹp cũng tự động ẩn đúng theo,
+		// không cần sửa thêm gì ở đó.
 		add_action('admin_menu', [$this, 'filterAdminMenuForExtraSuperUser'], 999);
 	}
 
+	/**
+	 * Named method (không phải closure ẩn danh) để test được qua Reflection
+	 * mà không cần do_action('admin_init') thật — do_action('admin_init')
+	 * thật sẽ kéo theo toàn bộ hook của plugin khác (WooCommerce...), không
+	 * phù hợp để test cô lập riêng logic này.
+	 */
 	public function maybeBlockDisallowedAdminPage()
 	{
 		if (!$this->isExtraSuperUser()) {
@@ -526,6 +624,9 @@ class AdminSettings
 		}
 	}
 
+	/**
+	 * Named method — lý do xem maybeBlockDisallowedAdminPage().
+	 */
 	public function filterAdminMenuForExtraSuperUser()
 	{
 		if (!$this->isExtraSuperUser()) {
@@ -537,6 +638,9 @@ class AdminSettings
 		$denied_laca_slugs = self::getExtraSuperUserDeniedLacaSlugs();
 		$denied_theme_slugs = self::getExtraSuperUserDeniedPagenow();
 
+		// Chỉ gỡ ĐÚNG mục con bị cấm — KHÔNG đụng vào $menu (top-level), vì
+		// Dashboard/Posts/Media/Pages/Woo/Users/Settings/Appearance/Journal/
+		// Partnership/Glossary... và cả "Laca Admin" đều phải giữ nguyên.
 		if (isset($submenu['laca-admin']) && is_array($submenu['laca-admin'])) {
 			foreach ($submenu['laca-admin'] as $key => $subItem) {
 				$slug = $subItem[2] ?? '';
@@ -546,6 +650,8 @@ class AdminSettings
 			}
 		}
 
+		// Giao diện > Theme + Theme File Editor — vẫn giữ Customize/Widgets/
+		// Menus (các mục khác trong $submenu['themes.php']).
 		if (isset($submenu['themes.php']) && is_array($submenu['themes.php'])) {
 			foreach ($submenu['themes.php'] as $key => $subItem) {
 				$slug = $subItem[2] ?? '';
@@ -558,7 +664,7 @@ class AdminSettings
 
 	public function setupErrorMessage()
 	{
-		$logoUrl = get_site_url() . "/wp-content/themes/lacadev/resources/images/dev/moomsdev-black.png";
+		$logoUrl = get_template_directory_uri() . '/../resources/images/dev/moomsdev-black.png';
 		$adminUrl = admin_url();
 		$website = AUTHOR['website'];
 		$authorName = AUTHOR['name'];
@@ -688,23 +794,23 @@ class AdminSettings
 
 	public function checkIsMaintenance()
 	{
-        // Sử dụng template_redirect để chỉ ảnh hưởng Frontend
-        // Không ảnh hưởng wp-admin hoặc wp-login.php
+		// Sử dụng template_redirect để chỉ ảnh hưởng Frontend
+		// Không ảnh hưởng wp-admin hoặc wp-login.php
 		add_action('template_redirect', static function () {
-            // 1. Kiểm tra option có đang bật không
+			// 1. Kiểm tra option có đang bật không
 			if (get_option('_is_maintenance') === 'yes') {
-                
-                // 2. Nếu là Admin hoặc Editor thì CHO PHÉP truy cập để làm việc
-                if (current_user_can('edit_theme_options')) {
-                    return;
-                }
 
-                // 3. Chặn tất cả user khác và load template báo trì
-                // Sử dụng status_header + exit thay vì wp_die để render full custom UI
-                status_header(503);
-                nocache_headers();
-                include get_template_directory() . '/maintenance.php';
-                exit();
+				// 2. Nếu là Admin hoặc Editor thì CHO PHÉP truy cập để làm việc
+				if (current_user_can('edit_theme_options')) {
+					return;
+				}
+
+				// 3. Chặn tất cả user khác và load template báo trì
+				// Sử dụng status_header + exit thay vì wp_die để render full custom UI
+				status_header(503);
+				nocache_headers();
+				include get_template_directory() . '/maintenance.php';
+				exit();
 			}
 		});
 	}
@@ -734,7 +840,7 @@ class AdminSettings
 
 		$errorMessage = $this->errorMessage;
 		add_action('current_screen', static function () use ($errorMessage) {
-			$deniePage      = [
+			$deniePage = [
 				'plugins',
 				'plugin-install',
 				'plugin-editor',
@@ -780,7 +886,7 @@ class AdminSettings
 		});
 
 		$errorMessage = $this->errorMessage;
-		$denyPages    = [
+		$denyPages = [
 			'options-reading',
 			'options-writing',
 			'options-discussion',
@@ -812,14 +918,16 @@ class AdminSettings
 			global $menu;
 			global $submenu;
 			foreach ($menu as $key => $menuItem) {
-				if (in_array($menuItem[2], [
-					'tools.php',
-					'edit-comments.php',
-					'wpseo_dashboard',
-					'duplicator',
-					'yit_plugin_panel',
-					'woocommerce-checkout-manager',
-				])) {
+				if (
+					in_array($menuItem[2], [
+						'tools.php',
+						'edit-comments.php',
+						'wpseo_dashboard',
+						'duplicator',
+						'yit_plugin_panel',
+						'woocommerce-checkout-manager',
+					])
+				) {
 					unset($menu[$key]);
 				}
 			}
@@ -828,16 +936,16 @@ class AdminSettings
 
 	public function hidePostMenuDefault()
 	{
-		add_action('admin_init', function () {
+		add_action('admin_menu', function () {
 			remove_menu_page('edit.php');
-		});
+		}, 999);
 	}
 
 	public function hideCommentMenuDefault()
 	{
-		add_action('admin_init', function () {
+		add_action('admin_menu', function () {
 			remove_menu_page('edit-comments.php');
-		});
+		}, 999);
 	}
 
 	public function createAdminOptions()
@@ -847,47 +955,47 @@ class AdminSettings
 				->set_page_file(__('laca-admin', 'laca'))
 				->set_page_menu_position(3)
 				->add_tab(__('ADMIN', 'laca'), [
-					Field::make('checkbox', 'is_maintenance', __('Bật chế độ bảo trì', 'laca')) 
+					Field::make('checkbox', 'is_maintenance', __('Bật chế độ bảo trì', 'laca'))
 						->set_width(30),
-					Field::make( 'html', 'is_maintenance_desc' )
+					Field::make('html', 'is_maintenance_desc')
 						->set_width(70)
-						->set_html( '<i class="fa-regular fa-lightbulb-on"></i> Khi bật chế độ bảo trì, tất cả người dùng sẽ không thể truy cập vào trang web của bạn. Bạn có thể tạm thời đóng băng trang web để tránh việc người dùng truy cập vào trang web của bạn.' ),
-					
+						->set_html('<i class="fa-regular fa-lightbulb-on"></i> Khi bật chế độ bảo trì, tất cả người dùng sẽ không thể truy cập vào trang web của bạn. Bạn có thể tạm thời đóng băng trang web để tránh việc người dùng truy cập vào trang web của bạn.'),
+
 					// hide theme editor
 					Field::make('checkbox', 'hide_theme_editor', __('Tắt chức năng chỉnh sửa code', 'laca'))
-					->set_width(30),
-					Field::make( 'html', 'hide_theme_editor_desc' )
+						->set_width(30),
+					Field::make('html', 'hide_theme_editor_desc')
 						->set_width(70)
-						->set_html( '<i class="fa-regular fa-lightbulb-on"></i> Khi bật chế độ này, bạn sẽ không thể chỉnh sửa code trong trang admin.' ),
+						->set_html('<i class="fa-regular fa-lightbulb-on"></i> Khi bật chế độ này, bạn sẽ không thể chỉnh sửa code trong trang admin.'),
 
 					Field::make('checkbox', 'disable_admin_confirm_email', __('Tắt chức năng xác thực email khi thay đổi email admin', 'laca'))
 						->set_width(30),
-					Field::make( 'html', 'disable_admin_confirm_email_desc' )
+					Field::make('html', 'disable_admin_confirm_email_desc')
 						->set_width(70)
-						->set_html( '<i class="fa-regular fa-lightbulb-on"></i> Khi bật chế độ này, bạn sẽ không cần phải xác thực email khi thay đổi email admin.' ),
-					
+						->set_html('<i class="fa-regular fa-lightbulb-on"></i> Khi bật chế độ này, bạn sẽ không cần phải xác thực email khi thay đổi email admin.'),
+
 					Field::make('checkbox', 'disable_use_weak_password', __('Tắt chức năng sử dụng mật khẩu yếu', 'laca'))
 						->set_width(30),
-					Field::make( 'html', 'disable_use_weak_password_desc' )
+					Field::make('html', 'disable_use_weak_password_desc')
 						->set_width(70)
-						->set_html( '<i class="fa-regular fa-lightbulb-on"></i> Khi bật chế độ này, bạn sẽ không thể sử dụng mật khẩu yếu.' ),
+						->set_html('<i class="fa-regular fa-lightbulb-on"></i> Khi bật chế độ này, bạn sẽ không thể sử dụng mật khẩu yếu.'),
 
 					Field::make('checkbox', 'hide_post_menu_default', __('Ẩn menu bài viết mặc định', 'laca'))
 						->set_width(30),
-					Field::make( 'html', 'hide_post_menu_default_desc' )
+					Field::make('html', 'hide_post_menu_default_desc')
 						->set_width(70)
-						->set_html( '<i class="fa-regular fa-lightbulb-on"></i> Khi bật chế độ này, bạn sẽ không thể xem menu bài viết trong trang admin.' ),
+						->set_html('<i class="fa-regular fa-lightbulb-on"></i> Khi bật chế độ này, bạn sẽ không thể xem menu bài viết trong trang admin.'),
 
 					Field::make('checkbox', 'hide_comment_menu_default', __('Ẩn menu bình luận mặc định', 'laca'))
 						->set_width(30),
-					Field::make( 'html', 'hide_comment_menu_default_desc' )
+					Field::make('html', 'hide_comment_menu_default_desc')
 						->set_width(70)
-						->set_html( '<i class="fa-regular fa-lightbulb-on"></i> Khi bật chế độ này, bạn sẽ không thể xem menu bình luận trong trang admin.' ),
-						
+						->set_html('<i class="fa-regular fa-lightbulb-on"></i> Khi bật chế độ này, bạn sẽ không thể xem menu bình luận trong trang admin.'),
+
 				])
 				->add_tab(__('SMTP', 'laca'), [
 					Field::make('checkbox', 'use_smtp', __('Sử dụng SMTP để gửi mail', 'laca')),
-					
+
 					Field::make('separator', 'smtp_separator_1', __('Thông tin máy chủ SMTP', 'laca')),
 					Field::make('text', 'smtp_host', __('Địa chỉ máy chủ', 'laca'))
 						->set_width(33.33)
@@ -909,15 +1017,17 @@ class AdminSettings
 				])
 				->add_tab(__('LOGIN', 'laca'), [
 					Field::make('image', 'login_logo', __('Login logo', 'laca'))
-						->set_width(33.33)
+						->set_width(20)
 						->set_help_text('Nếu để trống sẽ dùng logo mặc định của website'),
 
 					Field::make('textarea', 'login_welcome_text_vi', __('Lời chào (VI)', 'laca'))
 						->set_rows(4)
+						->set_width(40)
 						->set_default_value("Chào mừng về Trạm Laca!\nCắm sạc, pha trà và bắt đầu nào!")
 						->set_help_text('Có thể xuống dòng, hệ thống sẽ tự đổi sang <br/>'),
 					Field::make('textarea', 'login_welcome_text_en', __('Welcome text (EN)', 'laca'))
 						->set_rows(4)
+						->set_width(40)
 						->set_default_value("Welcome to Laca Station!\nCharge up, brew some tea and let's go!"),
 
 					Field::make('text', 'login_user_label_vi', __('Label user (VI)', 'laca'))
@@ -963,297 +1073,338 @@ class AdminSettings
 						->set_default_value('← Leave the Station'),
 				]);
 
-			Container::make('theme_options', __('Tools', 'laca'))
-			->set_page_parent($options)
-			->set_page_file(__('laca-tools', 'laca'))
-			->add_tab(__('Optimization', 'laca'), [
-				// ── Disable unnecessary items ────────────────────────────────────────
-				Field::make('separator', 'title_disable_unnecessary_items', __('Disable unnecessary items', 'laca')),
+			Container::make('theme_options', __('Tối ưu hóa', 'laca'))
+				->set_page_parent($options)
+				->set_page_file(__('laca-tools', 'laca'))
+				->add_tab(__('Tối ưu hóa', 'laca'), [
+					Field::make('html', 'opt_security_hardening_notice')
+						->set_html(sprintf(
+							'<div class="laca-alert laca-alert--info" style="margin-bottom:16px;">
+								<span class="dashicons dashicons-info" style="color:#0284c7; margin-right:6px;"></span>
+								%s <a href="%s" style="font-weight:600; text-decoration:underline;">%s</a>
+							</div>',
+							esc_html__('Gỡ oEmbed, ẩn phiên bản WordPress, tắt pingback nằm ở', 'laca'),
+							esc_url(admin_url('admin.php?page=laca-security&tab=hardening')),
+							esc_html__('Bảo mật → Gia cố →', 'laca')
+						)),
 
-				Field::make('checkbox', 'disable_use_jquery_migrate', __('Disable jQuery Migrate', 'laca'))
-					->set_width(30),
-				Field::make('html', 'disable_use_jquery_migrate_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>✅ Nên bật với theme custom</strong><br>
-						<b>Tác dụng:</b> Xóa file <code>jquery-migrate.js</code> (~8KB) khỏi frontend — thư viện chỉ cần cho jQuery API cũ (trước v1.9).<br>
-						<b>Nên bật khi:</b> Không dùng plugin/theme cũ viết bằng jQuery deprecated. Theme LacaDev không cần.<br>
-						<b>Rủi ro:</b> Một số plugin legacy sẽ bị lỗi JS. Kiểm tra console DevTools sau khi bật.
-					</div>'),
+					// Disable unnecessary items
+					Field::make('separator', 'title_disable_unnecessary_items', __('Tắt thành phần không cần thiết', 'laca')),
+					Field::make('checkbox', 'disable_use_jquery_migrate', __('Bỏ thư viện JavaScript cũ (jQuery Migrate)', 'laca'))
+						->set_width(35),
+					Field::make('html', 'disable_use_jquery_migrate_desc')
+						->set_width(65)
+						->set_html('<span class="dashicons dashicons-lightbulb" style="color:var(--laca-accent); margin-right:4px;"></span> ' . esc_html__('Chỉ cần cho theme/plugin rất cũ (~10KB). Bật xong kiểm tra site; nếu gặp lỗi giao diện thì tắt lại.', 'laca')),
 
-				Field::make('checkbox', 'disable_gutenberg_css', __('Disable Gutenberg CSS', 'laca'))
-					->set_width(30),
-				Field::make('html', 'gutenberg_css_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>⚠️ Cẩn thận — kiểm tra layout trước</strong><br>
-						<b>Tác dụng:</b> Xóa <code>wp-block-library.css</code> và <code>wp-block-library-theme.css</code> (~20KB) trên toàn site.<br>
-						<b>Nên bật khi:</b> Không hiển thị block Gutenberg trên frontend (dùng Blade template / custom layout thuần).<br>
-						<b>Rủi ro:</b> Nếu bài viết có block Gutenberg (gallery, columns, buttons...) sẽ mất style. Kiểm tra trang blog/single post kỹ trước khi bật production.
-					</div>'),
+					Field::make('checkbox', 'disable_gutenberg_css', __('Tắt CSS Gutenberg ngoài Frontend', 'laca'))
+						->set_width(35),
+					Field::make('html', 'gutenberg_css_desc')
+						->set_width(65)
+						->set_html('<span class="dashicons dashicons-lightbulb" style="color:var(--laca-accent); margin-right:4px;"></span> ' . esc_html__('Bỏ nạp file block-library CSS mặc định nếu theme tự xây dựng style riêng. Giúp giảm tải CSS.', 'laca')),
 
-				Field::make('checkbox', 'disable_classic_css', __('Disable Classic CSS', 'laca'))
-					->set_width(30),
-				Field::make('html', 'classic_css_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>✅ Thường an toàn khi dùng theme custom</strong><br>
-						<b>Tác dụng:</b> Xóa <code>classic-theme-styles.css</code> (~8KB) — CSS WordPress tự động thêm cho theme không hỗ trợ block.<br>
-						<b>Nên bật khi:</b> Theme đã có CSS riêng hoàn chỉnh, không phụ thuộc Classic Theme styles.<br>
-						<b>Rủi ro:</b> Thấp nếu theme custom. Có thể ảnh hưởng một số style trang archive/comment mặc định.
-					</div>'),
+					Field::make('checkbox', 'disable_classic_css', __('Tắt CSS Classic Theme', 'laca'))
+						->set_width(35),
+					Field::make('html', 'classic_css_desc')
+						->set_width(65)
+						->set_html('<span class="dashicons dashicons-lightbulb" style="color:var(--laca-accent); margin-right:4px;"></span> ' . esc_html__('Bỏ nạp file CSS tương thích theme cổ điển không dùng đến.', 'laca')),
 
-				Field::make('checkbox', 'disable_emoji', __('Disable Emoji', 'laca'))
-					->set_width(30),
-				Field::make('html', 'emoji_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>✅ Nên bật — gần như không có rủi ro</strong><br>
-						<b>Tác dụng:</b> Xóa script + style WordPress dùng để convert text emoji (<code>:smile:</code>) thành ảnh. Tiết kiệm 1 HTTP request + ~10KB JS.<br>
-						<b>Nên bật khi:</b> Hầu hết mọi site. Emoji Unicode (😊 🎉) vẫn hiển thị bình thường trên mọi trình duyệt.<br>
-						<b>Rủi ro:</b> Chỉ mất chức năng convert shortcode kiểu <code>:emoji_name:</code> thành ảnh. Không ảnh hưởng emoji thật.
-					</div>'),
+					Field::make('checkbox', 'disable_emoji', __('Tắt Emoji của WordPress', 'laca'))
+						->set_width(35),
+					Field::make('html', 'emoji_desc')
+						->set_width(65)
+						->set_html('<span class="dashicons dashicons-lightbulb" style="color:var(--laca-accent); margin-right:4px;"></span> ' . esc_html__('Bỏ ~15KB script/CSS emoji; biểu tượng cảm xúc vẫn hiển thị tốt bằng font tích hợp sẵn trên thiết bị.', 'laca')),
 
-				// ── Optimization Library ─────────────────────────────────────────────
-				Field::make('separator', 'title_optimization_library', __('Optimization Library', 'laca')),
+					// Optimization Library
+					Field::make('separator', 'title_optimization_library', __('Thư viện tối ưu trải nghiệm', 'laca')),
+					Field::make('checkbox', 'enable_instant_page', __('Tải trước trang khi rê chuột (Instant.page)', 'laca'))
+						->set_width(35),
+					Field::make('html', 'instant_page_desc')
+						->set_width(65)
+						->set_html('<span class="dashicons dashicons-lightbulb" style="color:var(--laca-accent); margin-right:4px;"></span> ' . esc_html__('Tải ngầm dữ liệu trang khi người xem rê chuột lên liên kết. Nhấp chuột trang sẽ hiện gần như tức thì.', 'laca')),
 
-				Field::make('checkbox', 'enable_instant_page', __('Enable Instant-page', 'laca'))
-					->set_width(30),
-				Field::make('html', 'instant_page_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>✅ Nên bật — cải thiện UX rõ rệt</strong><br>
-						<b>Tác dụng:</b> Khi user hover qua link ≥65ms, trang đích được tải trước vào cache — click sẽ gần như tức thì. Giảm cảm giác chờ đợi đáng kể.<br>
-						<b>Nên bật khi:</b> Site có nhiều internal link, hosting ổn định. Không ảnh hưởng analytics (dùng prefetch, không prerender).<br>
-						<b>Rủi ro:</b> Tăng nhẹ bandwidth server do prefetch trang chưa click. Không phù hợp nếu hosting yếu hoặc giới hạn traffic.
-					</div>'),
+					Field::make('checkbox', 'enable_smooth_scroll', __('Cuộn trang mượt mà (Smooth Scroll)', 'laca'))
+						->set_width(35),
+					Field::make('html', 'smooth_scroll_desc')
+						->set_width(65)
+						->set_html('<span class="dashicons dashicons-lightbulb" style="color:var(--laca-accent); margin-right:4px;"></span> ' . esc_html__('Tạo hiệu ứng cuộn trang mượt mà khi người dùng điều hướng trên website.', 'laca')),
 
-				Field::make('checkbox', 'enable_smooth_scroll', __('Enable Smooth-scroll', 'laca'))
-					->set_width(30),
-				Field::make('html', 'smooth_scroll_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>⚠️ Kiểm tra conflict trước khi bật</strong><br>
-						<b>Tác dụng:</b> Thêm hiệu ứng cuộn mượt (animate) khi click anchor link (<code>#section</code>) thay vì nhảy thẳng.<br>
-						<b>Nên bật khi:</b> Trang có nhiều section, landing page, one-page website.<br>
-						<b>Rủi ro:</b> Nếu theme đã có CSS <code>scroll-behavior: smooth</code> sẽ bị trùng lặp. Một số plugin slider/tab dùng hash URL cũng có thể bị ảnh hưởng.
-					</div>'),
+					// The function of lazy loading images
+					Field::make('separator', 'title_lazy_loading_images', __('Tối ưu HTML & Hình ảnh', 'laca')),
+					Field::make('checkbox', 'remove_comments', __('Xoá chú thích (comment) trong HTML, JS và CSS', 'laca')),
+					Field::make('checkbox', 'remove_xhtml_closing_tags', __('Bỏ thẻ đóng XHTML ở phần tử rỗng (HTML5 chuẩn)', 'laca')),
+					Field::make('checkbox', 'remove_relative_domain', __('Chuyển URL nội bộ thành đường dẫn tương đối (bỏ domain)', 'laca')),
+					Field::make('checkbox', 'remove_protocols', __('Dùng URL trung lập giao thức (bỏ http: và https:)', 'laca')),
+					Field::make('checkbox', 'support_multi_byte_utf_8', __('Hỗ trợ mã hoá UTF-8 nhiều byte (khi thấy ký tự lạ)', 'laca')),
 
-				// ── Lazy loading & Image optimization ────────────────────────────────
-				Field::make('separator', 'title_lazy_loading_images', __('Image & Output Optimization', 'laca')),
+					Field::make('checkbox', 'enable_advanced_resource_hints', __('Tối ưu nạp trước tài nguyên (Resource Hints)', 'laca'))
+						->set_width(35),
+					Field::make('html', 'enable_advanced_resource_hints_desc')
+						->set_width(65)
+						->set_html('<span class="dashicons dashicons-lightbulb" style="color:var(--laca-accent); margin-right:4px;"></span> ' . esc_html__('Thêm các chỉ dẫn dns-prefetch và preconnect giúp trình duyệt kết nối sớm tới các tài nguyên bên thứ ba.', 'laca')),
 
-				Field::make('checkbox', 'remove_comments', __('Remove HTML comments from output', 'laca'))
-					->set_width(30),
-				Field::make('html', 'remove_comments_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>✅ An toàn trên production</strong><br>
-						<b>Tác dụng:</b> Xóa toàn bộ HTML comment <code>&lt;!-- ... --&gt;</code> khỏi HTML output. Giảm kích thước HTML ~2–5%. Vẫn giữ IE conditional comments.<br>
-						<b>Nên bật khi:</b> Production site — không cần debug HTML source.<br>
-						<b>Rủi ro:</b> Thấp. Một số plugin dùng comment để đánh dấu vị trí (widget placeholder). Test trên staging trước.
-					</div>'),
+					Field::make('checkbox', 'enable_optimize_images', __('Tải ảnh chậm (Lazy Load) cho ảnh đại diện', 'laca'))
+						->set_width(35),
+					Field::make('html', 'enable_optimize_images_desc')
+						->set_width(65)
+						->set_html('<span class="dashicons dashicons-lightbulb" style="color:var(--laca-accent); margin-right:4px;"></span> ' . esc_html__('Chỉ tải ảnh khi người xem cuộn tới. Trang hiện nhanh hơn, tiết kiệm băng thông đáng kể.', 'laca')),
 
-				Field::make('checkbox', 'enable_advanced_resource_hints', __('Bật Advanced Resource Hints', 'laca'))
-					->set_width(30),
-				Field::make('html', 'enable_advanced_resource_hints_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>✅ Nên bật nếu dùng Google Fonts</strong><br>
-						<b>Tác dụng:</b> Thêm <code>preconnect</code> và <code>dns-prefetch</code> cho fonts.googleapis.com và fonts.gstatic.com vào <code>&lt;head&gt;</code>. Giảm thời gian DNS lookup khi tải font.<br>
-						<b>Nên bật khi:</b> Site dùng Google Fonts. Cải thiện LCP và FCP nhẹ.<br>
-						<b>Rủi ro:</b> Không có. Browser tự quyết định có dùng hint hay không.
-					</div>'),
+					Field::make('checkbox', 'enable_optimize_content_images', __('Tải ảnh chậm cho ảnh trong bài viết', 'laca'))
+						->set_width(35),
+					Field::make('html', 'enable_optimize_content_images_desc')
+						->set_width(65)
+						->set_html('<span class="dashicons dashicons-lightbulb" style="color:var(--laca-accent); margin-right:4px;"></span> ' . esc_html__('Tự động tải chậm (lazy load) toàn bộ hình ảnh nằm trong nội dung bài viết.', 'laca')),
 
-				Field::make('checkbox', 'enable_optimize_images', __('Tối ưu hóa thuộc tính ảnh', 'laca'))
-					->set_width(30),
-				Field::make('html', 'enable_optimize_images_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>✅ Nên bật — tốt cho SEO và performance</strong><br>
-						<b>Tác dụng:</b> Tự động thêm <code>loading="lazy"</code> và điền thuộc tính <code>alt</code> (nếu trống) vào ảnh qua hàm <code>wp_get_attachment_image()</code>.<br>
-						<b>Nên bật khi:</b> Site nhiều ảnh. Giúp cải thiện điểm PageSpeed (Lighthouse).<br>
-						<b>Rủi ro:</b> Ảnh hero/banner đầu trang (<em>above the fold</em>) nếu cũng đi qua hàm này sẽ bị lazy load → có thể làm chậm LCP. Dùng <code>loading="eager"</code> trực tiếp cho ảnh hero.
-					</div>'),
+					Field::make('checkbox', 'enable_register_service_worker', __('Bật Service Worker Cache', 'laca'))
+						->set_width(35),
+					Field::make('html', 'enable_register_service_worker_desc')
+						->set_width(65)
+						->set_html('<span class="dashicons dashicons-lightbulb" style="color:var(--laca-accent); margin-right:4px;"></span> ' . esc_html__('Lưu bộ nhớ đệm offline qua trình duyệt giúp tải lại trang cực nhanh. Yêu cầu website hoạt động trên giao thức HTTPS.', 'laca')),
 
-				Field::make('checkbox', 'enable_optimize_content_images', __('Tối ưu hóa ảnh trong nội dung bài viết', 'laca'))
-					->set_width(30),
-				Field::make('html', 'enable_optimize_content_images_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>✅ Nên bật với blog nhiều ảnh</strong><br>
-						<b>Tác dụng:</b> Tự động thêm <code>loading="lazy"</code> vào tất cả thẻ <code>&lt;img&gt;</code> bên trong nội dung bài viết (filter <code>the_content</code>).<br>
-						<b>Nên bật khi:</b> Bài viết có nhiều ảnh. Trình duyệt hiện đại hỗ trợ 100%, giảm thời gian tải trang đáng kể.<br>
-						<b>Rủi ro:</b> Rất thấp. Ảnh đầu bài viết cũng bị lazy — có thể chấp nhận vì ảnh nội dung thường below the fold.
-					</div>'),
+					// Tối ưu hóa Database & Bộ nhớ
+					Field::make('separator', 'title_database_memory_optimization', __('Tối ưu hóa Database & Bộ nhớ', 'laca')),
+					Field::make('checkbox', 'enable_optimize_database_queries', __('Tối ưu hóa truy vấn Database', 'laca'))
+						->set_width(35),
+					Field::make('html', 'enable_optimize_database_queries_desc')
+						->set_width(65)
+						->set_html('<span class="dashicons dashicons-lightbulb" style="color:var(--laca-accent); margin-right:4px;"></span> ' . esc_html__('Tự động giãn cách thời gian lưu nháp tự động và tối ưu hoá bộ đệm đối tượng (object cache).', 'laca')),
 
-				Field::make('checkbox', 'enable_register_service_worker', __('Bật Service Worker cache', 'laca'))
-					->set_width(30),
-				Field::make('html', 'enable_register_service_worker_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#fff3cd;border-left:3px solid #ffc107;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>⚠️ Chỉ bật khi file <code>dist/sw.js</code> đã tồn tại</strong><br>
-						<b>Tác dụng:</b> Đăng ký Service Worker để cache tài nguyên tĩnh (CSS, JS, ảnh) trên trình duyệt. Trang load nhanh hơn từ lần thứ 2, hoạt động offline cơ bản.<br>
-						<b>Nên bật khi:</b> Đã có file <code>/dist/sw.js</code> trong theme và muốn PWA-like experience.<br>
-						<b>Rủi ro:</b> Nếu thiếu <code>sw.js</code> → lỗi console (không crash). Cache cũ có thể gây khó update CSS/JS sau deploy nếu không có cache busting.
-					</div>'),
+					Field::make('checkbox', 'enable_optimize_sql_queries', __('Ghi nhật ký (log) truy vấn SQL chậm', 'laca'))
+						->set_width(35),
+					Field::make('html', 'enable_optimize_sql_queries_desc')
+						->set_width(65)
+						->set_html('<span class="dashicons dashicons-lightbulb" style="color:var(--laca-accent); margin-right:4px;"></span> ' . esc_html__('Ghi nhận các truy vấn cơ sở dữ liệu chạy lâu bất thường vào log để hỗ trợ chẩn đoán hiệu năng.', 'laca')),
 
-				// ── Mobile UX ────────────────────────────────────────────────────────
-				Field::make('separator', 'title_mobile_ux', __('Mobile UX', 'laca')),
+					Field::make('checkbox', 'enable_optimize_memory_usage', __('Tối ưu hóa phân bổ bộ nhớ PHP', 'laca'))
+						->set_width(35),
+					Field::make('html', 'enable_optimize_memory_usage_desc')
+						->set_width(65)
+						->set_html('<span class="dashicons dashicons-lightbulb" style="color:var(--laca-accent); margin-right:4px;"></span> ' . esc_html__('Tự động kích hoạt bộ thu gom rác (garbage collection) và tối ưu hoá giới hạn bộ nhớ PHP khi xử lý dữ liệu lớn.', 'laca')),
 
-				Field::make('checkbox', 'enable_mobile_sticky_cta', __('Bật thanh CTA liên hệ trên mobile', 'laca'))
-					->set_default_value(true)
-					->set_width(30),
-				Field::make('html', 'enable_mobile_sticky_cta_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>' . esc_html__('✅ Mặc định bật', 'laca') . '</strong><br>
-						<b>' . esc_html__('Tác dụng:', 'laca') . '</b> ' . esc_html__('Hiển thị thanh gọi nhanh / Zalo / Báo giá cố định ở chân trang trên thiết bị di động (< 768px). Tự ẩn khi cuộn xuống và hiện khi cuộn lên.', 'laca') . '<br>
-						<b>' . esc_html__('Nên tắt khi:', 'laca') . '</b> ' . esc_html__('Muốn tối ưu không gian màn hình mobile hoặc landing page đã có CTA riêng.', 'laca') . '
-					</div>'),
-			])
-			// ── Security Tab ──────────────────────────────────────────────────────
-			->add_tab(__('Security', 'laca'), [
-				Field::make('separator', 'title_laca_api_security', __('Bảo mật kết nối Hub ↔ Client (HMAC & API)', 'laca')),
+					Field::make('checkbox', 'enable_cleanup_memory', __('Giải phóng bộ nhớ cuối request', 'laca'))
+						->set_width(35),
+					Field::make('html', 'enable_cleanup_memory_desc')
+						->set_width(65)
+						->set_html('<span class="dashicons dashicons-lightbulb" style="color:var(--laca-accent); margin-right:4px;"></span> ' . esc_html__('Giải phóng các biến tạm cuối chu trình tạo trang để giảm thiểu tối đa hiện tượng rò rỉ bộ nhớ (memory leak).', 'laca')),
 
-				Field::make('checkbox', 'laca_allow_legacy_auth', __('Cho phép xác thực Legacy (secret_key không ký)', 'laca'))
-					->set_default_value(true)
-					->set_width(30),
-				Field::make('html', 'laca_allow_legacy_auth_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#fff3cd;border-left:3px solid #ffc107;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>' . esc_html__('⚠️ Thời gian đệm nâng cấp: 30 ngày', 'laca') . '</strong><br>
-						<b>' . esc_html__('Tác dụng:', 'laca') . '</b> ' . esc_html__('Cho phép các website khách chưa nâng cấp tiếp tục gửi log và lấy catalog qua secret_key cũ (không có chữ ký HMAC). Khi tắt, tất cả request không có chữ ký HMAC hợp lệ sẽ bị từ chối (401).', 'laca') . '<br>
-						<b>' . esc_html__('Khuyến nghị:', 'laca') . '</b> ' . esc_html__('Giữ bật trong giai đoạn nâng cấp theme client, sau đó tắt đi để kích hoạt bảo mật tuyệt đối chống giả mạo và replay attack.', 'laca') . '
-					</div>'),
+					Field::make('checkbox', 'enable_performance_monitoring', __('Theo dõi hiệu năng thực thi (Server-Timing)', 'laca'))
+						->set_width(35),
+					Field::make('html', 'enable_performance_monitoring_desc')
+						->set_width(65)
+						->set_html('<span class="dashicons dashicons-lightbulb" style="color:var(--laca-accent); margin-right:4px;"></span> ' . esc_html__('Đo lường thời gian thực thi PHP và truy vấn DB, xuất ra HTTP header Server-Timing để dễ kiểm tra.', 'laca')),
 
-				Field::make('text', 'laca_backup_max_age_days', __('Số ngày tối đa trước khi cảnh báo backup quá hạn', 'laca'))
-					->set_attribute('type', 'number')
-					->set_attribute('min', '1')
-					->set_attribute('max', '90')
-					->set_default_value('7')
-					->set_width(30),
-				Field::make('html', 'laca_backup_max_age_days_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>' . esc_html__('Mặc định: 7 ngày', 'laca') . '</strong><br>
-						<b>' . esc_html__('Tác dụng:', 'laca') . '</b> ' . esc_html__('Nếu website khách có thời điểm backup gần nhất cách hiện tại vượt quá số ngày này, hoặc trạng thái backup là chưa rõ (unknown) quá 7 ngày, hệ thống sẽ tự động tạo cảnh báo và gửi thông báo (tối đa 1 lần/ngày/site).', 'laca') . '
-					</div>'),
+					Field::make('select', 'revision_limit', __('Số bản sửa (revision) giữ lại', 'laca'))
+						->set_options([
+							''   => __('Mặc định WordPress', 'laca'),
+							'0'  => __('Không lưu', 'laca'),
+							'3'  => '3',
+							'5'  => '5',
+							'10' => '10',
+							'20' => '20',
+						])
+						->set_default_value('')
+						->set_width(50),
 
-				Field::make('separator', 'title_enhance_website_security', __('Tắt tính năng có nguy cơ bảo mật', 'laca')),
+					Field::make('select', 'heartbeat_mode', __('Kiểm soát WordPress Heartbeat', 'laca'))
+						->set_options([
+							''            => __('Mặc định (15–60 giây)', 'laca'),
+							'slow'        => __('Chậm (60 giây)', 'laca'),
+							'editor_only' => __('Chỉ trong trình soạn bài', 'laca'),
+						])
+						->set_default_value('')
+						->set_width(50),
 
-				Field::make('checkbox', 'disable_rest_api', __('Disable REST API (cho khách)', 'laca'))
-					->set_width(30),
-				Field::make('html', 'disable_rest_api_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>⚠️ Kiểm tra plugin trước khi bật</strong><br>
-						<b>Tác dụng:</b> Chặn toàn bộ REST API (<code>/wp-json/</code>) với người dùng <em>chưa đăng nhập</em>. Trả về lỗi 401.<br>
-						<b>Nên bật khi:</b> Site không cần REST API công khai (không dùng headless, không có app mobile).<br>
-						<b>Rủi ro:</b> WooCommerce, Gutenberg, Contact Form 7 và nhiều plugin dùng REST API ngay cả khi chưa đăng nhập. Kiểm tra kỹ trên staging trước.
-					</div>'),
+					Field::make('checkbox', 'enable_post_view_counter', __('Đếm lượt xem bài viết', 'laca'))
+						->set_width(35),
+					Field::make('html', 'enable_post_view_counter_desc')
+						->set_width(65)
+						->set_html('<span class="dashicons dashicons-lightbulb" style="color:var(--laca-accent); margin-right:4px;"></span> ' . esc_html__('Đếm lượt xem bất đồng bộ bằng Beacon/REST API và gom bộ đệm ghi theo lô mỗi 5 phút, không làm chậm trang và hoàn toàn tương thích bộ nhớ đệm (cache).', 'laca')),
+				]);
 
-				Field::make('checkbox', 'disable_xml_rpc', __('Disable XML-RPC', 'laca'))
-					->set_width(30),
-				Field::make('html', 'disable_xml_rpc_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#edfaef;border-left:3px solid #28a745;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>✅ Nên bật luôn — vector tấn công phổ biến</strong><br>
-						<b>Tác dụng:</b> Tắt hoàn toàn XML-RPC (<code>/xmlrpc.php</code>) — giao thức cũ cho phép quản lý WP từ xa.<br>
-						<b>Nên bật khi:</b> Không dùng WordPress Mobile App, Jetpack, hay công cụ quản lý từ xa qua XML-RPC.<br>
-						<b>Rủi ro:</b> Jetpack và WordPress App sẽ ngừng hoạt động. Ngoài ra <strong>không có rủi ro</strong> — tắt giúp ngăn brute force và DDoS amplification.
-					</div>'),
+			// LacaDev Block Sync — chỉ site khách (hub không có BlockSyncReceiver → mở trang sẽ fatal)
+			if (class_exists(\App\Settings\BlockSyncReceiver::class)) {
+			Container::make('theme_options', __('Đồng bộ Block', 'laca'))
+				->set_page_parent($options)
+				->set_page_file(__('laca-block-sync', 'laca'))
+				->add_fields([
+					Field::make('separator', 'sep_block_sync_heading', __('Block Sync — Nhận blocks từ lacadev.com', 'laca')),
 
-				Field::make('checkbox', 'disable_wp_embed', __('Disable WP-Embed (oEmbed)', 'laca'))
-					->set_width(30),
-				Field::make('html', 'disable_wp_embed_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>✅ Nên bật nếu không cần nhúng site ra ngoài</strong><br>
-						<b>Tác dụng:</b> Tắt tính năng cho phép người khác nhúng bài viết của bạn vào site họ qua oEmbed. Xóa script <code>wp-embed.js</code> (~2KB) và discovery links.<br>
-						<b>Nên bật khi:</b> Không muốn nội dung site bị nhúng sang site khác.<br>
-						<b>Rủi ro:</b> Không ảnh hưởng việc bạn nhúng YouTube/Twitter/Vimeo vào bài viết. Chỉ tắt chiều "người khác nhúng site bạn".
-					</div>'),
+					Field::make('html', 'block_sync_api_key_display', __('API Key', 'laca'))
+						->set_html(static function () {
+							$key = \App\Settings\BlockSyncReceiver::ensureApiKey();
+							return '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:12px 16px;margin:8px 0">'
+								. '<p style="margin:0 0 6px;font-weight:600;color:#166534">🔑 API Key của site này:</p>'
+								. '<code style="font-size:13px;word-break:break-all;background:#dcfce7;padding:6px 10px;border-radius:4px;display:block">' . esc_html($key) . '</code>'
+								. '<p style="margin:8px 0 0;font-size:12px;color:#4b5563">Copy key này và dán vào tab <strong>🧩 Block Sync</strong> trong project trên <strong>lacadev.com</strong>.</p>'
+								. '</div>';
+						}),
 
-				Field::make('checkbox', 'disable_x_pingback', __('Disable X-Pingback header', 'laca'))
-					->set_width(30),
-				Field::make('html', 'disable_x_pingback_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#edfaef;border-left:3px solid #28a745;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>✅ Nên bật luôn</strong><br>
-						<b>Tác dụng:</b> Xóa header <code>X-Pingback</code> khỏi response HTTP — header này tiết lộ đây là WordPress và có thể bị lợi dụng để khuếch đại DDoS.<br>
-						<b>Nên bật khi:</b> Luôn luôn bật. Không ảnh hưởng bất kỳ chức năng nào của site.<br>
-						<b>Rủi ro:</b> Không có.
-					</div>'),
+					Field::make('html', 'block_sync_endpoint_info', '')
+						->set_html(static function () {
+							$endpoint = rest_url('lacadev/v1/sync-block');
+							return '<div style="background:#f4f4f5;border:1px solid #e4e4e7;border-radius:6px;padding:12px 16px;margin:8px 0">'
+								. '<p style="margin:0 0 6px;font-weight:600;color:#18181b">🌐 Endpoint URL của site này:</p>'
+								. '<code style="font-size:13px;word-break:break-all;background:#e4e4e7;color:#18181b;padding:6px 10px;border-radius:4px;display:block">' . esc_html($endpoint) . '</code>'
+								. '<p style="margin:8px 0 0;font-size:12px;color:#71717a">Dán URL này vào trường <strong>Sync Endpoint URL</strong> trong project tương ứng trên lacadev.com.</p>'
+								. '</div>';
+						}),
 
-				Field::make('separator', 'title_wordpress_hardening', __('WordPress Hardening', 'laca')),
+					Field::make('separator', 'sep_block_catalog_heading', __('Block Catalog — chỉ dùng trên clients.lacadev.com', 'laca')),
 
-				Field::make('checkbox', 'enable_remove_wordpress_bloat', __('Ẩn thông tin WordPress (Bloat Removal)', 'laca'))
-					->set_width(30),
-				Field::make('html', 'enable_remove_wordpress_bloat_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#edfaef;border-left:3px solid #28a745;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>✅ Nên bật luôn — tốt cả bảo mật lẫn performance</strong><br>
-						<b>Tác dụng:</b> Xóa các tag lộ thông tin WordPress khỏi <code>&lt;head&gt;</code>: generator tag (phiên bản WP), RSD link, wlwmanifest, REST API link header, adjacent posts links, oEmbed discovery.<br>
-						<b>Nên bật khi:</b> Mọi production site. Ẩn phiên bản WP giúp giảm nguy cơ bị target bởi exploit tự động.<br>
-						<b>Rủi ro:</b> Không có. Các tính năng chức năng không bị ảnh hưởng.
-					</div>'),
+					Field::make('html', 'block_catalog_key_display', __('Catalog Key', 'laca'))
+						->set_html(static function () {
+							$key = \App\Settings\BlockCatalogProvider::ensureApiKey();
+							return '<div style="background:#f4f4f5;border:1px solid #e4e4e7;border-radius:6px;padding:12px 16px;margin:8px 0">'
+								. '<p style="margin:0 0 6px;font-weight:600;color:#18181b">🔑 Catalog Key của site này:</p>'
+								. '<code style="font-size:13px;word-break:break-all;background:#e4e4e7;color:#18181b;padding:6px 10px;border-radius:4px;display:block">' . esc_html($key) . '</code>'
+								. '<p style="margin:8px 0 0;font-size:12px;color:#71717a">Chỉ cấu hình trên <strong>lacadev.com</strong> (hub) để hub đọc danh mục block từ <strong>chính site clients.lacadev.com này</strong> — không liên quan tới project của khách hàng.</p>'
+								. '</div>';
+						}),
 
-				Field::make('separator', 'title_performance_server', __('Tối ưu Server & Database', 'laca')),
+					Field::make('html', 'block_catalog_endpoint_info', '')
+						->set_html(static function () {
+							$endpoint = rest_url('lacadev/v1/blocks-catalog');
+							return '<div style="background:#f4f4f5;border:1px solid #e4e4e7;border-radius:6px;padding:12px 16px;margin:8px 0">'
+								. '<p style="margin:0 0 6px;font-weight:600;color:#18181b">🌐 Catalog Endpoint URL:</p>'
+								. '<code style="font-size:13px;word-break:break-all;background:#e4e4e7;color:#18181b;padding:6px 10px;border-radius:4px;display:block">' . esc_html($endpoint) . '</code>'
+								. '</div>';
+						}),
+				]);
+			}
 
-				Field::make('checkbox', 'enable_optimize_database_queries', __('Giới hạn Post Revision & Autosave', 'laca'))
-					->set_width(30),
-				Field::make('html', 'enable_optimize_database_queries_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>✅ Nên bật — tiết kiệm DB đáng kể theo thời gian</strong><br>
-						<b>Tác dụng:</b> Giới hạn lịch sử bài viết tối đa <strong>3 revision</strong> (thay vì vô hạn). Tăng khoảng thời gian autosave lên <strong>5 phút</strong> (thay vì 60 giây).<br>
-						<b>Nên bật khi:</b> Site có nhiều editor/content. Bảng <code>wp_posts</code> sẽ không phình to theo thời gian.<br>
-						<b>Rủi ro:</b> Chỉ giữ 3 bản gần nhất — không thể khôi phục về revision cũ hơn. Với bài viết quan trọng nên backup thủ công.
-					</div>'),
+			// Tracker Settings — chỉ site khách (hub không có LacaDevTrackerClient)
+			if (class_exists(\App\Settings\LacaDevTrackerClient::class)) {
+			Container::make('theme_options', __('Site Tracker', 'laca'))
+				->set_page_parent($options)
+				->set_page_file(__('laca-tracker', 'laca'))
+				->add_fields([
+					Field::make('html', 'tracker_info', '')
+						->set_html(
+							'<div style="background:#f4f4f5;border:1px solid #e4e4e7;border-radius:6px;padding:14px 16px;margin:8px 0">'
+							. '<p style="margin:0 0 8px;font-weight:600;color:#18181b">📡 LacaDev Tracker</p>'
+							. '<p style="margin:0;font-size:13px;color:#71717a">Gửi log tự động (cập nhật plugin/theme/core, xóa plugin, phát hiện file PHP lạ) về hệ thống quản lý dự án lacadev.com. '
+							. 'Lấy <strong>Endpoint URL</strong> và <strong>Secret Key</strong> từ trang chi tiết project tương ứng trên lacadev.com.</p>'
+							. '</div>'
+						),
 
-				Field::make('checkbox', 'enable_optimize_memory_usage', __('Tối ưu PHP Memory', 'laca'))
-					->set_width(30),
-				Field::make('html', 'enable_optimize_memory_usage_desc')
-					->set_width(70)
-					->set_html('<div style="padding:8px 12px;background:#f0f6fc;border-left:3px solid #0073aa;border-radius:3px;font-size:13px;line-height:1.7">
-						<strong>⚠️ Chỉ bật khi gặp lỗi memory</strong><br>
-						<b>Tác dụng:</b> Cố gắng tăng PHP memory limit lên <strong>256MB</strong> qua <code>ini_set</code> và bật PHP garbage collection (<code>gc_enable()</code>).<br>
-						<b>Nên bật khi:</b> Gặp lỗi <em>"Allowed memory size exhausted"</em> hoặc site có plugin nặng (WooCommerce, WPML...).<br>
-						<b>Rủi ro:</b> <code>ini_set</code> có thể bị hosting chặn (shared hosting). Nếu hosting đã cấu hình đủ memory thì tùy chọn này không có tác dụng gì thêm.
-					</div>'),
-			]);
+					Field::make('html', 'tracker_status_html', '')
+						->set_html(static function () {
+							$configured = \App\Settings\LacaDevTrackerClient::isConfigured();
+							if ($configured) {
+								return '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:10px 14px;margin:8px 0;color:#166534;font-weight:600">✅ Tracker đã được cấu hình</div>';
+							}
+							return '<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:10px 14px;margin:8px 0;color:#c2410c;font-weight:600">⚠️ Chưa cấu hình — nhập Endpoint và Secret Key bên dưới để kích hoạt</div>';
+						}),
+
+					Field::make('separator', 'sep_tracker_fast_config', __('⚡ Dán cấu hình nhanh từ Hub (Laca CMS)', 'laca')),
+
+					Field::make('textarea', 'laca_client_config_paste', __('Dán cấu hình JSON từ Hub', 'laca'))
+						->set_rows(4)
+						->set_attribute('placeholder', '{"hub_url": "...", "endpoint": "...", "project_id": "...", "keys": { ... }}')
+						->set_help_text('Dán toàn bộ mã JSON cấu hình sao chép từ Project Workspace trên Hub. Hệ thống sẽ tự động bóc tách và điền vào các trường bên dưới.'),
+
+					Field::make('separator', 'sep_tracker', __('Chi tiết kết nối & Khóa bảo mật (HMAC)', 'laca')),
+
+					Field::make('text', 'laca_tracker_endpoint', __('Tracker Endpoint URL', 'laca'))
+						->set_width(60)
+						->set_attribute('placeholder', 'https://lacadev.com/wp-json/laca/v1/tracker/log')
+						->set_help_text('REST URL của lacadev CMS. Tự động điền khi dán JSON cấu hình.'),
+
+					Field::make('text', 'laca_project_id', __('Public Project ID', 'laca'))
+						->set_width(40)
+						->set_attribute('placeholder', 'prj_xxxxxxx')
+						->set_help_text('Mã định danh dự án trên Hub (truyền trong header X-Laca-Project).'),
+
+					Field::make('text', 'laca_key_tracker', __('Tracker Key', 'laca'))
+						->set_width(33.33)
+						->set_attribute('type', 'password')
+						->set_attribute('placeholder', 'Key ký HMAC gửi log')
+						->set_help_text('Dùng để ký chữ ký HMAC khi gửi log và heartbeat lên Hub.'),
+
+					Field::make('text', 'laca_key_catalog', __('Block Catalog Key', 'laca'))
+						->set_width(33.33)
+						->set_attribute('type', 'password')
+						->set_attribute('placeholder', 'Key Block Marketplace')
+						->set_help_text('Dùng để xác thực tải block từ Hub hoặc nhận sync block.'),
+
+					Field::make('text', 'laca_key_remote', __('Remote Update Key', 'laca'))
+						->set_width(33.33)
+						->set_attribute('type', 'password')
+						->set_attribute('placeholder', 'Key nhận lệnh cập nhật từ xa')
+						->set_help_text('Dùng để xác thực lệnh cập nhật plugin/theme/core gửi từ Hub.'),
+
+					Field::make('text', 'laca_tracker_secret_key', __('Secret Key dự phòng (Legacy)', 'laca'))
+						->set_width(100)
+						->set_attribute('placeholder', 'sk_xxxxxxxx')
+						->set_attribute('type', 'password')
+						->set_help_text('Secret key cũ dự phòng nếu không dùng chữ ký HMAC.'),
+
+					Field::make('separator', 'sep_tracker_deep_fim', __('Kiểm tra sâu (nâng cao)', 'laca')),
+
+					Field::make('checkbox', 'laca_tracker_deep_fim', __('Bật kiểm tra sâu mã nguồn (FIM)', 'laca'))
+						->set_width(30),
+					Field::make('html', 'tracker_deep_fim_desc')
+						->set_width(70)
+						->set_html('<i class="fa-regular fa-lightbulb-on"></i> So sánh md5 toàn bộ file .php/.js/.json/.htaccess/.sh trong theme và plugin (không quét <code>uploads</code>) mỗi ngày, phát hiện được cả nội dung bị sửa mà không đổi thời gian chỉnh sửa. Nặng hơn kiểm tra mặc định — chỉ bật nếu cần giám sát chặt.'),
+
+					Field::make('html', 'tracker_save_note', '')
+						->set_html(
+							'<p style="font-size:12px;color:#6b7280;margin-top:4px">'
+							. 'Sau khi lưu, tracker sẽ tự động gửi log khi có cập nhật plugin/theme/core hoặc phát hiện file PHP lạ trong <code>wp-content/uploads</code>.'
+							. '</p>'
+						),
+
+					Field::make('separator', 'sep_tracker_real_cron', __('Cron hệ thống thật (site ít traffic)', 'laca')),
+
+					Field::make('html', 'tracker_cron_url_desc')
+						->set_html('<i class="fa-regular fa-lightbulb-on"></i> WordPress mặc định chỉ chạy cron khi có người truy cập site (pseudo-cron). Site ít traffic nên thêm URL dưới đây vào Cron Jobs của hosting, chạy mỗi 15 phút, để tracker luôn chạy đều dù không có traffic.'),
+
+					Field::make('html', 'tracker_cron_url')
+						->set_html(static function () {
+							$url = esc_url(home_url('wp-cron.php?doing_wp_cron'));
+							return '<div class="laca-form-group laca-copyable-input"><label>' . esc_html__('Cron URL', 'laca') . '</label><input type="text" readonly value="' . $url . '"></div>';
+						}),
+				]);
+			}
 
 			// Google reCAPTCHA
+
 			Container::make('theme_options', __('Google reCAPTCHA', 'laca'))
 				->set_page_parent($options)
 				->set_page_file(__('laca-recaptcha', 'laca'))
 				->add_fields([
 					Field::make('html', 'recaptcha_info', '')
 						->set_html('<div class="carbon-field-description">Bảo vệ website khỏi spam/bot bằng Google reCAPTCHA v3. <a href="https://www.google.com/recaptcha/admin/create" target="_blank">Đăng ký Key tại đây</a>.</div>'),
-					
+
 					Field::make('text', 'recaptcha_site_key', __('Site Key', 'laca'))
 						->set_width(50)
 						->set_attribute('placeholder', '6Le...'),
-						
+
 					Field::make('text', 'recaptcha_secret_key', __('Secret Key', 'laca'))
 						->set_width(50)
 						->set_attribute('type', 'password')
 						->set_attribute('placeholder', '6Le...'),
-						
+
 					Field::make('separator', 'recaptcha_separator', __('Cấu hình hiển thị', 'laca')),
-					
+
 					Field::make('checkbox', 'enable_recaptcha_login', __('Kích hoạt cho Đăng nhập', 'laca'))
 						->set_width(25)
 						->set_default_value(true),
-						
-					Field::make('checkbox', 'enable_recaptcha_register', __('Kích hoạt cho Đăng ký', 'laca')),
-					Field::make('checkbox', 'enable_recaptcha_comment', __('Kích hoạt cho Bình luận', 'laca')),
-					Field::make('checkbox', 'enable_recaptcha_contact', __('Kích hoạt cho Form Liên Hệ', 'laca'))
+
+					Field::make('checkbox', 'enable_recaptcha_register', __('Kích hoạt cho Đăng ký', 'laca'))
 						->set_width(25)
 						->set_default_value(true),
-						
-					Field::make('text', 'recaptcha_score', __('Điểm tối thiểu (0.0 - 1.0)', 'laca'))
+
+					Field::make('checkbox', 'enable_recaptcha_comment', __('Kích hoạt cho Bình luận', 'laca'))
 						->set_width(25)
+						->set_default_value(true),
+
+					Field::make('checkbox', 'enable_recaptcha_contact', __('Kích hoạt cho Form liên hệ', 'laca'))
+						->set_width(25)
+						->set_default_value(true)
+						->set_help_text('Form tạo ở Laca Admin → Contact Form (shortcode [laca_contact_form]).'),
+
+					Field::make('text', 'recaptcha_score', __('Điểm tối thiểu (0.0 - 1.0)', 'laca'))
+						->set_width(50)
 						->set_default_value('0.5')
 						->set_attribute('type', 'number')
 						->set_attribute('step', '0.1')
@@ -1273,23 +1424,10 @@ class AdminSettings
 					Field::make('checkbox', 'enable_zalo_notify', __('Bật thông báo Zalo', 'laca')),
 
 					Field::make('text', 'zalo_oa_access_token', __('Access Token', 'laca'))
-						->set_width(50)
-						->set_help_text('Tự động được làm mới khi gần hết hạn — không cần cập nhật tay nếu đã điền App ID/App Secret bên dưới.'),
+						->set_width(50),
 
 					Field::make('text', 'zalo_oa_refresh_token', __('Refresh Token', 'laca'))
-						->set_width(50)
-						->set_help_text('Zalo cấp token mới mỗi lần refresh — hệ thống tự ghi đè giá trị này, không cần sửa tay.'),
-
-					Field::make('separator', 'sep_zalo_app', __('Zalo App (để tự động refresh token)', 'laca')),
-
-					Field::make('text', 'zalo_app_id', __('App ID', 'laca'))
-						->set_width(50)
-						->set_help_text('Lấy từ Zalo Developers (developers.zalo.me) — App đã đăng ký OA này, KHÁC với Access/Refresh Token của OA phía trên.'),
-
-					Field::make('text', 'zalo_app_secret', __('App Secret Key', 'laca'))
-						->set_width(50)
-						->set_attribute('type', 'password')
-						->set_help_text('Secret Key của App (không phải của OA). Bắt buộc để hệ thống tự refresh Access Token khi hết hạn (~1h/lần).'),
+						->set_width(50),
 
 					Field::make('text', 'zalo_default_receiver', __('Zalo User ID nhận mặc định', 'laca'))
 						->set_help_text('Nhập danh sách Zalo User ID (cách nhau bằng dấu phẩy) của Admin để nhận các cảnh báo quan trọng.'),
@@ -1390,9 +1528,11 @@ class AdminSettings
 							'discord'  => 'Discord',
 						])
 						->set_default_value(['email', 'zalo', 'telegram', 'slack', 'discord']),
-				]);
+]);
 
-			// Block Catalog Source — nơi hub lấy danh mục block để cho site
+			
+			if (class_exists('\\App\\Settings\\LacaTools\\BlockCatalogHub')) {
+				// Block Catalog Source — nơi hub lấy danh mục block để cho site
 			// khách hàng duyệt/yêu cầu đồng bộ (khác với sync_api_key/
 			// sync_endpoint_url theo từng Project — đây là 1 nguồn DUY NHẤT
 			// dùng chung cho toàn hub: clients.lacadev.com).
@@ -1420,6 +1560,11 @@ class AdminSettings
 						->set_attribute('type', 'password')
 						->set_help_text('Catalog Key hiển thị ở trang Laca Theme → 🧩 LacaDev trên clients.lacadev.com.'),
 
+					Field::make('checkbox', 'laca_allow_legacy_auth', __('Cho phép xác thực legacy (key tĩnh)', 'laca'))
+						->set_option_value('yes')
+						->set_default_value(true)
+						->set_help_text(__('Tắt khi Fleet cho thấy mọi site đều \'signed\'.', 'laca')),
+
 					Field::make('html', 'block_catalog_refresh', '')
 						->set_html(static function () {
 							$nonce = wp_create_nonce('laca_refresh_block_catalog');
@@ -1445,56 +1590,223 @@ class AdminSettings
 								</script>';
 						}),
 				]);
+			}
 
-            Container::make('theme_options', __('Login Socials', 'laca'))
-            ->set_page_parent($options)
-            ->set_page_file(__('laca-login-socials', 'laca'))
-            ->add_tab(__('Google', 'laca'), [
-                Field::make('html', 'login_socials_google_info', '')
-                    ->set_html(
-                        '<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:14px 16px;margin:8px 0">'
-                        . '<p style="margin:0 0 8px;font-weight:600;color:#0369a1">🔧 Đăng nhập bằng Google</p>'
-                        . '<p style="margin:0;font-size:13px;color:#374151">Cấu hình này cho phép người dùng đăng nhập vào site bằng tài khoản Google thay vì tài khoản WordPress. '
-                        . 'Bật công tắc bên dưới, sau đó điền <strong>Client ID</strong> và <strong>Client Secret</strong> lấy từ Google Cloud Console, '
-                        . 'và dán <strong>Redirect URI</strong> (đã điền sẵn) vào phần cấu hình OAuth của Google.</p>'
-                        . '</div>'
-                    ),
-                Field::make('checkbox', 'enable_login_google', __('Bật Login Google', 'laca')),
-                Field::make('text', 'google_client_id', __('Client ID', 'laca'))
-                    ->set_width(50),
-                Field::make('text', 'google_client_secret', __('Client Secret', 'laca'))
-                    ->set_width(50),
-                Field::make('text', 'google_redirect_uri', __('Redirect URI', 'laca'))
-                    ->set_attribute('readOnly', true)
-                    ->set_default_value(home_url('/wp-admin/admin-ajax.php?action=social_login_callback&driver=google')),
-            ]);
+			Container::make('theme_options', __('Login Socials', 'laca'))
+				->set_page_parent($options)
+				->set_page_file(__('laca-login-socials', 'laca'))
+				->add_tab(__('Google', 'laca'), [
+					Field::make('html', 'login_socials_google_info', '')
+						->set_html('<div style="background:#f4f4f5;border:1px solid #e4e4e7;border-radius:6px;padding:14px 16px;margin:8px 0"><p style="margin:0 0 8px;font-weight:600;color:#18181b">🔧 Đăng nhập bằng Google</p><p style="margin:0;font-size:13px;color:#71717a">Cho phép người dùng đăng nhập vào site bằng tài khoản Google thay vì username/mật khẩu. Bạn cần tạo <strong>Client ID</strong> và <strong>Client Secret</strong> trên Google Cloud Console, dán vào bên dưới, rồi cấu hình <strong>Redirect URI</strong> (đã điền sẵn) trong đó.</p></div>'),
 
-            // Workspace / Dashboard Widgets Settings
-            Container::make('theme_options', __('Quản trị', 'laca'))
-                ->set_page_parent($options)
-                ->set_page_file(__('laca-management-settings', 'laca'))
-                ->add_tab(__('Dashboard Widget', 'laca'), [
-                    Field::make('html', 'dashboard_widget_desc')
-                        ->set_html('<div class="carbon-field-description">Cấu hình hiển thị Widget <b>"Tổng hợp Nội dung"</b> trên màn hình Dashboard chính.</div>'),
-                    
-                    Field::make('multiselect', 'dashboard_widget_post_types', __('Các Post Type hiển thị', 'laca'))
-                        ->set_options(function() {
-                            $types = get_post_types(['public' => true, 'show_in_menu' => true], 'objects');
-                            $options = [];
-                            foreach ($types as $pt) {
-                                if (in_array($pt->name, ['attachment', 'wp_block', 'wp_template', 'wp_template_part'])) continue;
-                                $options[$pt->name] = $pt->label;
-                            }
-                            return $options;
-                        })
-                        ->set_help_text(__('Để trống để tự động hiển thị tất cả các loại nội dung quan trọng (Posts, Services, Projects, Properties...).', 'laca'))
-                        ->set_default_value(['post']),
+					Field::make('checkbox', 'enable_login_google', __('Bật Login Google', 'laca')),
+					Field::make('text', 'google_client_id', __('Client ID', 'laca'))
+						->set_width(50),
+					Field::make('text', 'google_client_secret', __('Client Secret', 'laca'))
+						->set_width(50),
+					Field::make('text', 'google_redirect_uri', __('Redirect URI', 'laca'))
+						->set_default_value(admin_url('admin-ajax.php?action=google_admin_callback')),
 
-                    Field::make('text', 'dashboard_widget_limit', __('Số lượng bài hiển thị', 'laca'))
-                        ->set_attribute('type', 'number')
-                        ->set_default_value('5')
-                        ->set_width(50),
-                ]);
-        });
+					Field::make('html', 'google_login_guide', '')
+						->set_html(function () {
+							$redirect_uri = admin_url('admin-ajax.php?action=google_admin_callback');
+							$origin_uri = home_url();
+
+							return '
+							<div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;padding:20px 24px;margin:20px 0;box-shadow:0 1px 3px rgba(0,0,0,0.05);font-size:13px;line-height:1.6;color:#334155">
+								<h3 style="margin:0 0 16px;font-size:15px;color:#0f172a;display:flex;align-items:center;gap:8px">
+									📘 Hướng dẫn từng bước cấu hình Google Login
+								</h3>
+
+								<div style="display:grid;gap:14px">
+									<div style="background:#f8fafc;border-left:4px solid #71717a;padding:12px 16px;border-radius:4px">
+										<p style="margin:0 0 6px;font-weight:600;color:#27272a">Bước 1: Tạo Project trên Google Cloud</p>
+										<p style="margin:0">Truy cập <a href="https://console.cloud.google.com/" target="_blank" style="color:#27272a;text-decoration:underline">Google Cloud Console</a> ➔ Bấm chọn danh sách Project ở thanh trên cùng ➔ Chọn <strong>New Project</strong> ➔ Đặt tên website (VD: <code>' . esc_html(get_bloginfo('name')) . '</code>) ➔ Bấm <strong>Create</strong>.</p>
+									</div>
+
+									<div style="background:#f8fafc;border-left:4px solid #71717a;padding:12px 16px;border-radius:4px">
+										<p style="margin:0 0 6px;font-weight:600;color:#27272a">Bước 2: Cấu hình Màn hình đồng thuận (OAuth consent screen / Audience)</p>
+										<ul style="margin:0;padding-left:18px">
+											<li>Ở menu bên trái, vào <strong>Audience</strong> (hoặc <strong>OAuth consent screen</strong>).</li>
+											<li>Chọn loại người dùng là <strong>External</strong> ➔ Bấm <strong>Create</strong> ➔ Điền tên App, Email hỗ trợ và Email nhà phát triển.</li>
+											<li><strong>Cấp quyền tài khoản:</strong> Tại mục <strong>Audience</strong>, cuộn xuống <strong>Test users</strong> ➔ Bấm <strong>+ Add users</strong> ➔ Nhập email Google của bạn (email admin) ➔ Bấm <strong>Save</strong> <em>(hoặc bấm nút <strong>Publish app</strong> để công khai cho mọi tài khoản Google).</em></li>
+										</ul>
+									</div>
+
+									<div style="background:#f8fafc;border-left:4px solid #71717a;padding:12px 16px;border-radius:4px">
+										<p style="margin:0 0 6px;font-weight:600;color:#27272a">Bước 3: Tạo OAuth Client ID & Nhập URL chính xác</p>
+										<p style="margin:0 0 8px">Vào menu bên trái <strong>Clients</strong> (hoặc <strong>Credentials</strong>) ➔ Bấm <strong>+ Create Credentials</strong> ➔ Chọn <strong>OAuth client ID</strong> ➔ Application type chọn <strong>Web application</strong>.</p>
+										<div style="background:#f1f5f9;border:1px solid #cbd5e1;padding:10px 14px;border-radius:6px;margin:8px 0">
+											<p style="margin:0 0 6px"><strong>1. Authorized JavaScript origins:</strong></p>
+											<code style="background:#ffffff;padding:4px 8px;border-radius:4px;border:1px solid #cbd5e1;color:#0f172a;display:inline-block;font-size:12px">' . esc_html($origin_uri) . '</code>
+											<p style="margin:10px 0 6px"><strong>2. Authorized redirect URIs:</strong> (Bắt buộc khớp 100% từng ký tự)</p>
+											<code style="background:#ffffff;padding:4px 8px;border-radius:4px;border:1px solid #cbd5e1;color:#0f172a;display:inline-block;font-size:12px">' . esc_html($redirect_uri) . '</code>
+										</div>
+										<p style="margin:6px 0 0;color:#64748b;font-size:12px"><em>* Lưu ý: Sau khi bấm nút Save trên Google Console, có thể mất từ 1-3 phút để Google kích hoạt URL mới.</em></p>
+									</div>
+
+									<div style="background:#f8fafc;border-left:4px solid #10b981;padding:12px 16px;border-radius:4px">
+										<p style="margin:0 0 6px;font-weight:600;color:#065f46">Bước 4: Lưu vào Website & Bắt đầu sử dụng</p>
+										<p style="margin:0">Copy <strong>Client ID</strong> và <strong>Client Secret</strong> từ Google dán vào 2 ô ở trên ➔ Tích chọn <strong>"Bật Login Google"</strong> ➔ Bấm <strong>Save Changes</strong> (Lưu thay đổi) ở cột bên phải. Ra trang <code>/wp-login.php</code> bấm nút Google để đăng nhập.</p>
+									</div>
+								</div>
+
+								<div style="margin-top:16px;background:#fefce8;border:1px solid #fef08a;border-radius:6px;padding:12px 16px;color:#854d0e;font-size:12px">
+									<strong>💡 Mẹo quản lý nhiều website:</strong> 
+									Một tài khoản Google Cloud có thể dùng cho nhiều website. Trong cùng một Client ID, tại ô <em>Authorized redirect URIs</em>, bạn có thể bấm <code>+ Add URI</code> để thêm các link callback của các website khác nhau, sau đó dùng chung Client ID & Secret này cho tất cả các site đó.
+								</div>
+							</div>';
+						}),
+				]);
+
+			// Workspace / HD Sử dụng & Dashboard Widgets Settings
+			Container::make('theme_options', __('Quản trị & HD Sử dụng', 'laca'))
+				->set_page_parent($options)
+				->set_page_file(__('laca-management-settings', 'laca'))
+				->add_tab(__('Dashboard Widget', 'laca'), [
+					Field::make('html', 'dashboard_widget_desc')
+						->set_html('<div class="carbon-field-description">Cấu hình hiển thị Widget <b>"Tổng hợp Nội dung"</b> trên màn hình Dashboard chính.</div>'),
+
+					Field::make('multiselect', 'dashboard_widget_post_types', __('Các Post Type hiển thị', 'laca'))
+						->set_options(function () {
+							$types = get_post_types(['public' => true, 'show_in_menu' => true], 'objects');
+							$options = [];
+							foreach ($types as $pt) {
+								if (in_array($pt->name, ['attachment', 'wp_block', 'wp_template', 'wp_template_part']))
+									continue;
+								$options[$pt->name] = $pt->label;
+							}
+							return $options;
+						})
+						->set_help_text(__('Để trống để tự động hiển thị tất cả các loại nội dung quan trọng (Posts, Services, Projects, Properties...).', 'laca'))
+						->set_default_value(['post']),
+
+					Field::make('text', 'dashboard_widget_limit', __('Số lượng bài hiển thị', 'laca'))
+						->set_attribute('type', 'number')
+						->set_default_value('5')
+						->set_width(50),
+				])
+				->add_tab(__('Nội dung HD Sử dụng', 'laca'), [
+					Field::make('html', 'help_page_desc')
+						->set_html('<div class="carbon-field-description">Nội dung này sẽ hiển thị ở menu <b>"HD Sử dụng"</b> dành cho khách hàng.</div>'),
+
+					Field::make('text', 'help_page_title', __('Tiêu đề trang', 'laca'))
+						->set_default_value('Hướng dẫn quản trị Website Professional'),
+
+					Field::make('textarea', 'help_page_intro', __('Đoạn giới thiệu', 'laca'))
+						->set_default_value('Chào mừng bạn đến với hệ thống quản trị website nâng cao. Hệ thống đã được tối ưu để bạn quản lý nội dung dễ dàng nhất.'),
+
+					Field::make('complex', 'help_page_blocks', __('Các khối hướng dẫn (Blog, WooCommerce...)', 'laca'))
+						->set_layout('tabbed-horizontal')
+						->add_fields([
+							Field::make('text', 'title', __('Tiêu đề khối', 'laca')),
+							Field::make('color', 'border_color', __('Màu viền (Border top)', 'laca'))->set_default_value('#2271b1'),
+							Field::make('rich_text', 'content', __('Nội dung hướng dẫn (Link, Video, Text)', 'laca')),
+						]),
+
+					Field::make('separator', 'help_separator', __('Thông tin hỗ trợ kỹ thuật', 'laca')),
+					Field::make('text', 'help_support_phone', __('Điện thoại/Zalo', 'laca')),
+					Field::make('text', 'help_support_email', __('Email', 'laca')),
+					Field::make('text', 'help_support_website', __('Website', 'laca')),
+				])
+				->add_tab(__('Vai trò Khách hàng', 'laca'), [
+					Field::make('html', 'client_role_desc')
+						->set_html('<div class="carbon-field-description">Vai trò <b>"Khách hàng" (laca_client)</b> cho phép người dùng biên tập nội dung (bài viết, trang, media, menu, xem form liên hệ, SEO) nhưng ẩn hoàn toàn các mục kỹ thuật (Plugins, Themes, Users, Tools, Cài đặt hệ thống, Laca Admin).</div>'),
+
+					Field::make('multiselect', 'laca_client_assigned_users', __('Gán vai trò Khách hàng cho người dùng', 'laca'))
+						->set_options(function () {
+							$users = get_users(['fields' => ['ID', 'user_login', 'display_name']]);
+							$options = [];
+							$superLogins = \App\Settings\AdminSettings::getSuperUserLogins();
+							foreach ($users as $u) {
+								if (in_array($u->user_login, $superLogins, true)) {
+									continue;
+								}
+								$options[(string) $u->ID] = "{$u->display_name} ({$u->user_login})";
+							}
+							return $options;
+						})
+						->set_help_text(__('Chọn các tài khoản thuộc nhóm khách hàng để áp dụng phân quyền an toàn.', 'laca')),
+				]);
+		});
+	}
+
+	/**
+	 * Script tự động phân tích JSON cấu hình khi dán vào ô laca_client_config_paste
+	 */
+	public function addTrackerConfigParserScript(): void
+	{
+		add_action('admin_footer', static function () {
+			$screen = get_current_screen();
+			if (!$screen || strpos((string) $screen->id, 'laca-tracker') === false) {
+				return;
+			}
+			?>
+			<script>
+			document.addEventListener('DOMContentLoaded', function () {
+				function setupParser() {
+					var textarea = document.querySelector('textarea[name*="laca_client_config_paste"]');
+					if (!textarea || textarea.dataset.parsedAttached) {
+						return;
+					}
+					textarea.dataset.parsedAttached = 'true';
+
+					function parseConfig() {
+						var raw = textarea.value.trim();
+						if (!raw || raw.charAt(0) !== '{') {
+							return;
+						}
+						try {
+							var data = JSON.parse(raw);
+							var setVal = function (fieldName, val) {
+								if (!val) return;
+								var input = document.querySelector('input[name*="' + fieldName + '"]');
+								if (input) {
+									input.value = val;
+									input.dispatchEvent(new Event('input', { bubbles: true }));
+									input.dispatchEvent(new Event('change', { bubbles: true }));
+								}
+							};
+
+							if (data.endpoint) {
+								setVal('laca_tracker_endpoint', data.endpoint);
+							} else if (data.hub_url) {
+								setVal('laca_tracker_endpoint', data.hub_url.replace(/\/+$/, '') + '/wp-json/laca/v1/tracker/log');
+							}
+
+							if (data.project_id) {
+								setVal('laca_project_id', data.project_id);
+							}
+
+							if (data.keys) {
+								if (data.keys.tracker) {
+									setVal('laca_key_tracker', data.keys.tracker);
+									setVal('laca_tracker_secret_key', data.keys.tracker);
+								}
+								if (data.keys.catalog) {
+									setVal('laca_key_catalog', data.keys.catalog);
+								}
+								if (data.keys.remote) {
+									setVal('laca_key_remote', data.keys.remote);
+								}
+							}
+						} catch (e) {
+							console.warn('[LacaDev Tracker] Không thể parse JSON cấu hình:', e);
+						}
+					}
+
+					textarea.addEventListener('input', parseConfig);
+					textarea.addEventListener('paste', function () {
+						setTimeout(parseConfig, 60);
+					});
+				}
+
+				setupParser();
+				var observer = new MutationObserver(setupParser);
+				observer.observe(document.body, { childList: true, subtree: true });
+			});
+			</script>
+			<?php
+		});
 	}
 }

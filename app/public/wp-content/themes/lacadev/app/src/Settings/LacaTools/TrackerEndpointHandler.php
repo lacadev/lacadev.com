@@ -125,6 +125,59 @@ class TrackerEndpointHandler
                 continue;
             }
 
+            if ($type === 'theme_update_result') {
+                $resultState = sanitize_key((string) ($meta['result'] ?? ''));
+                $validStates = ['success', 'failed', 'integrity_failed', 'rolled_back'];
+                if (!in_array($resultState, $validStates, true)) {
+                    continue;
+                }
+
+                $stateRecord = [
+                    'from'        => sanitize_text_field((string) ($meta['from'] ?? '')),
+                    'to'          => sanitize_text_field((string) ($meta['to'] ?? '')),
+                    'result'      => $resultState,
+                    'error'       => sanitize_text_field((string) ($meta['error'] ?? '')),
+                    'sha256'      => sanitize_text_field((string) ($meta['sha256'] ?? '')),
+                    'duration_ms' => absint($meta['duration_ms'] ?? 0),
+                    'source'      => sanitize_key((string) ($meta['source'] ?? 'dashboard')),
+                    'snapshot'    => sanitize_file_name((string) ($meta['snapshot'] ?? '')),
+                    'at'          => time(),
+                ];
+
+                update_post_meta($projectId, '_laca_theme_update_state', $stateRecord);
+
+                $history = get_post_meta($projectId, '_laca_theme_update_history', true);
+                $history = is_array($history) ? $history : [];
+                array_unshift($history, $stateRecord);
+                $history = array_slice($history, 0, 20);
+                update_post_meta($projectId, '_laca_theme_update_history', $history);
+
+                if (in_array($resultState, ['success', 'rolled_back'], true) && $stateRecord['to'] !== '') {
+                    $seenMeta = get_post_meta($projectId, '_tracker_last_seen_meta', true);
+                    if (is_array($seenMeta)) {
+                        $seenMeta['theme_version_parent'] = $stateRecord['to'];
+                        update_post_meta($projectId, '_tracker_last_seen_meta', $seenMeta);
+                    }
+                }
+
+                if (in_array($resultState, ['integrity_failed', 'failed'], true)) {
+                    $this->createAlert($projectId, $content, 'critical');
+                }
+
+                $logId = ProjectLog::add([
+                    'project_id'  => $projectId,
+                    'log_content' => $content,
+                    'log_type'    => 'deployment',
+                    'is_auto'     => 1,
+                    'log_by'      => 'LacaDev Tracker Bot',
+                    'meta'        => $stateRecord,
+                ]);
+                if ($logId) {
+                    $insertedCount++;
+                }
+                continue;
+            }
+
             // Map event type → log_type của database
             $deploymentTypes = [
                 'deployment',
@@ -326,24 +379,139 @@ class TrackerEndpointHandler
             }
         }
 
+        $canAutoApprove = $alreadyInstalled && $this->canAutoApproveBlockSync($projectId, $blockName);
+
         $pending[] = [
             'block_name'   => $blockName,
             'requested_at' => current_time('mysql'),
-            'status'       => $alreadyInstalled ? 'auto_approved' : 'pending',
+            'status'       => $canAutoApprove ? 'auto_approved' : 'pending',
             'reason'       => '',
         ];
         update_post_meta($projectId, '_pending_block_sync_requests', $pending);
 
-        $msg = $alreadyInstalled
-            ? "🔄 Site khách yêu cầu cập nhật block đã cài: {$blockName}"
-            : "🧩 Site khách yêu cầu đồng bộ block mới: {$blockName}";
+        $msg = $canAutoApprove
+            ? "🔄 Site khách yêu cầu cập nhật block đã cài (tự động duyệt): {$blockName}"
+            : "🧩 Site khách yêu cầu đồng bộ block (chờ duyệt): {$blockName}";
 
         $this->createClientRequestAlert($projectId, $msg, 'info', 'other');
 
-        if ($alreadyInstalled) {
+        if ($canAutoApprove) {
             // Đẩy ngay — do App\PostTypes\Concerns\BlockSyncSender lắng nghe
             do_action('laca_block_sync_auto_approved', $projectId, $blockName);
         }
+    }
+
+    /**
+     * Chỉ tự động duyệt (auto-approve) khi `requires` của block thoả mãn và block trên site khách không bị `local_modified`.
+     */
+    private function canAutoApproveBlockSync(int $projectId, string $blockName): bool
+    {
+        // 1. Kiểm tra requires từ cache catalog (nếu có)
+        $catalog = get_transient('laca_block_catalog_cache');
+        if (is_array($catalog)) {
+            foreach ($catalog as $item) {
+                $itemPath = (string) ($item['path'] ?? $item['name'] ?? '');
+                if ($itemPath !== $blockName && (string) ($item['name'] ?? '') !== $blockName) {
+                    continue;
+                }
+
+                $requires = is_array($item['requires'] ?? null) ? $item['requires'] : [];
+                if (!empty($requires['functions']) || !empty($requires['ajax'])) {
+                    // Không thể chắc chắn hàm/ajax tồn tại từ phía Hub trước khi push -> để pending
+                    return false;
+                }
+
+                if (!empty($requires['parent']) && is_string($requires['parent'])) {
+                    $updateState = get_post_meta($projectId, '_laca_theme_update_state', true);
+                    $seenMeta    = get_post_meta($projectId, '_tracker_last_seen_meta', true);
+                    $parentVer   = '';
+                    if (is_array($updateState) && !empty($updateState['to'])) {
+                        $parentVer = (string) $updateState['to'];
+                    } elseif (is_array($seenMeta) && !empty($seenMeta['theme_version_parent'])) {
+                        $parentVer = (string) $seenMeta['theme_version_parent'];
+                    }
+
+                    if ($parentVer === '') {
+                        return false;
+                    }
+
+                    $constraint = trim($requires['parent']);
+                    if (preg_match('/^(>=|<=|>|<|==|=)\s*(.+)$/', $constraint, $m)) {
+                        $op  = $m[1] === '=' ? '==' : $m[1];
+                        $ver = trim($m[2]);
+                    } else {
+                        $op  = '>=';
+                        $ver = $constraint;
+                    }
+
+                    if (!version_compare($parentVer, $ver, $op)) {
+                        return false;
+                    }
+                }
+                break;
+            }
+        }
+
+        // 2. Kiểm tra trạng thái local_modified trên site khách trước khi auto-approve
+        $endpointUrl = function_exists('carbon_get_post_meta')
+            ? (string) carbon_get_post_meta($projectId, 'sync_endpoint_url')
+            : (string) get_post_meta($projectId, '_sync_endpoint_url', true);
+        if ($endpointUrl === '') {
+            return false;
+        }
+
+        $statusUrl  = rtrim($endpointUrl, '/') . '/status?block=' . rawurlencode($blockName);
+        $keyCatalog = \App\Features\ProjectManagement\ProjectKeyManager::getKey(
+            $projectId,
+            \App\Features\ProjectManagement\ProjectKeyManager::KEY_CATALOG
+        );
+        $publicId = \App\Features\ProjectManagement\ProjectKeyManager::getPublicId($projectId);
+
+        $headers = ['Accept' => 'application/json'];
+        if (!empty($keyCatalog) && !empty($publicId)) {
+            $headers = array_merge(
+                $headers,
+                \App\Security\RequestSigner::sign('GET', $statusUrl, '', $keyCatalog, $publicId)
+            );
+        } else {
+            $apiKey = function_exists('carbon_get_post_meta')
+                ? (string) carbon_get_post_meta($projectId, 'sync_api_key')
+                : (string) get_post_meta($projectId, '_sync_api_key', true);
+            if ($apiKey !== '') {
+                $headers['X-Laca-Key'] = $apiKey;
+            }
+        }
+
+        $host      = strtolower(rtrim((string) parse_url($statusUrl, PHP_URL_HOST), '.'));
+        $sslVerify = ($host === '' || !str_ends_with($host, '.local'));
+
+        $response = wp_remote_get($statusUrl, [
+            'headers'   => $headers,
+            'timeout'   => 10,
+            'sslverify' => $sslVerify,
+        ]);
+
+        if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+            return false;
+        }
+
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+        if (!is_array($body)) {
+            return false;
+        }
+
+        if (!empty($body['local_modified'])) {
+            return false;
+        }
+
+        $storedChecksums = get_post_meta($projectId, '_block_sync_checksums', true);
+        if (is_array($storedChecksums) && isset($storedChecksums[$blockName]) && isset($body['checksum'])) {
+            if ((string) $body['checksum'] !== (string) $storedChecksums[$blockName]) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

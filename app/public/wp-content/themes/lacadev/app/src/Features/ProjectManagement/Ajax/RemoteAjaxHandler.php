@@ -38,7 +38,7 @@ class RemoteAjaxHandler
             wp_send_json_error(['message' => 'Không hợp lệ'], 403);
         }
 
-        $allowedActions = ['update_plugin', 'update_theme', 'update_core'];
+        $allowedActions = ['update_plugin', 'update_theme', 'update_core', 'rollback_theme'];
         if (!in_array($action, $allowedActions, true)) {
             wp_send_json_error(['message' => 'Action không hợp lệ.'], 400);
         }
@@ -98,12 +98,16 @@ class RemoteAjaxHandler
             $publicId
         );
 
+        $host      = strtolower(rtrim((string) parse_url($siteUrl, PHP_URL_HOST), '.'));
+        $sslVerify = ($host === '' || !str_ends_with($host, '.local'));
+
         $postArgs = [
-            'body'    => $bodyJson,
-            'headers' => array_merge([
+            'body'      => $bodyJson,
+            'headers'   => array_merge([
                 'Content-Type' => 'application/json',
             ], $sigHeaders),
-            'timeout' => 120,
+            'timeout'   => 120,
+            'sslverify' => $sslVerify,
         ];
 
         $response = wp_remote_post($endpoint, $postArgs);
