@@ -196,12 +196,18 @@ class BlockCatalogHub
             return null;
         }
 
+        $headers = \App\Security\RequestSigner::sign('GET', $url, '', $key, 'lacadev-hub');
+        $headers['Accept'] = 'application/json';
+        // TODO: Gỡ header fallback X-Laca-Catalog-Key sau khi nguồn production clients.lacadev.com nâng cấp lên >= 3.9.
+        $headers['X-Laca-Catalog-Key'] = $key;
+
+        $host      = strtolower(rtrim((string) parse_url($url, PHP_URL_HOST), '.'));
+        $sslVerify = ($host === '' || !str_ends_with($host, '.local'));
+
         $response = wp_remote_get($url, [
-            'headers' => [
-                'X-Laca-Catalog-Key' => $key,
-                'Accept'             => 'application/json',
-            ],
-            'timeout' => 15,
+            'headers'   => $headers,
+            'timeout'   => 15,
+            'sslverify' => $sslVerify,
         ]);
 
         if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {

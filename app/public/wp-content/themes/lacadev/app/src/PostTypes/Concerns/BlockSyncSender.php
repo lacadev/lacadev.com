@@ -103,13 +103,22 @@ trait BlockSyncSender
                      style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid #fde68a">
                     <div>
                         <strong><?php echo esc_html($reqBlockName); ?></strong>
-                        <?php if ($isUpdateReq): ?>
+                        <?php $reqStatus = (string) ($req['status'] ?? 'pending'); ?>
+                        <?php if ($reqStatus === 'conflict'): ?>
+                            <span style="background:#dc262622;color:#b91c1c;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:600;margin-left:6px">XUNG ĐỘT — KHÁCH ĐÃ SỬA CỤC BỘ</span>
+                        <?php elseif ($reqStatus === 'missing_dependencies'): ?>
+                            <span style="background:#7c3aed22;color:#6d28d9;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:600;margin-left:6px">THIẾU PHỤ THUỘC (409)</span>
+                        <?php elseif ($isUpdateReq): ?>
                             <span style="background:#fd7e1422;color:#fd7e14;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:600;margin-left:6px">CẬP NHẬT — GHI ĐÈ BẢN ĐANG CÀI</span>
                         <?php else: ?>
                             <span style="background:#0ea5e922;color:#0369a1;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:600;margin-left:6px">BLOCK MỚI</span>
                         <?php endif; ?>
                         <br>
                         <small style="color:#78716c">Yêu cầu lúc <?php echo esc_html($req['requested_at']); ?></small>
+                        <?php if (!empty($req['reason'])): ?>
+                            <br>
+                            <small style="color:#b91c1c"><?php echo esc_html((string) $req['reason']); ?></small>
+                        <?php endif; ?>
                     </div>
                     <div style="display:flex;gap:6px;flex-shrink:0">
                         <button type="button" class="button button-primary laca-approve-block-request-btn">✅ Duyệt &amp; Đẩy</button>
@@ -320,13 +329,11 @@ trait BlockSyncSender
         // Gọi GET /status endpoint
         // endpointUrl là .../sync-block → status là .../sync-block/status
         $statusUrl = rtrim($endpointUrl, '/') . '/status';
+        $headers   = $this->buildClientSyncHeaders('GET', $statusUrl, '', $postId, $apiKey);
         $response  = wp_remote_get($statusUrl, [
-            'headers' => [
-                'X-Laca-Key' => $apiKey,
-                'Accept'     => 'application/json',
-            ],
+            'headers'   => $headers,
             'timeout'   => 15,
-            'sslverify' => !defined('WP_DEBUG') || !WP_DEBUG,
+            'sslverify' => $this->shouldVerifySsl($statusUrl),
         ]);
 
         if (is_wp_error($response)) {
@@ -356,10 +363,14 @@ trait BlockSyncSender
             wp_send_json_error(['message' => "Response không hợp lệ. JSON error: {$jsonErr}. URL gọi: {$statusUrl}. Body: {$preview}"]);
         }
 
-        // Cập nhật meta
-        update_post_meta($postId, '_block_sync_versions', $body['installed']);
+        // Cập nhật meta (chuẩn hoá nếu client trả dạng object hoặc string)
+        $normalizedInstalled = [];
+        foreach ((array) $body['installed'] as $blkKey => $blkVal) {
+            $normalizedInstalled[(string) $blkKey] = is_array($blkVal) ? (string) ($blkVal['version'] ?? '') : (string) $blkVal;
+        }
+        update_post_meta($postId, '_block_sync_versions', $normalizedInstalled);
 
-        wp_send_json_success(['installed' => $body['installed']]);
+        wp_send_json_success(['installed' => $normalizedInstalled]);
     }
 
     // =========================================================================
@@ -454,7 +465,7 @@ trait BlockSyncSender
         // [0] = bản hiện tại vừa push, [1] = bản ngay trước đó — mục tiêu rollback
         $previous = $entries[1];
 
-        $result = $this->pushBlockFiles($blockName, $previous['version'], $previous['files'], $apiKey, $endpointUrl, $postId);
+        $result = $this->pushBlockFiles($blockName, $previous['version'], $previous['files'], $apiKey, $endpointUrl, $postId, null, true);
 
         if (!$result['success']) {
             wp_send_json_error(['message' => $result['message']]);
@@ -490,19 +501,66 @@ trait BlockSyncSender
     {
         $result = $this->approveAndPushBlock($projectId, $blockName);
 
-        if (!$result['success'] && !empty($result['conflict'])) {
-            $this->updateRequestStatus(
-                $projectId,
-                $blockName,
-                'pending',
-                'Tự động phát hiện site khách đã tự sửa block này — cần admin duyệt thủ công và xác nhận ghi đè.'
-            );
+        if (!$result['success']) {
+            if (!empty($result['missing_dependencies'])) {
+                $this->updateRequestStatus(
+                    $projectId,
+                    $blockName,
+                    'missing_dependencies',
+                    $result['message'] ?? 'Site khách thiếu phụ thuộc cần thiết cho block này.'
+                );
+            } elseif (!empty($result['conflict'])) {
+                $this->updateRequestStatus(
+                    $projectId,
+                    $blockName,
+                    'conflict',
+                    'Tự động phát hiện site khách đã tự sửa block này — cần admin duyệt thủ công và xác nhận ghi đè.'
+                );
+            }
         }
     }
 
     // =========================================================================
     // PRIVATE HELPERS
     // =========================================================================
+
+    private function shouldVerifySsl(string $url): bool
+    {
+        $host = strtolower(rtrim((string) parse_url($url, PHP_URL_HOST), '.'));
+        return $host === '' || !str_ends_with($host, '.local');
+    }
+
+    /**
+     * Dựng header xác thực cho request gửi tới client: có catalog key + publicId thì CHỈ ký HMAC, không gửi X-Laca-Key.
+     *
+     * @return array<string, string>
+     */
+    private function buildClientSyncHeaders(string $method, string $url, string $body, int $projectId, string $fallbackApiKey): array
+    {
+        $headers = ['Accept' => 'application/json'];
+        if ($method !== 'GET') {
+            $headers['Content-Type'] = 'application/json';
+        }
+
+        if ($projectId > 0) {
+            $keyCatalog = \App\Features\ProjectManagement\ProjectKeyManager::getKey(
+                $projectId,
+                \App\Features\ProjectManagement\ProjectKeyManager::KEY_CATALOG
+            );
+            $publicId = \App\Features\ProjectManagement\ProjectKeyManager::getPublicId($projectId);
+
+            if (!empty($keyCatalog) && !empty($publicId)) {
+                $sigHeaders = \App\Security\RequestSigner::sign($method, $url, $body, $keyCatalog, $publicId);
+                return array_merge($headers, $sigHeaders);
+            }
+        }
+
+        if ($fallbackApiKey !== '') {
+            $headers['X-Laca-Key'] = $fallbackApiKey;
+        }
+
+        return $headers;
+    }
 
     /**
      * @return array<int,array{block_name:string,requested_at:string,status:string,reason:string}>
@@ -516,13 +574,13 @@ trait BlockSyncSender
 
         return array_values(array_filter(
             $pending,
-            static fn($req) => in_array($req['status'] ?? '', ['pending', 'auto_approved'], true)
+            static fn($req) => in_array($req['status'] ?? '', ['pending', 'auto_approved', 'conflict', 'missing_dependencies'], true)
         ));
     }
 
     /**
      * Đổi trạng thái 1 request (khớp theo block_name, chỉ áp dụng cho request
-     * đang pending/auto_approved — không đụng tới request đã quyết định trước đó).
+     * đang chờ xử lý hoặc bị xung đột/thiếu phụ thuộc — không đụng tới request đã kết thúc trước đó).
      */
     private function updateRequestStatus(int $postId, string $blockName, string $status, string $reason): void
     {
@@ -533,7 +591,7 @@ trait BlockSyncSender
 
         foreach ($pending as &$req) {
             if (($req['block_name'] ?? '') === $blockName
-                && in_array($req['status'] ?? '', ['pending', 'auto_approved'], true)
+                && in_array($req['status'] ?? '', ['pending', 'auto_approved', 'conflict', 'missing_dependencies'], true)
             ) {
                 $req['status']     = $status;
                 $req['reason']     = $reason;
@@ -554,11 +612,15 @@ trait BlockSyncSender
      */
     private function approveAndPushBlock(int $postId, string $blockName, bool $force = false): array
     {
-        $apiKey      = carbon_get_post_meta($postId, 'sync_api_key');
-        $endpointUrl = carbon_get_post_meta($postId, 'sync_endpoint_url');
+        $apiKey      = (string) carbon_get_post_meta($postId, 'sync_api_key');
+        $endpointUrl = (string) carbon_get_post_meta($postId, 'sync_endpoint_url');
+        $keyCatalog  = \App\Features\ProjectManagement\ProjectKeyManager::getKey(
+            $postId,
+            \App\Features\ProjectManagement\ProjectKeyManager::KEY_CATALOG
+        );
 
-        if (empty($apiKey) || empty($endpointUrl)) {
-            $msg = 'Chưa cấu hình API Key hoặc Endpoint URL cho project này (tab 🧩 Block Sync).';
+        if ((empty($apiKey) && empty($keyCatalog)) || empty($endpointUrl)) {
+            $msg = 'Chưa cấu hình Catalog/API Key hoặc Endpoint URL cho project này (tab 🧩 Block Sync).';
             $this->updateRequestStatus($postId, $blockName, 'rejected', $msg);
             return ['success' => false, 'message' => $msg, 'version' => null];
         }
@@ -573,15 +635,22 @@ trait BlockSyncSender
         }
 
         if (!$force && $this->detectConflict($postId, $blockName, $apiKey, $endpointUrl)) {
+            $msg = "Site khách đã tự sửa đổi block \"{$blockName}\" kể từ lần đồng bộ trước — ghi đè sẽ làm mất các thay đổi đó.";
+            $this->updateRequestStatus($postId, $blockName, 'conflict', $msg);
             return [
                 'success'  => false,
                 'conflict' => true,
-                'message'  => "Site khách đã tự sửa đổi block \"{$blockName}\" kể từ lần đồng bộ trước — ghi đè sẽ làm mất các thay đổi đó.",
+                'message'  => $msg,
                 'version'  => null,
             ];
         }
 
-        $result = $this->pushBlockFiles($blockName, $remote['version'], $remote['files'], $apiKey, $endpointUrl, $postId);
+        $manifest = $remote['manifest'] ?? null;
+        if (!is_array($manifest) && !empty($remote['requires']) && is_array($remote['requires'])) {
+            $manifest = ['requires' => $remote['requires']];
+        }
+
+        $result = $this->pushBlockFiles($blockName, $remote['version'], $remote['files'], $apiKey, $endpointUrl, $postId, $manifest, $force);
 
         if ($result['success']) {
             $installedMeta             = get_post_meta($postId, '_block_sync_versions', true) ?: [];
@@ -601,14 +670,13 @@ trait BlockSyncSender
     }
 
     /**
-     * Gọi BlockCatalogHub (global, xem app/src/Settings/LacaTools/BlockCatalogHub.php)
-     * để lấy toàn bộ file nguồn của 1 block từ clients.lacadev.com.
+     * Gọi BlockCatalogProvider (cấu hình tại Laca Admin → 🗂️ Block Catalog Source)
+     * để lấy toàn bộ file nguồn, manifest SHA-256 và requires của 1 block.
      *
-     * @return array{version:string,files:array<string,string>}|null
+     * @return array{version:string,files:array<string,string>,manifest:array<string,mixed>|null,requires:array<string,mixed>}|null
      */
     private function fetchBlockFilesFromCatalog(string $blockName): ?array
     {
-        // Carbon Fields lưu option của simple field với tiền tố "_"
         $catalogUrl = trim((string) get_option('_laca_catalog_source_url', ''));
         $catalogKey = trim((string) get_option('_laca_catalog_source_key', ''));
 
@@ -616,26 +684,21 @@ trait BlockSyncSender
             return null;
         }
 
-        // Nếu $blockName KHÔNG chứa "/" (block phẳng thông thường), dùng URL chuẩn qua path segment:
-        //   {catalogUrl}/{blockName}/files
-        // Tương thích tối đa với mọi phiên bản client cũ.
-        // Nếu $blockName CÓ chứa "/" (bucket/block), KHÔNG được dùng %2F trong path segment vì
-        // Apache có cấu hình AllowEncodedSlashes mặc định là Off, sẽ trả về lỗi 404 HTML trước khi
-        // request kịp đến WordPress/WPEmerge. Do đó, chuyển sang dùng route tương thích qua query param:
-        //   {catalogUrl}/files?block=...
         if (!str_contains($blockName, '/')) {
             $filesUrl = rtrim($catalogUrl, '/') . '/' . rawurlencode($blockName) . '/files';
         } else {
             $filesUrl = rtrim($catalogUrl, '/') . '/files?' . http_build_query(['block' => $blockName]);
         }
 
+        $headers = \App\Security\RequestSigner::sign('GET', $filesUrl, '', $catalogKey, 'lacadev-hub');
+        $headers['Accept'] = 'application/json';
+        // TODO: Gỡ header fallback X-Laca-Catalog-Key sau khi nguồn production clients.lacadev.com nâng cấp lên >= 3.9.
+        $headers['X-Laca-Catalog-Key'] = $catalogKey;
+
         $response = wp_remote_get($filesUrl, [
-            'headers'   => [
-                'X-Laca-Catalog-Key' => $catalogKey,
-                'Accept'             => 'application/json',
-            ],
+            'headers'   => $headers,
             'timeout'   => 30,
-            'sslverify' => !WP_DEBUG,
+            'sslverify' => $this->shouldVerifySsl($filesUrl),
         ]);
 
         if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
@@ -647,20 +710,19 @@ trait BlockSyncSender
             return null;
         }
 
+        $manifest = (isset($body['manifest']) && is_array($body['manifest'])) ? $body['manifest'] : null;
+        $requires = (isset($body['requires']) && is_array($body['requires']))
+            ? $body['requires']
+            : (is_array($manifest['requires'] ?? null) ? $manifest['requires'] : []);
+
         return [
-            'version' => (string) ($body['version'] ?? '1.0.0'),
-            'files'   => $body['files'],
+            'version'  => (string) ($body['version'] ?? '1.0.0'),
+            'files'    => $body['files'],
+            'manifest' => $manifest,
+            'requires' => $requires,
         ];
     }
 
-    /**
-     * Phát hiện site khách đã tự sửa block này kể từ lần push gần nhất, TRƯỚC
-     * KHI ghi đè — hỏi client checksum hiện tại của block (qua endpoint
-     * status có sẵn, mở rộng thêm ?block=) rồi so với checksum đã lưu lúc
-     * push thành công lần trước ($_block_sync_checksums). Không chặn nếu:
-     * (a) block này chưa từng push (không có gì để so), hoặc (b) không hỏi
-     * được client (lỗi mạng) — tránh chặn nhầm khi không chắc chắn có xung đột.
-     */
     private function detectConflict(int $postId, string $blockName, string $apiKey, string $endpointUrl): bool
     {
         $storedChecksums = get_post_meta($postId, '_block_sync_checksums', true) ?: [];
@@ -671,7 +733,7 @@ trait BlockSyncSender
             return false;
         }
 
-        $remoteChecksum = $this->getRemoteChecksum($blockName, $apiKey, $endpointUrl);
+        $remoteChecksum = $this->getRemoteChecksum($blockName, $apiKey, $endpointUrl, $postId);
         if ($remoteChecksum === null) {
             return false;
         }
@@ -679,17 +741,15 @@ trait BlockSyncSender
         return $remoteChecksum !== $storedChecksum;
     }
 
-    private function getRemoteChecksum(string $blockName, string $apiKey, string $endpointUrl): ?string
+    private function getRemoteChecksum(string $blockName, string $apiKey, string $endpointUrl, int $projectId = 0): ?string
     {
         $statusUrl = rtrim($endpointUrl, '/') . '/status?block=' . rawurlencode($blockName);
+        $headers   = $this->buildClientSyncHeaders('GET', $statusUrl, '', $projectId, $apiKey);
 
         $response = wp_remote_get($statusUrl, [
-            'headers'   => [
-                'X-Laca-Key' => $apiKey,
-                'Accept'     => 'application/json',
-            ],
+            'headers'   => $headers,
             'timeout'   => 15,
-            'sslverify' => !WP_DEBUG,
+            'sslverify' => $this->shouldVerifySsl($statusUrl),
         ]);
 
         if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
@@ -792,68 +852,56 @@ trait BlockSyncSender
     }
 
     /**
-     * Gửi $files (đã encode base64 sẵn) tới client endpoint — retry với
-     * exponential backoff (max 3 lần). Tách riêng khỏi pushSingleBlock() để
-     * dùng chung được cho cả block đọc từ local disk (hub) lẫn block lấy từ
-     * xa qua BlockCatalogHub (clients.lacadev.com) — xem approveAndPushBlock().
-     *
      * @param array<string,string> $files
+     * @param array<string,mixed>|null $manifest
      */
-    private function pushBlockFiles(string $blockName, string $version, array $files, string $apiKey, string $endpointUrl, int $projectId = 0): array
-    {
-        // POST đến client endpoint — retry với exponential backoff (max 3 lần)
-        $payload = json_encode([
+    private function pushBlockFiles(
+        string $blockName,
+        string $version,
+        array $files,
+        string $apiKey,
+        string $endpointUrl,
+        int $projectId = 0,
+        ?array $manifest = null,
+        bool $force = false
+    ): array {
+        $payloadArr = [
             'block_name' => $blockName,
             'version'    => $version,
             'files'      => $files,
-        ]);
-
-        $headers = [
-            'X-Laca-Key'   => $apiKey,
-            'Content-Type' => 'application/json',
-            'Accept'       => 'application/json',
         ];
 
-        // Chuẩn ký HMAC-SHA256 (Phase 7): Thêm chữ ký bằng key catalog
-        if ($projectId > 0) {
-            $keyCatalog = \App\Features\ProjectManagement\ProjectKeyManager::getKey(
-                $projectId,
-                \App\Features\ProjectManagement\ProjectKeyManager::KEY_CATALOG
-            );
-            if (empty($keyCatalog)) {
-                $keyCatalog = $apiKey;
+        if ($manifest !== null) {
+            $payloadArr['manifest'] = $manifest;
+            if (!empty($manifest['requires']) && is_array($manifest['requires'])) {
+                $payloadArr['requires'] = $manifest['requires'];
             }
-            $publicId   = \App\Features\ProjectManagement\ProjectKeyManager::getPublicId($projectId);
-            $sigHeaders = \App\Security\RequestSigner::sign(
-                'POST',
-                $endpointUrl,
-                (string) $payload,
-                $keyCatalog,
-                $publicId
-            );
-            $headers = array_merge($headers, $sigHeaders);
+        }
+        if ($force) {
+            $payloadArr['force'] = true;
         }
 
+        $payload     = (string) wp_json_encode($payloadArr);
         $response    = null;
         $lastError   = '';
         $maxAttempts = 3;
 
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             if ($attempt > 1) {
-                // Exponential backoff: 1s, 2s (blocking — admin context, short delays ok)
                 sleep(min(2 ** ($attempt - 2), 4));
             }
 
+            $headers  = $this->buildClientSyncHeaders('POST', $endpointUrl, $payload, $projectId, $apiKey);
             $response = wp_remote_post($endpointUrl, [
-                'headers' => $headers,
-                'body'    => $payload,
-                'timeout' => 30,
-                'sslverify' => !WP_DEBUG,
+                'headers'   => $headers,
+                'body'      => $payload,
+                'timeout'   => 30,
+                'sslverify' => $this->shouldVerifySsl($endpointUrl),
             ]);
 
             if (!is_wp_error($response)) {
                 $code = wp_remote_retrieve_response_code($response);
-                // Retry on server errors (5xx) but not client errors (4xx)
+                // 4xx (bao gồm 409 conflict / missing_dependencies) không retry; chỉ retry lỗi 5xx.
                 if ($code < 500) {
                     break;
                 }
@@ -872,36 +920,67 @@ trait BlockSyncSender
             ];
         }
 
-        $code    = wp_remote_retrieve_response_code($response);
-        $rawBody = wp_remote_retrieve_body($response);
-
-        // Strip UTF-8 BOM (\xEF\xBB\xBF) và whitespace trước/sau JSON.
-        // BOM vô hình nhưng làm json_decode() trả về null.
-        $cleanBody = preg_replace('/^\xEF\xBB\xBF/', '', $rawBody);
+        $code      = wp_remote_retrieve_response_code($response);
+        $rawBody   = wp_remote_retrieve_body($response);
+        $cleanBody = preg_replace('/^\xEF\xBB\xBF/', '', $rawBody) ?? $rawBody;
         $body      = json_decode(trim($cleanBody), true);
-
 
         if ($code === 401) {
             return [
-                'success' => false,
-                'message' => 'API Key không hợp lệ (401)',
-                'version' => null,
+                'success'   => false,
+                'http_code' => 401,
+                'message'   => 'API Key / chữ ký HMAC không hợp lệ (401)',
+                'version'   => null,
+            ];
+        }
+
+        if ($code === 409) {
+            $bizCode = is_array($body) ? (string) ($body['code'] ?? 'conflict') : 'conflict';
+            $missing = (is_array($body) && is_array($body['missing'] ?? null)) ? $body['missing'] : [];
+            $msg     = is_array($body) && !empty($body['message'])
+                ? (string) $body['message']
+                : ($bizCode === 'missing_dependencies'
+                    ? 'Site khách thiếu phụ thuộc cần thiết (' . implode(', ', $missing) . ').'
+                    : 'Block trên site khách đã bị chỉnh sửa cục bộ (409).');
+
+            if (!empty($missing) && !str_contains($msg, implode(', ', $missing))) {
+                $msg .= ' [' . implode(', ', $missing) . ']';
+            }
+
+            if ($projectId > 0) {
+                $reqStatus = $bizCode === 'missing_dependencies' ? 'missing_dependencies' : 'conflict';
+                $this->updateRequestStatus($projectId, $blockName, $reqStatus, $msg);
+            }
+
+            return [
+                'success'              => false,
+                'http_code'            => 409,
+                'code'                 => $bizCode,
+                'conflict'             => $bizCode === 'local_modified',
+                'missing_dependencies' => $bizCode === 'missing_dependencies',
+                'missing'              => $missing,
+                'message'              => $msg,
+                'version'              => null,
             ];
         }
 
         if ($code !== 200 || empty($body['success'])) {
             $msg = $body['message'] ?? ('HTTP ' . $code . ' | body: ' . substr($rawBody, 0, 120));
             return [
-                'success' => false,
-                'message' => "Client từ chối: {$msg}",
-                'version' => null,
+                'success'   => false,
+                'http_code' => $code,
+                'message'   => "Client từ chối: {$msg}",
+                'version'   => null,
             ];
         }
 
         return [
-            'success' => true,
-            'message' => $body['message'] ?? 'Thành công',
-            'version' => $version,
+            'success'           => true,
+            'http_code'         => 200,
+            'message'           => $body['message'] ?? 'Thành công',
+            'version'           => (string) ($body['installed_version'] ?? $version),
+            'checksum'          => $body['checksum'] ?? null,
+            'path'              => $body['path'] ?? $blockName,
         ];
     }
 
