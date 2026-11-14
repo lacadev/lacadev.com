@@ -8,6 +8,8 @@ use App\Models\ProjectAlert;
 /**
  * ClientWebhook
  *
+ * @deprecated 3.9.1 Không còn được đăng ký; thay bằng TrackerEndpointHandler.
+ *
  * REST API endpoint nhận báo cáo thay đổi từ các site client (chạy lacadev-client)
  * về server lacadev master và ghi log/cảnh báo vào CPT `project` tương ứng.
  *
