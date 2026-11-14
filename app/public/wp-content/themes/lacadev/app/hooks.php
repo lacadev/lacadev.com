@@ -192,9 +192,13 @@ if (is_admin()) {
 
 /**
  * LacaDev Tracker Client — gửi logs & alerts về lacadev CMS.
+ * Hub (có LacaProjectsHub) tuyệt đối không tự khởi chạy tracker client.
  */
 add_action('init', static function () {
-    if (class_exists('\App\Settings\LacaDevTrackerClient')) {
+    if (
+        class_exists('\App\Settings\LacaDevTrackerClient')
+        && !class_exists(\App\Features\ProjectManagement\LacaProjectsHub::class)
+    ) {
         new \App\Settings\LacaDevTrackerClient();
     }
 
@@ -257,7 +261,28 @@ function laca_install_project_manager_tables(): void
 add_action('after_switch_theme', 'laca_install_project_manager_tables');
 add_action('after_setup_theme', 'laca_install_project_manager_tables', 1);
 
+/**
+ * Menu quản trị Dự án (LacaProjectsHub) & Trang tổng hợp cảnh báo tất cả dự án
+ */
 add_action('init', function () {
+    if (class_exists('\App\Features\ProjectManagement\LacaProjectsHub')) {
+        (new \App\Features\ProjectManagement\LacaProjectsHub())->register();
+    }
+
+    if (class_exists('\App\Features\ProjectManagement\ProjectGlobalAlertsPage')) {
+        (new \App\Features\ProjectManagement\ProjectGlobalAlertsPage())->register();
+    }
+});
+
+/**
+ * Khởi tạo Handler xử lý Notifications & Cron (Project Manager),
+ * Export PDF Quote và các REST endpoint của Hub
+ */
+add_action('init', function () {
+    if (class_exists('\App\Settings\LacaTools\ProjectNotificationHandler')) {
+        (new \App\Settings\LacaTools\ProjectNotificationHandler())->init();
+    }
+
     if (class_exists('\App\Settings\LacaTools\ProjectPdfExporter')) {
         (new \App\Settings\LacaTools\ProjectPdfExporter())->init();
     }
@@ -378,6 +403,9 @@ add_action('init', function () {
     if (class_exists('\App\Features\ContactForm\ContactFormAjaxHandler')) {
         (new \App\Features\ContactForm\ContactFormAjaxHandler())->init();
     }
+    if (class_exists('\App\Features\ContactForm\FooterContactHandler')) {
+        (new \App\Features\ContactForm\FooterContactHandler())->init();
+    }
 }, 10);
 
 /**
@@ -404,6 +432,15 @@ add_action('init', function () {
 add_action('init', function () {
     if (class_exists('\App\Settings\LoginLog\LoginLogManager')) {
         (new \App\Settings\LoginLog\LoginLogManager())->init();
+    }
+});
+
+/**
+ * Mobile Sticky CTA Bar.
+ */
+add_action('init', function () {
+    if (class_exists('\App\Features\MobileStickyCta')) {
+        (new \App\Features\MobileStickyCta())->init();
     }
 });
 
@@ -530,6 +567,9 @@ add_action('after_setup_theme', function () {
 if (defined('WP_CLI') && \WP_CLI) {
     if (class_exists('\App\Cli\LacaSyncCommand')) {
         \WP_CLI::add_command('laca', \App\Cli\LacaSyncCommand::class);
+    }
+    if (class_exists('\App\Cli\LacaCryptoCommand')) {
+        \WP_CLI::add_command('laca crypto', \App\Cli\LacaCryptoCommand::class);
     }
 }
 
