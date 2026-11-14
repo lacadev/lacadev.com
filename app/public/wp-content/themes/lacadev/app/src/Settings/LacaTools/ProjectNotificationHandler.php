@@ -26,7 +26,11 @@ class ProjectNotificationHandler
 
     public function init(): void
     {
-        add_action('init', [$this, 'scheduleCronJob']);
+        if (doing_action('init') || did_action('init')) {
+            $this->scheduleCronJob();
+        } else {
+            add_action('init', [$this, 'scheduleCronJob']);
+        }
         add_action(self::CRON_HOOK, [$this, 'processDailyChecks']);
         add_action('laca_project_alert_notify', [$this, 'handleRealtimeAlert'], 10, 3);
         add_action('admin_notices', [$this, 'renderCronHealthNotice']);

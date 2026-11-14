@@ -115,11 +115,23 @@ class ProjectKeyManager
             return '';
         }
 
-        // Nếu đã mã hoá thì giải mã
+        // Nếu đã mã hoá thì giải mã + lazy rehash sang AEAD v2
         if (Crypto::isEncrypted($stored)) {
-            return Crypto::decrypt($stored);
+            $decrypted = Crypto::decrypt($stored);
+            if ($decrypted === '') {
+                error_log(sprintf('[laca-crypto] Failed to decrypt key meta %s for project #%d.', $metaKey, $projectId));
+                return '';
+            }
+
+            if (Crypto::needsRehash($stored)) {
+                self::setKey($projectId, $type, $decrypted);
+            }
+
+            return $decrypted;
         }
 
+        // Dữ liệu cũ chưa mã hoá → tự động mã hoá sang v2
+        self::setKey($projectId, $type, $stored);
         return $stored;
     }
 
@@ -129,11 +141,15 @@ class ProjectKeyManager
     public static function setKey(int $projectId, string $type, string $plainKey): void
     {
         $metaKey = self::META_KEYS[$type] ?? '';
-        if (!$metaKey || empty($plainKey)) {
+        if (!$metaKey || $plainKey === '') {
             return;
         }
 
         $encrypted = Crypto::encrypt($plainKey);
+        if ($encrypted === '') {
+            return;
+        }
+
         update_post_meta($projectId, $metaKey, $encrypted);
 
         // Riêng portal key: lưu thêm hash sha256 để tìm kiếm O(1) không cần quét toàn bộ DB
@@ -155,6 +171,13 @@ class ProjectKeyManager
         foreach (self::META_KEYS as $type => $metaKey) {
             $val = self::getKey($projectId, $type);
             if ($val === '') {
+                $rawStored = (string) get_post_meta($projectId, $metaKey, true);
+                if ($rawStored !== '') {
+                    // Đã có dữ liệu mã hoá nhưng giải mã lỗi → KHÔNG tự sinh đè làm đứt kết nối site khách
+                    $keys[$type] = '';
+                    continue;
+                }
+
                 if ($type === self::KEY_TRACKER) {
                     $old = (string) get_post_meta($projectId, '_tracker_secret_key', true);
                     $val = $old ?: wp_generate_password(48, false);
